@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClojureProjectResolveSettings">
+    <item key="cljs.core/defprotocol" resolves-as="clojure.core/defprotocol" />
+    <currentScheme>PROJECT</currentScheme>
+  </component>
+</project>

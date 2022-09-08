@@ -1,0 +1,11 @@
+{:linters {:missing-docstring {:level :warning}
+           :redundant-fn-wrapper {:level :warning}
+           :shadowed-var {:level :warning
+                          :exclude []
+                          :suggest {}}
+           :unsorted-required-namespaces {:level :warning}}
+ :lint-as {}
+ :config-in-comment {:linters {:redundant-expression {:level :off}
+                               :unresolved-namespace {:level :off}
+                               :unresolved-symbol {:level :off}
+                               :duplicate-require {:level :off}}}}

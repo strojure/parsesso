@@ -1,0 +1,23 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <option name="RIGHT_MARGIN" value="100" />
+    <option name="SOFT_MARGINS" value="80" />
+    <ClojureCodeStyleSettings>
+      <option name="alignMapValues" value="false" />
+      <option name="commentAlignColumn" value="50" />
+      <option name="indentCustomisations">
+        <map>
+          <entry key="cljs.test/are" value="2" />
+          <entry key="clojure.core/cond-&gt;" value="1" />
+          <entry key="clojure.core/cond-&gt;&gt;" value="1" />
+          <entry key="clojure.core/defmulti" value="1" />
+          <entry key="clojure.core/defonce" value="-1" />
+          <entry key="clojure.test/are" value="2" />
+        </map>
+      </option>
+    </ClojureCodeStyleSettings>
+    <codeStyleSettings language="Markdown">
+      <option name="RIGHT_MARGIN" value="80" />
+    </codeStyleSettings>
+  </code_scheme>
+</component>
