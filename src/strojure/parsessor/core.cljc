@@ -51,8 +51,7 @@
           (nil? m1) e2
           :else (let [pos1 (:pos e1)]
                   (case (compare pos1 (:pos e2))
-                    1 e1, -1 e2
-                    (ParseError. pos1 (reduce conj m1 m2)))))))
+                    1 e1, -1 e2, (ParseError. pos1 (reduce conj m1 m2)))))))
 
 (defn unknown-error [state]
   (new-error-unknown (:pos state)))
@@ -181,7 +180,61 @@
 ;; if this is undesirable.
 (declare look-ahead)
 
+(defn look-ahead
+  ;; TODO: Update reference to `try`.
+  "Parses `p` without consuming any input. If `p` fails and consumes some input,
+  so does `look-ahead`. Combine with `try` if this is undesirable."
+  [p]
+  (parser
+    (fn [state ret]
+      (let [ret-val (fn [x _ _] (ret-val-empty ret x state (new-error-unknown (:pos state))))]
+        (run-parser p state ret :ret-val-consumed ret-val :ret-val-empty ret-val)))))
+
 (declare token, token-prim, token-prim-ex)
+
+(defn- unexpect-error
+  [msg pos]
+  (new-error-message :msg/sys-unexpect msg pos))
+
+(defn token-prim
+  ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
+  ([pred, show-token get-next-pos] (token-prim pred show-token get-next-pos nil))
+  ([pred, show-token, get-next-pos, get-next-user]
+   (parser
+     (fn [state ret]
+       (if-let [input (seq (:input state))]
+         (let [c (first input)]
+           (if (pred c)
+             (let [cur-pos (:pos state)
+                   new-input (rest input)
+                   new-pos (get-next-pos cur-pos c new-input)
+                   new-state (->State new-input new-pos
+                                      (cond->> (:user state)
+                                        get-next-user (get-next-user cur-pos c new-input)))]
+               (ret-val-consumed ret c new-state (new-error-unknown new-pos)))
+             (ret-err-empty ret (unexpect-error (show-token c) (:pos state)))))
+         (ret-err-empty ret (unexpect-error "" (:pos state))))))))
+
+(defn token
+  [show-token, get-tok-pos, pred]
+  (token-prim show-token
+              (fn [_ tok ts] (get-tok-pos (if (seq ts) (first ts) tok)))
+              pred))
+
+(defn satisfy
+  [pred]
+  (token-prim pred
+              (fn [c] (str [c]))
+              (fn [pos c _] :dummy/pos)))
+
+(comment
+  (def -input "abc")
+  (str [\c])
+  (parse (satisfy #(= \a %)) -input)
+  (parse (satisfy #(= \b %)) -input)
+  (parse (choice (satisfy #(= \a %)) (satisfy #(= \b %))) -input)
+  (parse (choice (satisfy #(= \b %)) (satisfy #(= \a %))) -input)
+  )
 
 (declare many)
 
