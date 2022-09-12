@@ -4,7 +4,7 @@
                           :exclude []
                           :suggest {}}
            :unsorted-required-namespaces {:level :warning}}
- :lint-as {}
+ :lint-as {strojure.parsessor.core/with clojure.core/let}
  :config-in-comment {:linters {:redundant-expression {:level :off}
                                :unresolved-namespace {:level :off}
                                :unresolved-symbol {:level :off}
