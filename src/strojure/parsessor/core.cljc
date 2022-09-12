@@ -7,55 +7,97 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord ParseError [pos msgs])
-(defrecord Message [t msg])
-
 #?(:clj (defrecord Parser [parser-fn]
           IFn
-          (invoke [_ state reps] (parser-fn state reps))))
+          (invoke [_ state ret] (parser-fn state ret))))
 
 (defn parser [parser-fn] (Parser. parser-fn))
 
-(defprotocol IReplyMethods
-  (consumed-ok [_ value state error])
-  (empty-ok,,, [_ value state error])
-  (consumed-err [_ error])
-  (empty-err,,, [_ error]))
+(defrecord ValueReply [value consumed state error])
+(defrecord ErrorReply [error consumed])
 
-(defrecord ReplyMethods [consumed-ok-fn, empty-ok-fn, consumed-err-fn, empty-err-fn]
-  IReplyMethods
-  (consumed-ok [_ value state error] (consumed-ok-fn value state error))
-  (empty-ok,,, [_ value state error] (empty-ok-fn value state error))
-  (consumed-err [_ error] (consumed-err-fn error))
-  (empty-err,,, [_ error] (empty-err-fn error)))
+(defn value-reply? [reply] (instance? ValueReply reply))
+(defn error-reply? [reply] (instance? ErrorReply reply))
 
-(defn init-reps
-  []
-  (ReplyMethods. (fn consumed-ok [value state error] (ReplyOk. value state error true))
-                 (fn empty-ok,,, [value state error] (ReplyOk. value state error false))
-                 (fn consumed-err [error] (ReplyError. error true))
-                 (fn empty-err,,, [error] (ReplyError. error false))))
+(defrecord State [input pos user])
 
-(defn set-reps
-  ([reps k1 v1]
-   (-> reps (assoc k1 v1)))
-  ([reps k1 v1, k2 v2]
-   (-> reps (assoc k1 v1) (assoc k2 v2))))
+(defprotocol IReplyApi
+  (ret-val-consumed [_ value state error])
+  (ret-val-empty,,, [_ value state error])
+  (ret-err-consumed [_ error])
+  (ret-err-empty,,, [_ error]))
+
+#_:clj-kondo/ignore
+(defrecord ReplyApi [ret-val-consumed, ret-val-empty, ret-err-consumed, ret-err-empty]
+  IReplyApi
+  (ret-val-consumed [_ value state error] (ret-val-consumed value state error))
+  (ret-val-empty,,, [_ value state error] (ret-val-empty value state error))
+  (ret-err-consumed [_ error] (ret-err-consumed error))
+  (ret-err-empty,,, [_ error] (ret-err-empty error)))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defrecord ParseError [pos messages])
 
 (defn new-error-unknown [pos] (ParseError. pos nil))
 (defn new-error-message [typ msg pos] (ParseError. pos [[typ msg]]))
 
-(defn error-is-unknown [error] (empty? (:msgs error)))
+(defn error-is-unknown [error] (empty? (:messages error)))
 
 (defn merge-error [e1 e2]
   ;; TODO: merge errors
-  (ParseError. (:pos e1) (into (or (:msgs e1) []) (:msgs e2))))
+  (ParseError. (:pos e1) (into (or (:messages e1) []) (:messages e2))))
 
 (defn unknown-error [state]
   (new-error-unknown (:pos state)))
 
 (defn sys-unexpect-error [msg pos]
   (new-error-message :msg/sys-unexpect msg pos))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defn- init-reply-api
+  []
+  (ReplyApi. (fn ret-val-consumed [value state error] (ValueReply. value true state error))
+             (fn ret-val-empty,,, [value state error] (ValueReply. value false state error))
+             (fn ret-err-consumed [error] (ErrorReply. error true))
+             (fn ret-err-empty,,, [error] (ErrorReply. error false))))
+
+(defn run-parser
+  ([p state] (run-parser p state (init-reply-api)))
+  ([p state ret] (p state ret))
+  ([p state ret k1 f1] (p state (-> ret (assoc k1 f1))))
+  ([p state ret k1 f1 k2 f2] (p state (-> ret (assoc k1 f1) (assoc k2 f2)))))
+
+(defn mkpt
+  [k]
+  (parser
+    (fn [state ret]
+      (let [reply (k state)]
+        (if (:consumed reply)
+          (if (value-reply? reply)
+            (ret-val-consumed ret (:value reply) (:state reply) (:error reply))
+            (ret-err-consumed ret (:error reply)))
+          (if (value-reply? reply)
+            (ret-val-empty ret (:value reply) (:state reply) (:error reply))
+            (ret-err-empty ret (:error reply))))))))
+
+(defn fmap-reply
+  [f reply]
+  (cond-> reply
+    (value-reply? reply) (update :value f)))
+
+(defn parsec-map
+  [f p]
+  (parser
+    (fn [state ret]
+      (run-parser p state ret
+                  :ret-val-consumed (fn [x s e] (ret-val-consumed ret (f x) s e))
+                  :ret-val-empty (fn [x s e] (ret-val-empty ret (f x) s e))))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+;;; parsers
 
 (defn unexpected
   "The parser @unexpected msg@ always fails with an unexpected error
@@ -67,87 +109,46 @@
   of 'Text.Parsec.Combinator.notFollowedBy'."
   [msg]
   (parser
-    (fn [state reps]
-      (empty-err reps (new-error-message :msg/un-expect msg (:pos state))))))
-
-(defrecord ReplyOk [value state error consumed])
-(defrecord ReplyError [error consumed])
-(defrecord State [input pos user])
-
-(defn reply-ok? [reply] (instance? ReplyOk reply))
-(defn reply-error? [reply] (instance? ReplyError reply))
-
-(defn parse*
-  ([p state] (parse* p state (init-reps)))
-  ([p state reps] (p state reps))
-  ([p state reps k1 f1] (p state (set-reps reps k1 f1)))
-  ([p state reps k1 f1 k2 f2] (p state (set-reps reps k1 f1 k2 f2))))
-
-(defn mkpt
-  [k]
-  (parser
-    (fn [state reps]
-      (let [reply (k state)]
-        (if (:consumed reply)
-          (if (reply-ok? reply)
-            (consumed-ok reps (:value reply) (:state reply) (:error reply))
-            (consumed-err reps (:error reply)))
-          (if (reply-ok? reply)
-            (empty-ok reps (:value reply) (:state reply) (:error reply))
-            (empty-err reps (:error reply))))))))
-
-(defn fmap-reply
-  [f reply]
-  (cond-> reply
-    (reply-ok? reply) (update :value f)))
-
-(defn parsec-map
-  [f p]
-  (parser
-    (fn [state reps]
-      (parse* p state reps
-              :consumed-ok-fn (fn [x s e] (consumed-ok reps (f x) s e))
-              :empty-ok-fn (fn [x s e] (empty-ok reps (f x) s e))))))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-;;; parsers
+    (fn [state ret]
+      (ret-err-empty ret (new-error-message :msg/un-expect msg (:pos state))))))
 
 (defn return
   [x]
   (parser
-    (fn [state reps]
-      (empty-ok reps x state (unknown-error state)))))
+    (fn [state ret]
+      (ret-val-empty ret x state (unknown-error state)))))
 
 (defn bind
   "m - parser, k - (fn [value] parser)"
   [m k]
   (parser
-    (fn [state reps]
-      (parse* m state reps
-              :consumed-ok-fn
-              (fn [x s e]
-                (parse* (k x) s (cond-> reps
-                                  (not (error-is-unknown e))
-                                  ;; - if (k x) consumes, those go straight up
-                                  ;; - if (k x) doesn't consume input, but is okay, we still return
-                                  ;;   in the consumed continuation
-                                  ;; - if (k x) doesn't consume input, but errors, we return the
-                                  ;;   error in the 'consumed-error' continuation
-                                  (set-reps :empty-ok-fn (fn [x s e'] (consumed-ok reps x s (merge-error e e')))
-                                            :empty-err-fn (fn [e'] (consumed-err reps (merge-error e e')))))))
-              :empty-ok-fn
-              (fn [x s e]
-                (parse* (k x) s (cond-> reps
-                                  (not (error-is-unknown e))
-                                  ;; - in these cases, (k x) can return as empty
-                                  (set-reps :empty-ok-fn (fn [x s e'] (empty-ok reps x s (merge-error e e')))
-                                            :empty-err-fn (fn [e'] (empty-err reps (merge-error e e')))))))))))
+    (fn [state ret]
+      (run-parser m state ret
+                  :ret-val-consumed
+                  (fn [x s e]
+                    (if (error-is-unknown e)
+                      (run-parser (k x) s ret)
+                      ;; - if (k x) consumes, those go straight up
+                      ;; - if (k x) doesn't consume input, but is okay, we still return
+                      ;;   in the consumed continuation
+                      ;; - if (k x) doesn't consume input, but errors, we return the
+                      ;;   error in the 'ret-err-consumedor' continuation
+                      (run-parser (k x) s ret
+                                  :ret-val-empty (fn [x s e'] (ret-val-consumed ret x s (merge-error e e')))
+                                  :ret-err-empty (fn [e'] (ret-err-consumed ret (merge-error e e'))))))
+                  :ret-val-empty
+                  (fn [x s e]
+                    (if (error-is-unknown e)
+                      (run-parser (k x) s ret)
+                      ;; - in these cases, (k x) can return as empty
+                      (run-parser (k x) s ret
+                                  :ret-val-empty (fn [x s e'] (ret-val-empty ret x s (merge-error e e')))
+                                  :ret-err-empty (fn [e'] (ret-err-empty ret (merge-error e e'))))))))))
 
 (defn fail [msg]
   (parser
-    (fn [state reps]
-      (empty-err reps (new-error-message :msg/message msg (:pos state))))))
+    (fn [state ret]
+      (ret-err-empty ret (new-error-message :msg/message msg (:pos state))))))
 
 ;; always fails without consuming any input
 (declare zero)
@@ -168,8 +169,8 @@
 (defn try*
   [p]
   (parser
-    (fn [state reps]
-      (parse* p state reps :consumed-err-fn (:empty-err-fn reps)))))
+    (fn [state ret]
+      (run-parser p state ret :ret-err-consumed (:ret-err-empty ret)))))
 
 ;; | @lookAhead p@ parses @p@ without consuming any input.
 ;;
@@ -319,7 +320,7 @@
 #_(defrecord Parser [f]
     IParser
     (parser? [_] true)
-    (parse* [_ state] (f state)))
+    (run-parser [_ state] (f state)))
 
 #_(defn parse-pred [pred state]
     (if-let [input (seq (state/input state))]
@@ -346,9 +347,9 @@
 
 #_(defn parse-state*
     [p state]
-    (loop [state state, res (parse* p state)]
+    (loop [state state, res (run-parser p state)]
       (if (parser? res)
-        (recur state (parse* res state))
+        (recur state (run-parser res state))
         res)))
 
 #_(defn many
@@ -359,7 +360,7 @@
                (loop [res (parse-state* p state) vs (transient [])]
                  (if (state/state? res)
                    (recur (parse-state* p res) (conj! vs (:-value res)))
-                   (state/set-value (:state res) (persistent! vs)))))))
+                   (state/fn-value (:state res) (persistent! vs)))))))
 
 #_(defn parse
     [p input]
@@ -367,7 +368,7 @@
 
 (defn parse
   [p input]
-  (parse* p (State. (seq input) nil nil)))
+  (run-parser p (State. (seq input) nil nil)))
 
 (comment
   (def -input (seq "a"))
@@ -388,7 +389,7 @@
   (parse letter? -input)
   (parse (many letter?) -input)
   (seq -input)
-  (parse* letter? (state/->State -input nil nil))
+  (run-parser letter? (state/->State -input nil nil))
   )
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
