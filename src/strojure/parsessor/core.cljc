@@ -1,5 +1,6 @@
 (ns strojure.parsessor.core
-  (:require [strojure.parsessor.impl.state :as state])
+  (:require [strojure.parsessor.impl.pos :as pos]
+            [strojure.parsessor.impl.state :as state])
   #?(:clj (:import (clojure.lang IFn))))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -196,44 +197,33 @@
   [msg pos]
   (new-error-message :msg/sys-unexpect msg pos))
 
-(defn token-prim
+(defn token
+  "Returns the parser which accepts a token when `(pred token)` returns logical
+  true. The token can be shown in error message using `(msg-fn token)`."
+  ([pred] (token pred (partial str "token: ")))
   ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  ([pred, show-token get-next-pos] (token-prim pred show-token get-next-pos nil))
-  ([pred, show-token, get-next-pos, get-next-user]
+  ([pred, msg-fn] (token pred msg-fn nil))
+  ([pred, msg-fn, user-fn]
    (parser
      (fn [state ret]
        (if-let [input (seq (:input state))]
-         (let [c (first input)]
-           (if (pred c)
-             (let [cur-pos (:pos state)
+         (let [t (first input)]
+           (if (pred t)
+             (let [pos (:pos state)
                    new-input (rest input)
-                   new-pos (get-next-pos cur-pos c new-input)
-                   new-state (->State new-input new-pos
-                                      (cond->> (:user state)
-                                        get-next-user (get-next-user cur-pos c new-input)))]
-               (ret-val-consumed ret c new-state (new-error-unknown new-pos)))
-             (ret-err-empty ret (unexpect-error (show-token c) (:pos state)))))
+                   new-pos (pos/next-pos pos t new-input)
+                   new-state (->State new-input new-pos (cond->> (:user state)
+                                                          user-fn (user-fn pos t new-input)))]
+               (ret-val-consumed ret t new-state (new-error-unknown new-pos)))
+             (ret-err-empty ret (unexpect-error (delay (msg-fn t)) (:pos state)))))
          (ret-err-empty ret (unexpect-error "" (:pos state))))))))
-
-(defn token
-  [show-token, get-tok-pos, pred]
-  (token-prim show-token
-              (fn [_ tok ts] (get-tok-pos (if (seq ts) (first ts) tok)))
-              pred))
-
-(defn satisfy
-  [pred]
-  (token-prim pred
-              (fn [c] (str [c]))
-              (fn [pos c _] :dummy/pos)))
 
 (comment
   (def -input "abc")
-  (str [\c])
-  (parse (satisfy #(= \a %)) -input)
-  (parse (satisfy #(= \b %)) -input)
-  (parse (choice (satisfy #(= \a %)) (satisfy #(= \b %))) -input)
-  (parse (choice (satisfy #(= \b %)) (satisfy #(= \a %))) -input)
+  (parse (token #(= \a %)) -input)
+  (parse (token #(= \b %)) -input)
+  (parse (choice (token #(= \a %)) (token #(= \b %))) -input)
+  (parse (choice (token #(= \b %)) (token #(= \a %))) -input)
   )
 
 (declare many)
@@ -447,7 +437,8 @@
 
 (defn parse
   [p input]
-  (run-parser p (State. (seq input) nil nil)))
+  ;; TODO: Initialize source pos
+  (run-parser p (State. (seq input) 1 nil)))
 
 (comment
   (def -input (seq "a"))
