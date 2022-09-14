@@ -217,30 +217,27 @@
   (parse (choice (token #(= \b %)) (token #(= \a %))) -input)
   )
 
-(defn- many-accum
-  "Accumulates values using reducing function `rf`."
-  [p rf]
-  (parser
-    (fn [state ctx]
-      (let [error (fn [& _] (throw (ex-info "Combinator 'many' is applied to a parser that accepts an empty string." {})))
-            walk (fn walk [xs x s _e]
-                   (let [xs' (rf xs x)]
-                     (-> ctx
-                         (re/set-consumed-ok (partial walk xs'))
-                         (re/set-empty-err (fn [e] (re/consumed-ok ctx (rf xs') s e)))
-                         (re/set-empty-ok error)
-                         (continue p s))))
-            xs (rf)]
-        (-> ctx
-            (re/set-consumed-ok (partial walk xs))
-            (re/set-empty-err (fn [e] (re/consumed-ok ctx (rf xs) state e)))
-            (re/set-empty-ok error)
-            (continue p state))))))
+(defn- many-error
+  [sym]
+  (fn [_ _ _]
+    (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty string.") {}))))
 
 (defn many
   "Applies the parser `p` zero or more times. Returns a vector of the returned values or `p`."
   [p]
-  (many-accum p (completing conj! persistent!)))
+  (parser
+    (fn [state ctx]
+      (let [ctx (re/set-empty-ok ctx (many-error 'many))
+            walk (fn walk [xs x s _e]
+                   (let [xs' (conj! xs x)]
+                     (-> ctx
+                         (re/set-consumed-ok (partial walk xs'))
+                         (re/set-empty-err (fn [e] (re/consumed-ok ctx (persistent! xs') s e)))
+                         (continue p s))))]
+        (-> ctx
+            (re/set-consumed-ok (partial walk (transient [])))
+            (re/set-empty-err (partial re/consumed-ok ctx [] state))
+            (continue p state))))))
 
 (comment
   (def -input "")
@@ -250,17 +247,21 @@
   (parse (many (token #(Character/isLetter ^char %))) -input)
   )
 
-(declare skip-many)
-
 (defn skip-many
   "Applies the parser `p` zero or more times, skipping its result."
   [p]
-  (many-accum p (fn ([]) ([_]) ([_ _]))))
-
-#_(defn skip-many
-    "Applies the parser `p` zero or more times, skipping its result."
-    [p]
-    (many-accum p nil))
+  (parser
+    (fn [state ctx]
+      (let [ctx (re/set-empty-ok ctx (many-error 'many))
+            walk (fn walk [_x s _e]
+                   (-> ctx
+                       (re/set-consumed-ok walk)
+                       (re/set-empty-err (partial re/consumed-ok ctx nil s))
+                       (continue p s)))]
+        (-> ctx
+            (re/set-consumed-ok walk)
+            (re/set-empty-err (partial re/consumed-ok ctx nil state))
+            (continue p state))))))
 
 (comment
   (def -input "")
