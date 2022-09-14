@@ -5,39 +5,39 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord ValueReply [value consumed state error])
-(defrecord ErrorReply [error consumed])
+(defrecord Value [consumed value state error])
+(defrecord Failure [consumed error])
 
-(defn value-reply? [reply] (instance? ValueReply reply))
-(defn error-reply? [reply] (instance? ErrorReply reply))
+(defn value? [reply] (instance? Value reply))
+(defn failure? [reply] (instance? Failure reply))
 
-(defprotocol IReplyApi
-  (consumed-value [_ value state error])
-  (consumed-error [_ error])
-  (empty-value,,, [_ value state error])
-  (empty-error,,, [_ error])
-  (set-consumed-value [_ f])
-  (set-consumed-error [_ f])
-  (set-empty-value,,, [_ f])
-  (set-empty-error,,, [_ f]))
+(defprotocol IContext
+  (consumed-ok, [_ value state error])
+  (consumed-err [_ error])
+  (empty-ok,,,, [_ value state error])
+  (empty-err,,, [_ error])
+  (set-consumed-ok, [_ f])
+  (set-consumed-err [_ f])
+  (set-empty-ok,,,, [_ f])
+  (set-empty-err,,, [_ f]))
 
 #_:clj-kondo/ignore
-(deftype ReplyApi [consumed-value, consumed-error, empty-value, empty-error]
-  IReplyApi
-  (consumed-value [_ value state error] (consumed-value value state error))
-  (consumed-error [_ error] (consumed-error error))
-  (empty-value,,, [_ value state error] (empty-value value state error))
-  (empty-error,,, [_ error] (empty-error error))
-  (set-consumed-value [_ f] (ReplyApi. f, consumed-error, empty-value, empty-error))
-  (set-consumed-error [_ f] (ReplyApi. consumed-value, f, empty-value, empty-error))
-  (set-empty-value,,, [_ f] (ReplyApi. consumed-value, consumed-error, f, empty-error))
-  (set-empty-error,,, [_ f] (ReplyApi. consumed-value, consumed-error, empty-value, f)))
+(deftype Context [consumed-ok, consumed-err, empty-ok, empty-err]
+  IContext
+  (consumed-ok, [_ x s e] (consumed-ok x s e))
+  (consumed-err [_ e],,,, (consumed-err e))
+  (empty-ok,,,, [_ x s e] (empty-ok x s e))
+  (empty-err,,, [_ e],,,, (empty-err e))
+  (set-consumed-ok, [_ f] (Context. f, consumed-err, empty-ok, empty-err))
+  (set-consumed-err [_ f] (Context. consumed-ok, f, empty-ok, empty-err))
+  (set-empty-ok,,,, [_ f] (Context. consumed-ok, consumed-err, f, empty-err))
+  (set-empty-err,,, [_ f] (Context. consumed-ok, consumed-err, empty-ok, f)))
 
-(defn init-api
+(defn new-context
   []
-  (ReplyApi. (fn consumed-value [value state error] (ValueReply. value true state error))
-             (fn consumed-error [error] (ErrorReply. error true))
-             (fn empty-value,,, [value state error] (ValueReply. value false state error))
-             (fn empty-error,,, [error] (ErrorReply. error false))))
+  (Context. (fn consumed-ok, [x s e] (Value. true x s e))
+            (fn consumed-err [e],,,, (Failure. true e))
+            (fn empty-ok,,,, [x s e] (Value. false x s e))
+            (fn empty-err,,, [e],,,, (Failure. false e))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
