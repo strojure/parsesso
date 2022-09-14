@@ -59,6 +59,15 @@
 (defn sys-unexpect-error [msg pos]
   (new-error-message :msg/sys-unexpect msg pos))
 
+(defn add-error-message
+  [err typ msg]
+  (update err :messages (fnil conj []) [typ msg]))
+
+(defn set-error-message
+  [err typ msg]
+  ;; TODO: filter duplicates
+  (update err :messages (fnil conj []) [typ msg]))
+
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 #_(defn mkpt
@@ -142,17 +151,47 @@
                     (continue (f x) s)))))
           (continue p state)))))
 
-(defn fail [msg]
+(defn fail
+  "Always fails without consuming any input"
+  [msg]
   (parser
     (fn [state ctx]
       (re/empty-err ctx (new-error-message :msg/message msg (:pos state))))))
 
-;; always fails without consuming any input
+;; TODO: remove zero?
 (declare zero)
 
+;; TODO: remove plus?
 (declare plus)
 
-(declare label)
+(defn labels
+  [p messages]
+  (parser
+    (fn [state ctx]
+      (letfn [(set-expect-errors [e [msg & more :as messages]]
+                (cond
+                  more, (->> messages (reduce (fn [e msg] (add-error-message e :msg/expect msg)) e))
+                  msg,, (set-error-message e :msg/expect msg)
+                  :else (set-error-message e :msg/expect "")))]
+        (-> ctx
+            (re/set-empty-ok (fn [x s e] (re/empty-ok ctx x s (cond-> e (not (error-is-unknown e))
+                                                                        (set-expect-errors messages)))))
+            (re/set-empty-err (fn [e] (re/empty-err ctx (set-expect-errors e messages))))
+            (continue p state))))))
+
+(defn label
+  "The parser `(label msg)` behaves as parser `p`, but whenever the parser `p`
+  fails /without consuming any input/, it replaces expect error messages with
+  the expect error message `msg`.
+
+  This is normally used at the end of a set alternatives where we want to return
+  an error message in terms of a higher level construct rather than returning
+  all possible characters. For example, if the `expr` parser from the 'try'
+  example would fail, the error message is: '...: expecting expression'. Without
+  the `label` combinator, the message would be like '...: expecting \"let\" or
+  letter', which is less friendly."
+  [p msg]
+  (labels p [msg]))
 
 ;; The parser @try p@ behaves like parser @p@, except that it
 ;; pretends that it hasn't consumed any input when an error occurs.
@@ -181,8 +220,6 @@
             (re/set-consumed-ok val-fn)
             (re/set-empty-ok val-fn)
             (continue p state))))))
-
-(declare token, token-prim, token-prim-ex)
 
 (defn- unexpect-error
   [msg pos]
