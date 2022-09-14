@@ -320,7 +320,7 @@
   [p1 p2]
   (bind p1 (fn const [_] p2)))
 
-(defmacro with
+(defmacro when-bind
   [[& bindings] & body]
   ;; TODO: validate macro arguments
   (let [[sym p] (take 2 bindings)]
@@ -328,14 +328,14 @@
       `(bind ~p (fn [~sym] (let [p# ~@body]
                              ;; Allow return value directly in body
                              (cond-> p# (not (parser? p#)) (return)))))
-      `(bind ~p (fn [~sym] (with ~(drop 2 bindings) ~@body))))))
+      `(bind ~p (fn [~sym] (when-bind ~(drop 2 bindings) ~@body))))))
 
 #_(defmacro with
     [[& bindings] & body]
     (let [[sym p] (take 2 bindings)]
       (if (= 2 (count bindings))
         `(bind ~p (fn [~sym] ~@body))
-        `(bind ~p (fn [~sym] (with ~(drop 2 bindings) ~@body))))))
+        `(bind ~p (fn [~sym] (when-bind ~(drop 2 bindings) ~@body))))))
 
 (defn choice
   "Tries to apply the parsers in in order, until one of them succeeds. Returns
@@ -365,26 +365,26 @@
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (choice (with [_ p] (return nil)) (return nil)))
+  (choice (when-bind [_ p] (return nil)) (return nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
   ([p around] (between p around around))
   ([p open close]
-   (with [_ open, x p, _ close]
+   (when-bind [_ open, x p, _ close]
      (return x))))
 
 (defn skip-many-1
   "Applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (with [_ p]
+  (when-bind [_ p]
     (skip-many p)))
 
 (defn many-1
   "Applies the parser `p` /one/ or more times. Returns a list of the returned
   values of `p`."
   [p]
-  (with [x p]
+  (when-bind [x p]
     (many p [x])))
 
 (declare sep-by-1)
@@ -400,7 +400,7 @@
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
   of values returned by `p`."
   [p sep]
-  (with [x p]
+  (when-bind [x p]
     (many (>> sep p) [x])))
 
 (declare sep-end-by)
@@ -409,8 +409,8 @@
   "Parses /one/ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a vector of values returned by `p`."
   [p sep]
-  (with [x p]
-    (choice (with [_ sep, xs (sep-end-by p sep)]
+  (when-bind [x p]
+    (choice (when-bind [_ sep, xs (sep-end-by p sep)]
               ;; TODO: cons?
               (return (cons x xs)))
             (return [x]))))
@@ -551,8 +551,8 @@
   (parse (return :ok) -input)
   (parse (bind (return :ok) #(return (str %))) -input)
   (parse (bind (fail :x1) (fn [x] (return :x2))) -input)
-  (parse (with [x (return :x)
-                y (return {:y x})]
+  (parse (when-bind [x (return :x)
+                     y (return {:y x})]
            y)
          -input)
 
