@@ -259,22 +259,25 @@
   (fn [_ _ _]
     (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty string.") {}))))
 
+;; TODO: return nil or [] for empty result?
 (defn many
-  "Applies the parser `p` zero or more times. Returns a vector of the returned values or `p`."
-  [p]
-  (parser
-    (fn [state ctx]
-      (let [ctx (re/set-empty-ok ctx (many-error 'many))
-            walk (fn walk [xs x s _e]
-                   (let [xs' (conj! xs x)]
-                     (-> ctx
-                         (re/set-consumed-ok (partial walk xs'))
-                         (re/set-empty-err (fn [e] (re/consumed-ok ctx (persistent! xs') s e)))
-                         (continue p s))))]
-        (-> ctx
-            (re/set-consumed-ok (partial walk (transient [])))
-            (re/set-empty-err (partial re/consumed-ok ctx [] state))
-            (continue p state))))))
+  "Applies the parser `p` zero or more times. Returns a vector of the returned
+  values or `p`. Optional `init` is a collection to add values to."
+  ([p] (many p []))
+  ([p init]
+   (parser
+     (fn [state ctx]
+       (let [ctx (re/set-empty-ok ctx (many-error 'many))
+             walk (fn walk [xs x s _e]
+                    (let [xs' (conj! xs x)]
+                      (-> ctx
+                          (re/set-consumed-ok (partial walk xs'))
+                          (re/set-empty-err (fn [e] (re/consumed-ok ctx (persistent! xs') s e)))
+                          (continue p s))))]
+         (-> ctx
+             (re/set-consumed-ok (partial walk (transient init)))
+             (re/set-empty-err (partial re/consumed-ok ctx init state))
+             (continue p state)))))))
 
 (comment
   (def -input "")
@@ -289,7 +292,7 @@
   [p]
   (parser
     (fn [state ctx]
-      (let [ctx (re/set-empty-ok ctx (many-error 'many))
+      (let [ctx (re/set-empty-ok ctx (many-error 'skip-many))
             walk (fn walk [_x s _e]
                    (-> ctx
                        (re/set-consumed-ok walk)
@@ -312,9 +315,10 @@
 
 ;;; combinators
 
-#_(defn >>
-    [p1 p2]
-    (bind p1 (fn const [_] p2)))
+;; TODO: consider >> in api
+(defn >>
+  [p1 p2]
+  (bind p1 (fn const [_] p2)))
 
 (defmacro with
   [[& bindings] & body]
@@ -325,6 +329,13 @@
                              ;; Allow return value directly in body
                              (cond-> p# (not (parser? p#)) (return)))))
       `(bind ~p (fn [~sym] (with ~(drop 2 bindings) ~@body))))))
+
+#_(defmacro with
+    [[& bindings] & body]
+    (let [[sym p] (take 2 bindings)]
+      (if (= 2 (count bindings))
+        `(bind ~p (fn [~sym] ~@body))
+        `(bind ~p (fn [~sym] (with ~(drop 2 bindings) ~@body))))))
 
 (defn choice
   "Tries to apply the parsers in in order, until one of them succeeds. Returns
@@ -350,40 +361,67 @@
   [x p]
   (choice p (return x)))
 
-;; | @optional p@ tries to apply parser @p@.  It will parse @p@ or nothing.
-;; It only fails if @p@ fails after consuming input. It discards the result
-;; of @p@.
-(declare optional)
+(defn optional
+  "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
+  fails after consuming input. It discards the result of `p`."
+  [p]
+  (choice (with [_ p] (return nil)) (return nil)))
 
-;; | @between open close p@ parses @open@, followed by @p@ and @close@.
-;; Returns the value returned by @p@.
-(declare between #_(between [open close p]))
+(defn between
+  "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
+  ([p around] (between p around around))
+  ([p open close]
+   (with [_ open, x p, _ close]
+     (return x))))
 
-;; | @skipMany1 p@ applies the parser @p@ /one/ or more times, skipping
-;; its result.
-(declare skip-many-1)
+(defn skip-many-1
+  "Applies the parser `p` /one/ or more times, skipping its result."
+  [p]
+  (with [_ p]
+    (skip-many p)))
 
-;; | @many1 p@ applies the parser @p@ /one/ or more times. Returns a
-;; list of the returned values of @p@.
-(declare many-1)
+(defn many-1
+  "Applies the parser `p` /one/ or more times. Returns a list of the returned
+  values of `p`."
+  [p]
+  (with [x p]
+    (many p [x])))
 
-;; | @sepBy p sep@ parses /zero/ or more occurrences of @p@, separated
-;; by @sep@. Returns a list of values returned by @p@.
-(declare sep-by)
-
-;; | @sepBy1 p sep@ parses /one/ or more occurrences of @p@, separated
-;; by @sep@. Returns a list of values returned by @p@.
 (declare sep-by-1)
 
-;; | @sepEndBy1 p sep@ parses /one/ or more occurrences of @p@,
-;; separated and optionally ended by @sep@. Returns a list of values
-;; returned by @p@.
-(declare sep-end-by-1)
+;; TODO: return nil or [] for empty result?
+(defn sep-by
+  "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
+  vector of values returned by `p`."
+  [p sep]
+  (choice (sep-by-1 p sep) (return [])))
 
-;; | @sepEndBy p sep@ parses /zero/ or more occurrences of @p@,
-;; separated and optionally ended by @sep@, ie. haskell style
-;; statements. Returns a list of values returned by @p@.
+(defn sep-by-1
+  "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
+  of values returned by `p`."
+  [p sep]
+  (with [x p]
+    (many (>> sep p) [x])))
+
 (declare sep-end-by)
+
+(defn sep-end-by-1
+  "Parses /one/ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a vector of values returned by `p`."
+  [p sep]
+  (with [x p]
+    (choice (with [_ sep, xs (sep-end-by p sep)]
+              ;; TODO: cons?
+              (return (cons x xs)))
+            (return [x]))))
+
+;; TODO: return nil or [] for empty result?
+(defn sep-end-by
+  "Parses /zero/ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a list of values returned by `p`."
+  [p sep]
+  (choice (sep-end-by-1 p sep)
+          (return [])))
 
 ;; | @endBy1 p sep@ parses /one/ or more occurrences of @p@, separated
 ;; and ended by @sep@. Returns a list of values returned by @p@.
@@ -474,9 +512,41 @@
 (comment
   (def -input (seq "a"))
   (def -input (seq "abc123"))
+  (def -input (seq "a1b2c3"))
+  (def -input (seq "a1b2c"))
   (def -input (seq "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
+
+  (-> (many (token #(Character/isLetter ^char %)))
+      (parse -input))
+  (-> (many-1 (token #(Character/isLetter ^char %)))
+      (parse -input))
+
+  (-> (>> (token #(Character/isLetter ^char %))
+          (token #(Character/isDigit ^char %)))
+      (parse -input))
+  (-> (sep-by (token #(Character/isLetter ^char %))
+              (token #(Character/isDigit ^char %)))
+      (parse -input))
+  (-> (sep-by-1 (token #(Character/isLetter ^char %))
+                (token #(Character/isDigit ^char %)))
+      (parse -input))
+  (-> (sep-end-by (token #(Character/isLetter ^char %))
+                  (token #(Character/isDigit ^char %)))
+      (parse -input))
+  (-> (sep-end-by-1 (token #(Character/isLetter ^char %))
+                    (token #(Character/isDigit ^char %)))
+      (parse -input))
+
+  (parse (optional (fail :ok)) nil)
+
+  (def -input (seq "[]"))
+  (def -input (seq "[abc]"))
+  (def -input (seq "[abc123]"))
+  (-> (many (token #(Character/isLetter ^char %)))
+      (between (token #(= \[ %)) (token #(= \] %)))
+      (parse -input))
 
   (parse (return :ok) -input)
   (parse (bind (return :ok) #(return (str %))) -input)
