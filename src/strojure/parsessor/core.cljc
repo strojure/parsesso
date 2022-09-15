@@ -70,19 +70,25 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-#_(defn mkpt
+#_(defn- run-parsec-t
+    [p s]
+    (p s (re/new-context)))
+
+#_(defn- mk-pt
     "k is (fn [state] reply)"
     [f]
     (parser
       (fn [state ctx]
-        (let [reply (f state)]
-          (if (:consumed reply)
-            (if (value-reply? reply)
-              (consumed-ok ctx (:value reply) (:state reply) (:error reply))
-              (consumed-err ctx (:error reply)))
-            (if (value-reply? reply)
-              (empty-ok ctx (:value reply) (:state reply) (:error reply))
-              (empty-err ctx (:error reply))))))))
+        (re/reply (f state) ctx))))
+
+#_(defn call-cc
+    "f(x) returns parser"
+    [f]
+    (letfn [(pack [s a] (re/->Value false a s (unknown-error s)))]
+      (mk-pt (fn [s]
+               (call-cc (fn [c]
+                          (run-parsec-t (f (fn [a] (mk-pt (fn [s'] (c (pack s' a))))))
+                                        s)))))))
 
 #_(defn fmap-reply
     [f reply]
@@ -151,6 +157,32 @@
                     (continue (f x) s)))))
           (continue p state)))))
 
+#_(defn sequentially [f value]
+    (condp instance? value
+      Continue (Continue. #(sequentially f (continue value)))
+      (f value)))
+
+#_(defn bind*
+    "Parse p, and then q. The function f must be of one argument, it
+     will be given the value of p and must return the q to follow p"
+    [p f]
+    (parser
+      (fn [state ctx]
+        (letfn [(pcok [x s e]
+                  #p [:pcok e]
+                  (sequentially
+                    (fn [q] (Continue. #(q s ctx)))
+                    (f x)))
+                (peok [x s e]
+                  #p [:peok e]
+                  (sequentially
+                    (fn [q] (Continue. #(q s ctx)))
+                    (f x)))]
+          (Continue. #(p state (-> ctx
+                                   (re/set-consumed-ok pcok)
+                                   (re/set-empty-ok peok))))))))
+
+
 (defn fail
   "Always fails without consuming any input"
   [msg]
@@ -193,14 +225,14 @@
   [p msg]
   (labels p [msg]))
 
-;; The parser @try p@ behaves like parser @p@, except that it
-;; pretends that it hasn't consumed any input when an error occurs.
-;;
-;; This combinator is used whenever arbitrary look ahead is needed.
-;; Since it pretends that it hasn't consumed any input when @p@ fails,
-;; the ('<|>') combinator will try its second alternative even when the
-;; first parser failed while consuming input.
 (defn try*
+  "The parser `try p` behaves like parser `p`, except that it pretends that it
+  hasn't consumed any input when an error occurs.
+
+  This combinator is used whenever arbitrary look ahead is needed. Since it
+  pretends that it hasn't consumed any input when `p` fails, the ('<|>')
+  combinator will try its second alternative even when the first parser failed
+  while consuming input."
   [p]
   (parser
     (fn [state ctx]
@@ -225,13 +257,17 @@
   [msg pos]
   (new-error-message :msg/sys-unexpect msg pos))
 
+(def token-msg (partial str "token: "))
+
+;; TODO: optimal order of arguments?
 (defn token
   "Returns the parser which accepts a token when `(pred token)` returns logical
   true. The token can be shown in error message using `(msg-fn token)`."
-  ([pred] (token pred (partial str "token: ")))
+  ([pred] (token pred token-msg pos/next-pos nil))
+  ([pred, msg-fn] (token pred msg-fn pos/next-pos nil))
   ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  ([pred, msg-fn] (token pred msg-fn nil))
-  ([pred, msg-fn, user-fn]
+  ([pred, msg-fn, pos-fn] (token pred msg-fn pos-fn nil))
+  ([pred, msg-fn, pos-fn, user-fn]
    (parser
      (fn [state ctx]
        (if-let [input (seq (:input state))]
@@ -239,7 +275,7 @@
            (if (pred tok)
              (let [pos (:pos state)
                    new-input (rest input)
-                   new-pos (pos/next-pos pos tok new-input)
+                   new-pos (pos-fn pos tok new-input)
                    new-state (->State new-input new-pos (cond->> (:user state)
                                                           user-fn (user-fn pos tok new-input)))]
                (re/consumed-ok ctx tok new-state (new-error-unknown new-pos)))
@@ -423,66 +459,98 @@
   (choice (sep-end-by-1 p sep)
           (return [])))
 
-;; | @endBy1 p sep@ parses /one/ or more occurrences of @p@, separated
-;; and ended by @sep@. Returns a list of values returned by @p@.
-(declare end-by-1)
+(defn end-by-1
+  "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a list of values returned by `p`."
+  [p sep]
+  (many-1 (bind [x p, _ sep] (return x))))
 
-;; | @endBy p sep@ parses /zero/ or more occurrences of @p@, separated
-;; and ended by @sep@. Returns a list of values returned by @p@.
-(declare end-by)
+(defn end-by
+  "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a list of values returned by `p`."
+  [p sep]
+  (many-1 (bind [x p, _ sep] (return x))))
 
-;; | @count n p@ parses @n@ occurrences of @p@. If @n@ is smaller or
-;; equal to zero, the parser equals to @return []@. Returns a list of
-;; @n@ values returned by @p@.
-(declare times)
-#_(declare repeat)
+;; TODO: argument order
+;; TODO: function name
+(defn times
+  "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
+  equals to `return []`. Returns a list of `n` values returned by `p`."
+  [n p]
+  (if (pos? n) (bind [x p, xs (times (dec n) p)]
+                 (return (cons x xs)))
+               (return [])))
 
-;; | @chainr p op x@ parses /zero/ or more occurrences of @p@,
-;; separated by @op@ Returns a value obtained by a /right/ associative
-;; application of all functions returned by @op@ to the values returned
-;; by @p@. If there are no occurrences of @p@, the value @x@ is
-;; returned.
-(declare chain-right)
+(declare chain-right-1)
 
-;; | @chainl p op x@ parses /zero/ or more occurrences of @p@,
-;; separated by @op@. Returns a value obtained by a /left/ associative
-;; application of all functions returned by @op@ to the values returned
-;; by @p@. If there are zero occurrences of @p@, the value @x@ is
-;; returned.
-(declare chain-left)
+(defn chain-right
+  "Parses /zero/ or more occurrences of `p`, separated by `op` Returns a value
+  obtained by a /right/ associative application of all functions returned by
+  `op` to the values returned by `p`. If there are no occurrences of `p`, the
+  value `x` is returned."
+  [p op x]
+  (choice (chain-right-1 p op)
+          (return x)))
 
-;; | @chainl1 p op@ parses /one/ or more occurrences of @p@,
-;; separated by @op@ Returns a value obtained by a /left/ associative
-;; application of all functions returned by @op@ to the values returned
-;; by @p@. This parser can for example be used to eliminate left
-;; recursion which typically occurs in expression grammars.
 (declare chain-left-1)
 
-;; | @chainr1 p op x@ parses /one/ or more occurrences of |p|,
-;; separated by @op@ Returns a value obtained by a /right/ associative
-;; application of all functions returned by @op@ to the values returned
-;; by @p@.
-(declare chain-right-1)
+(defn chain-left
+  "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
+  obtained by a /left/ associative application of all functions returned by `op`
+  to the values returned by `p`. If there are zero occurrences of `p`, the value
+  `x` is returned."
+  [p op x]
+  (choice (chain-left-1 p op)
+          (return x)))
+
+(defn chain-left-1
+  "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
+  obtained by a /left/ associative application of all functions returned by `op`
+  to the values returned by `p`. This parser can for example be used to
+  eliminate left recursion which typically occurs in expression grammars."
+  [p op]
+  (letfn [(tail [x] (choice (bind [f op, y p] (tail (f x y)))
+                            (return x)))]
+    (bind [x p]
+      (return (tail x)))))
+
+(defn chain-right-1
+  "Parses /one/ or more occurrences of |p|, separated by `op` Returns a value
+  obtained by a /right/ associative application of all functions returned by
+  `op` to the values returned by `p`."
+  [p op]
+  (letfn [(scan [] (bind [x p] (tail x)))
+          (tail [x] (choice (bind [f op, y (scan)] (return (f x y)))
+                            (return x)))]
+    (scan)))
 
 ;;; Tricky combinators
 
-;; | The parser @anyToken@ accepts any kind of token. It is for example
-;; used to implement 'eof'. Returns the accepted token.
-(declare any-token)
+(def any-token
+  "Accepts any kind of token. It is for example used to implement 'eof'. Returns
+  the accepted token."
+  (token any? token-msg (fn [pos _ _] pos)))
 
-;; | This parser only succeeds at the end of the input. This is not a
-;; primitive parser but it is defined using 'notFollowedBy'.
-(defn eof []
-  #_(-> (not-followed-by any-token)
-        (label "end of input")))
+(comment
+  (def -input (seq ""))
+  (parse any-token -input)
+  )
 
-;; | @notFollowedBy p@ only succeeds when parser @p@ fails. This parser
-;; does not consume any input. This parser can be used to implement the
-;; \'longest match\' rule. For example, when recognizing keywords (for
-;; example @let@), we want to make sure that a keyword is not followed
-;; by a legal identifier character, in which case the keyword is
-;; actually an identifier (for example @lets@).
-(declare not-followed-by)
+(defn not-followed-by
+  "Only succeeds when parser `p` fails. This parser does not consume any input.
+  This parser can be used to implement the 'longest match' rule. For example,
+  when recognizing keywords (for example `let`), we want to make sure that a
+  keyword is not followed by a legal identifier character, in which case the
+  keyword is actually an identifier (for example `lets`)."
+  [p]
+  (try* (choice (bind [c (try* p)] (unexpected (delay (str c))))
+                (return []))))
+
+(def eof
+  "This parser only succeeds at the end of the input. This is not a primitive
+  parser but it is defined using 'notFollowedBy'."
+  (-> (not-followed-by any-token)
+      (label "end of input")))
 
 ;; | @manyTill p end@ applies parser @p@ /zero/ or more times until
 ;; parser @end@ succeeds. Returns the list of values returned by @p@.

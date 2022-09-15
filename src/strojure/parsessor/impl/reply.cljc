@@ -5,12 +5,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord Value [consumed value state error])
-(defrecord Failure [consumed error])
-
-(defn value? [reply] (instance? Value reply))
-(defn failure? [reply] (instance? Failure reply))
-
 (defprotocol IContext
   (consumed-ok, [_ value state error])
   (consumed-err [_ error])
@@ -39,5 +33,30 @@
             (fn consumed-err [e],,,, (Failure. true e))
             (fn empty-ok,,,, [x s e] (Value. false x s e))
             (fn empty-err,,, [e],,,, (Failure. false e))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defprotocol IReply
+  (reply [this ctx]))
+
+(defrecord Value [consumed value state error]
+  IReply
+  (reply [_ ctx]
+    (if consumed
+      (consumed-ok ctx value state error)
+      (empty-ok ctx value state error))))
+
+(defrecord Failure [consumed error]
+  IReply
+  (reply [_ ctx]
+    (if consumed
+      (consumed-err ctx error)
+      (empty-err ctx error))))
+
+(defn value? [reply] (instance? Value reply))
+
+(defn failure? [reply] (instance? Failure reply))
+
+(def consumed? :consumed)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
