@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ClojureProjectResolveSettings">
     <item key="cljs.core/defprotocol" resolves-as="clojure.core/defprotocol" />
-    <item key="strojure.parsessor.core/when-bind" resolves-as="clojure.core/let" />
+    <item key="strojure.parsessor.core/bind" resolves-as="clojure.core/let" />
     <currentScheme>PROJECT</currentScheme>
   </component>
 </project>
