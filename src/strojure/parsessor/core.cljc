@@ -370,7 +370,6 @@
 
 (declare sep-req)
 
-;; TODO: return nil or [] for empty result?
 (defn sep-opt
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
@@ -416,14 +415,20 @@
   (many-req (bind [x p, _ sep] (value x))))
 
 ;; TODO: argument order
-;; TODO: function name
-(defn times
+;; TODO: Check if it should be consumed or not if n > length.
+;; TODO: Rewrite similar to haskell?
+(defn many-count
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
-  equals to `(return nil)`. Returns a list of `n` values returned by `p`."
+  equals to `(value nil)`. Returns a list of `n` values returned by `p`."
   [n p]
-  (if (pos? n) (bind [x p, xs (times (dec n) p)]
+  (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
                  (value (cons x xs)))
                (value nil)))
+
+(comment
+  (parse (many-count 2 (token #{\x})) "xxxyyy")
+  (parse (many-count 4 (token #{\x})) "xxxyyy")
+  )
 
 (declare chain-right-req)
 
