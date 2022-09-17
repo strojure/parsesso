@@ -56,9 +56,6 @@
 (defn unknown-error [state]
   (new-error-unknown (:pos state)))
 
-(defn sys-unexpect-error [msg pos]
-  (new-error-message :msg/sys-unexpect msg pos))
-
 (defn add-error-message
   [err typ msg]
   (update err :messages (fnil conj []) [typ msg]))
