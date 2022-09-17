@@ -116,8 +116,8 @@
                 (continue ctx (f x) s)
                 ;; - in these cases, (k x) can return as empty
                 (-> ctx
-                    (re/set-empty-ok (fn [x s e'] (re/empty-ok ctx x s (merge-error e e'))))
-                    (re/set-empty-err (fn [e'] (re/empty-err ctx (merge-error e e'))))
+                    (re/set-empty-ok (fn [x s ee] (re/empty-ok ctx x s (merge-error e ee))))
+                    (re/set-empty-err (fn [ee] (re/empty-err ctx (merge-error e ee))))
                     (continue (f x) s)))))
           (continue p state)))))
 
@@ -233,13 +233,14 @@
   (parse (choice (token #(= \b %)) (token #(= \a %))) -input)
   )
 
+;; TODO: Better name for `many-error`?
 (defn- many-error
   [sym]
   (fn [_ _ _]
     (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty string.") {}))))
 
 ;; TODO: return nil or [] for empty result?
-;; TODO: rename `many`?
+;; TODO: rename `many` to something like reduce/collect etc.?
 (defn many-opt
   "Applies the parser `p` zero or more times. Returns a vector of the returned
   values or `p`. Optional `init` is a collection to add values to."
@@ -249,10 +250,10 @@
      (fn [state ctx]
        (let [ctx (re/set-empty-ok ctx (many-error 'many-opt))
              walk (fn walk [xs x s _e]
-                    (let [xs' (conj! xs x)]
+                    (let [xs (conj! xs x)]
                       (-> ctx
-                          (re/set-consumed-ok (partial walk xs'))
-                          (re/set-empty-err (fn [e] (re/consumed-ok ctx (persistent! xs') s e)))
+                          (re/set-consumed-ok (partial walk xs))
+                          (re/set-empty-err (fn [e] (re/consumed-ok ctx (persistent! xs) s e)))
                           (continue p s))))]
          (-> ctx
              (re/set-consumed-ok (partial walk (transient init)))
@@ -310,13 +311,6 @@
                               (cond-> p# (not (parser? p#)) (value)))))
       `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
-#_(defmacro with
-    [[& bindings] & body]
-    (let [[sym p] (take 2 bindings)]
-      (if (= 2 (count bindings))
-        `(bind* ~p (fn [~sym] ~@body))
-        `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
-
 (defn alt
   "Tries to apply the parsers in order, until one of them succeeds. Returns the
   value of the succeeding parser."
@@ -326,8 +320,8 @@
        (-> ctx
            (re/set-empty-err (fn [e]
                                (-> ctx
-                                   (re/set-empty-ok (fn [x s e'] (re/empty-ok ctx x s (merge-error e e'))))
-                                   (re/set-empty-err (fn [e'] (re/empty-err ctx (merge-error e e'))))
+                                   (re/set-empty-ok (fn [x s ee] (re/empty-ok ctx x s (merge-error e ee))))
+                                   (re/set-empty-err (fn [ee] (re/empty-err ctx (merge-error e ee))))
                                    (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
