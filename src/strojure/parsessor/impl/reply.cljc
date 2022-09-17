@@ -29,9 +29,9 @@
 
 (defn new-context
   []
-  (Context. (fn consumed-ok, [x s e] (Value. true x s e))
+  (Context. (fn consumed-ok, [x s e] (Value. x true s e))
             (fn consumed-err [e],,,, (Failure. true e))
-            (fn empty-ok,,,, [x s e] (Value. false x s e))
+            (fn empty-ok,,,, [x s e] (Value. x false s e))
             (fn empty-err,,, [e],,,, (Failure. false e))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -39,7 +39,7 @@
 (defprotocol IReply
   (reply [this ctx]))
 
-(defrecord Value [consumed value state error]
+(defrecord Value [value consumed state error]
   IReply
   (reply [_ ctx]
     (if consumed

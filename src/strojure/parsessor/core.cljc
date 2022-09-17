@@ -28,8 +28,11 @@
     (Continue. (fn [] (p state ctx)))))
 
 #?(:clj (deftype Parser [parser-fn]
-          IFn (invoke [_ state ctx] (parser-fn state ctx))
-          IContinuation (continue [_ state ctx] (Continue. (fn [] (parser-fn state ctx))))))
+          IFn
+          (invoke [_ state] (parser-fn state (re/new-context)))
+          (invoke [_ state ctx] (parser-fn state ctx))
+          IContinuation
+          (continue [_ state ctx] (Continue. (fn [] (parser-fn state ctx))))))
 
 (defn parser [parser-fn] (Parser. parser-fn))
 (defn parser? [p] (instance? Parser p))
@@ -160,12 +163,12 @@
   [p msg]
   (labels p [msg]))
 
-(defn try*
-  "The parser `try p` behaves like parser `p`, except that it pretends that it
-  hasn't consumed any input when an error occurs.
+(defn trim
+  "Behaves like parser `p`, except that it pretends that it hasn't consumed any
+  input when an error occurs.
 
   This combinator is used whenever arbitrary look ahead is needed. Since it
-  pretends that it hasn't consumed any input when `p` fails, the ('<|>')
+  pretends that it hasn't consumed any input when `p` fails, the `choice`
   combinator will try its second alternative even when the first parser failed
   while consuming input."
   [p]
@@ -176,7 +179,8 @@
           (continue p state)))))
 
 (comment
-  (parse (try* (token #{\x})) "y")
+  (parse (trim (>> (token #{\x}) (token #{\x}))) "xy")
+  (parse (trim (>> (token #{\x}) (token #{\x}))) "xx")
   )
 
 (defn look-ahead
@@ -186,10 +190,10 @@
   [p]
   (parser
     (fn [state ctx]
-      (let [val-fn (fn [x _ _] (re/empty-ok ctx x state (new-error-unknown (:pos state))))]
+      (let [empty-ok (fn [x _ _] (re/empty-ok ctx x state (new-error-unknown (:pos state))))]
         (-> ctx
-            (re/set-consumed-ok val-fn)
-            (re/set-empty-ok val-fn)
+            (re/set-consumed-ok empty-ok)
+            (re/set-empty-ok empty-ok)
             (continue p state))))))
 
 (defn- unexpect-error
@@ -340,7 +344,8 @@
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (choice (bind [_ p] (return nil)) (return nil)))
+  (choice (bind [_ p] (return nil))
+          (return nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
@@ -477,7 +482,7 @@
   keyword is not followed by a legal identifier character, in which case the
   keyword is actually an identifier (for example `lets`)."
   [p]
-  (try* (choice (bind [c (try* p)] (unexpected (delay (str c))))
+  (trim (choice (bind [c (trim p)] (unexpected (delay (str c))))
                 (return nil))))
 
 (def eof
@@ -507,7 +512,7 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (loop [reply (p (State. (seq input) 1 nil) (re/new-context))]
+  (loop [reply (p (State. (seq input) 1 nil))]
     (if (instance? Continue reply)
       (recur (continue reply))
       reply)))
@@ -568,8 +573,8 @@
   (def -p (choice (fail "oops") (fail "oops2") (return :ok)))
   (def -p (choice (return :ok) (fail "oops") (fail "oops2")))
   (parse -p -input)
-  (parse (try* (fail "oops")) -input)
-  (parse (try* (return :ok)) -input)
+  (parse (trim (fail "oops")) -input)
+  (parse (trim (return :ok)) -input)
 
   )
 
