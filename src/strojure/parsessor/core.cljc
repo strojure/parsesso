@@ -85,7 +85,7 @@
     (fn [state ctx]
       (re/empty-err ctx (new-error-message :msg/un-expect msg (:pos state))))))
 
-(defn return
+(defn value
   [x]
   (parser
     (fn [state ctx]
@@ -121,8 +121,8 @@
                     (continue (f x) s)))))
           (continue p state)))))
 
-(defn fail
-  "Always fails without consuming any input"
+(defn error
+  "Always fails without consuming any input."
   [msg]
   (parser
     (fn [state ctx]
@@ -306,7 +306,7 @@
     (if (= 2 (count bindings))
       `(bind* ~p (fn [~sym] (let [p# ~@body]
                               ;; Allow return value directly in body
-                              (cond-> p# (not (parser? p#)) (return)))))
+                              (cond-> p# (not (parser? p#)) (value)))))
       `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 #_(defmacro with
@@ -338,21 +338,21 @@
   "Tries to apply parser `p`. If `p` fails without consuming input, it returns
   the value `x`, otherwise the value returned by `p`."
   [x p]
-  (choice p (return x)))
+  (choice p (value x)))
 
 (defn optional
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (choice (bind [_ p] (return nil))
-          (return nil)))
+  (choice (bind [_ p] (value nil))
+          (value nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
   ([p around] (between p around around))
   ([p open close]
    (bind [_ open, x p, _ close]
-     (return x))))
+     (value x))))
 
 (defn skip-many-1
   "Applies the parser `p` /one/ or more times, skipping its result."
@@ -374,7 +374,7 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (choice (sep-by-1 p sep) (return nil)))
+  (choice (sep-by-1 p sep) (value nil)))
 
 (defn sep-by-1
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -392,8 +392,8 @@
   (bind [x p]
     (choice (bind [_ sep, xs (sep-end-by p sep)]
               ;; TODO: cons?
-              (return (cons x xs)))
-            (return [x]))))
+              (value (cons x xs)))
+            (value [x]))))
 
 ;; TODO: return nil or [] for empty result?
 (defn sep-end-by
@@ -401,19 +401,19 @@
   `sep`. Returns a list of values returned by `p`."
   [p sep]
   (choice (sep-end-by-1 p sep)
-          (return nil)))
+          (value nil)))
 
 (defn end-by-1
   "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (many-1 (bind [x p, _ sep] (return x))))
+  (many-1 (bind [x p, _ sep] (value x))))
 
 (defn end-by
   "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (many-1 (bind [x p, _ sep] (return x))))
+  (many-1 (bind [x p, _ sep] (value x))))
 
 ;; TODO: argument order
 ;; TODO: function name
@@ -422,8 +422,8 @@
   equals to `(return nil)`. Returns a list of `n` values returned by `p`."
   [n p]
   (if (pos? n) (bind [x p, xs (times (dec n) p)]
-                 (return (cons x xs)))
-               (return nil)))
+                 (value (cons x xs)))
+               (value nil)))
 
 (declare chain-right-1)
 
@@ -434,7 +434,7 @@
   value `x` is returned."
   [p op x]
   (choice (chain-right-1 p op)
-          (return x)))
+          (value x)))
 
 (declare chain-left-1)
 
@@ -445,7 +445,7 @@
   `x` is returned."
   [p op x]
   (choice (chain-left-1 p op)
-          (return x)))
+          (value x)))
 
 (defn chain-left-1
   "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
@@ -453,19 +453,19 @@
   to the values returned by `p`. This parser can for example be used to
   eliminate left recursion which typically occurs in expression grammars."
   [p op]
-  (letfn [(tail [x] (choice (bind [f op, y p] (tail (f x y)))
-                            (return x)))]
+  (letfn [(more [x] (choice (bind [f op, y p] (more (f x y)))
+                            (value x)))]
     (bind [x p]
-      (return (tail x)))))
+      (value (more x)))))
 
 (defn chain-right-1
   "Parses /one/ or more occurrences of |p|, separated by `op` Returns a value
   obtained by a /right/ associative application of all functions returned by
   `op` to the values returned by `p`."
   [p op]
-  (letfn [(scan [] (bind [x p] (tail x)))
-          (tail [x] (choice (bind [f op, y (scan)] (return (f x y)))
-                            (return x)))]
+  (letfn [(scan [] (bind [x p] (more x)))
+          (more [x] (choice (bind [f op, y (scan)] (value (f x y)))
+                            (value x)))]
     (scan)))
 
 ;;; Tricky combinators
@@ -483,7 +483,7 @@
   keyword is actually an identifier (for example `lets`)."
   [p]
   (trim (choice (bind [c (trim p)] (unexpected (delay (str c))))
-                (return nil))))
+                (value nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -547,7 +547,7 @@
                     (token #(Character/isDigit ^char %)))
       (parse -input))
 
-  (parse (optional (fail :ok)) nil)
+  (parse (optional (error :ok)) nil)
 
   (def -input (seq "[]"))
   (def -input (seq "[abc]"))
@@ -556,25 +556,25 @@
       (between (token #(= \[ %)) (token #(= \] %)))
       (parse -input))
 
-  (parse (return :ok) -input)
-  (parse (bind* (return :ok) #(return (str %))) -input)
-  (parse (bind* (fail :x1) (fn [x] (return :x2))) -input)
-  (parse (bind [x (return :x)
-                y (return {:y x})]
+  (parse (value :ok) -input)
+  (parse (bind* (value :ok) #(value (str %))) -input)
+  (parse (bind* (error :x1) (fn [x] (value :x2))) -input)
+  (parse (bind [x (value :x)
+                y (value {:y x})]
            y)
          -input)
 
-  (parse (fail "oops") -input)
-  (parse (choice (return :ok) (fail "oops")) -input)
-  (parse (choice (fail "oops") (return :ok)) -input)
-  (parse (choice (fail "oops") (fail "oops2") (return :ok)) -input)
-  (parse (choice (fail "oops") (fail "oops2")) -input)
-  (def -p (choice (fail "oops") (return :ok)))
-  (def -p (choice (fail "oops") (fail "oops2") (return :ok)))
-  (def -p (choice (return :ok) (fail "oops") (fail "oops2")))
+  (parse (error "oops") -input)
+  (parse (choice (value :ok) (error "oops")) -input)
+  (parse (choice (error "oops") (value :ok)) -input)
+  (parse (choice (error "oops") (error "oops2") (value :ok)) -input)
+  (parse (choice (error "oops") (error "oops2")) -input)
+  (def -p (choice (error "oops") (value :ok)))
+  (def -p (choice (error "oops") (error "oops2") (value :ok)))
+  (def -p (choice (value :ok) (error "oops") (error "oops2")))
   (parse -p -input)
-  (parse (trim (fail "oops")) -input)
-  (parse (trim (return :ok)) -input)
+  (parse (trim (error "oops")) -input)
+  (parse (trim (value :ok)) -input)
 
   )
 
