@@ -46,9 +46,9 @@
 (defn error-is-unknown [error] (nil? (:messages error)))
 
 (defn merge-error [e1 e2]
-  (let [m1 (:messages :e1), m2 (:messages e2)]
-    (cond (nil? m2) e1
-          (nil? m1) e2
+  (let [m1 (:messages e1), m2 (:messages e2)]
+    (cond (and m1 (nil? m2)) e1
+          (and m2 (nil? m1)) e2
           :else (let [pos1 (:pos e1)]
                   (case (compare pos1 (:pos e2))
                     1 e1, -1 e2, (ParseError. pos1 (reduce conj m1 m2)))))))
@@ -67,42 +67,6 @@
   [err typ msg]
   ;; TODO: filter duplicates
   (update err :messages (fnil conj []) [typ msg]))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-#_(defn- run-parsec-t
-    [p s]
-    (p s (re/new-context)))
-
-#_(defn- mk-pt
-    "k is (fn [state] reply)"
-    [f]
-    (parser
-      (fn [state ctx]
-        (re/reply (f state) ctx))))
-
-#_(defn call-cc
-    "f(x) returns parser"
-    [f]
-    (letfn [(pack [s a] (re/->Value false a s (unknown-error s)))]
-      (mk-pt (fn [s]
-               (call-cc (fn [c]
-                          (run-parsec-t (f (fn [a] (mk-pt (fn [s'] (c (pack s' a))))))
-                                        s)))))))
-
-#_(defn fmap-reply
-    [f reply]
-    (cond-> reply
-      (value-reply? reply) (update :value f)))
-
-#_(defn parsec-map
-    [f p]
-    (parser
-      (fn [state ctx]
-        (-> ctx
-            (re/set-consumed-ok (fn [x s e] (consumed-ok ctx (f x) s e)))
-            (re/set-empty-ok (fn [x s e] (empty-ok ctx (f x) s e)))
-            (continue p state)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -135,17 +99,17 @@
       (-> ctx
           (re/set-consumed-ok
             (fn [x s e]
-              (if (error-is-unknown e)
-                (continue ctx (f x) s)
-                ;; - if (k x) consumes, those go straight up
-                ;; - if (k x) doesn't consume input, but is okay, we still return
-                ;;   in the consumed continuation
-                ;; - if (k x) doesn't consume input, but errors, we return the
-                ;;   error in the 'consumed-err' continuation
-                (-> ctx
-                    (re/set-empty-ok (fn [x s e'] (re/consumed-ok ctx x s (merge-error e e'))))
-                    (re/set-empty-err (fn [e'] (re/consumed-err ctx (merge-error e e'))))
-                    (continue (f x) s)))))
+              ;; - if (f x) consumes, those go straight up
+              ;; - if (f x) doesn't consume input, but is okay, we still return
+              ;;   in the consumed continuation
+              ;; - if (f x) doesn't consume input, but errors, we return the
+              ;;   error in the 'consumed-err' continuation
+              (-> ctx
+                  (re/set-empty-ok (fn [x s ee] (re/consumed-ok ctx x s (if (error-is-unknown e)
+                                                                          ee (merge-error e ee)))))
+                  (re/set-empty-err (fn [ee] (re/consumed-err ctx (if (error-is-unknown e)
+                                                                    ee (merge-error e ee)))))
+                  (continue (f x) s))))
           (re/set-empty-ok
             (fn [x s e]
               (if (error-is-unknown e)
@@ -156,32 +120,6 @@
                     (re/set-empty-err (fn [e'] (re/empty-err ctx (merge-error e e'))))
                     (continue (f x) s)))))
           (continue p state)))))
-
-#_(defn sequentially [f value]
-    (condp instance? value
-      Continue (Continue. #(sequentially f (continue value)))
-      (f value)))
-
-#_(defn bind*
-    "Parse p, and then q. The function f must be of one argument, it
-     will be given the value of p and must return the q to follow p"
-    [p f]
-    (parser
-      (fn [state ctx]
-        (letfn [(pcok [x s e]
-                  #p [:pcok e]
-                  (sequentially
-                    (fn [q] (Continue. #(q s ctx)))
-                    (f x)))
-                (peok [x s e]
-                  #p [:peok e]
-                  (sequentially
-                    (fn [q] (Continue. #(q s ctx)))
-                    (f x)))]
-          (Continue. #(p state (-> ctx
-                                   (re/set-consumed-ok pcok)
-                                   (re/set-empty-ok peok))))))))
-
 
 (defn fail
   "Always fails without consuming any input"
@@ -239,6 +177,10 @@
       (-> ctx
           (re/set-consumed-err (partial re/empty-err ctx))
           (continue p state)))))
+
+(comment
+  (parse (try* (token #{\x})) "y")
+  )
 
 (defn look-ahead
   ;; TODO: Update reference to `try`.
@@ -374,8 +316,8 @@
         `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 (defn choice
-  "Tries to apply the parsers in in order, until one of them succeeds. Returns
-  the value of the succeeding parser."
+  "Tries to apply the parsers in order, until one of them succeeds. Returns the
+  value of the succeeding parser."
   ([p1 p2]
    (parser
      (fn [state ctx]
@@ -430,7 +372,7 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (choice (sep-by-1 p sep) (return [])))
+  (choice (sep-by-1 p sep) (return nil)))
 
 (defn sep-by-1
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -457,7 +399,7 @@
   `sep`. Returns a list of values returned by `p`."
   [p sep]
   (choice (sep-end-by-1 p sep)
-          (return [])))
+          (return nil)))
 
 (defn end-by-1
   "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
@@ -475,11 +417,11 @@
 ;; TODO: function name
 (defn times
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
-  equals to `return []`. Returns a list of `n` values returned by `p`."
+  equals to `(return nil)`. Returns a list of `n` values returned by `p`."
   [n p]
   (if (pos? n) (bind [x p, xs (times (dec n) p)]
                  (return (cons x xs)))
-               (return [])))
+               (return nil)))
 
 (declare chain-right-1)
 
@@ -531,11 +473,6 @@
   the accepted token."
   (token any? token-msg (fn [pos _ _] pos)))
 
-(comment
-  (def -input (seq ""))
-  (parse any-token -input)
-  )
-
 (defn not-followed-by
   "Only succeeds when parser `p` fails. This parser does not consume any input.
   This parser can be used to implement the 'longest match' rule. For example,
@@ -544,11 +481,12 @@
   keyword is actually an identifier (for example `lets`)."
   [p]
   (try* (choice (bind [c (try* p)] (unexpected (delay (str c))))
-                (return []))))
+                (return nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
   parser but it is defined using 'notFollowedBy'."
+  ;; TODO: Implement using direct access to input for performance?
   (-> (not-followed-by any-token)
       (label "end of input")))
 
