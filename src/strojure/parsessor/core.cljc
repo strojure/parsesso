@@ -317,7 +317,7 @@
         `(bind* ~p (fn [~sym] ~@body))
         `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
-(defn choice
+(defn alt
   "Tries to apply the parsers in order, until one of them succeeds. Returns the
   value of the succeeding parser."
   ([p1 p2]
@@ -331,22 +331,22 @@
                                    (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
-   (-> (choice p1 p2) (choice p3)))
+   (-> (alt p1 p2) (alt p3)))
   ([p1 p2 p3 & more]
-   (reduce choice (list* p1 p2 p3 more))))
+   (reduce alt (list* p1 p2 p3 more))))
 
 (defn option
   "Tries to apply parser `p`. If `p` fails without consuming input, it returns
   the value `x`, otherwise the value returned by `p`."
   [x p]
-  (choice p (value x)))
+  (alt p (value x)))
 
 (defn optional
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (choice (bind [_ p] (value nil))
-          (value nil)))
+  (alt (bind [_ p] (value nil))
+       (value nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
@@ -375,7 +375,7 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (choice (sep-req p sep) (value nil)))
+  (alt (sep-req p sep) (value nil)))
 
 (defn sep-req
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -391,17 +391,17 @@
   `sep`. Returns a vector of values returned by `p`."
   [p sep]
   (bind [x p]
-    (choice (bind [_ sep, xs (sep-end-opt p sep)]
+    (alt (bind [_ sep, xs (sep-end-opt p sep)]
               ;; TODO: cons?
               (value (cons x xs)))
-            (value [x]))))
+         (value [x]))))
 
 (defn sep-end-opt
   "Parses /zero/ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a list of values returned by `p`."
   [p sep]
-  (choice (sep-end-req p sep)
-          (value nil)))
+  (alt (sep-end-req p sep)
+       (value nil)))
 
 (defn end-req
   "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
@@ -433,8 +433,8 @@
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (choice (chain-right-req p op)
-          (value x)))
+  (alt (chain-right-req p op)
+       (value x)))
 
 (declare chain-left-req)
 
@@ -444,8 +444,8 @@
   to the values returned by `p`. If there are zero occurrences of `p`, the value
   `x` is returned."
   [p op x]
-  (choice (chain-left-req p op)
-          (value x)))
+  (alt (chain-left-req p op)
+       (value x)))
 
 (defn chain-left-req
   "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
@@ -453,8 +453,8 @@
   to the values returned by `p`. This parser can for example be used to
   eliminate left recursion which typically occurs in expression grammars."
   [p op]
-  (letfn [(more [x] (choice (bind [f op, y p] (more (f x y)))
-                            (value x)))]
+  (letfn [(more [x] (alt (bind [f op, y p] (more (f x y)))
+                         (value x)))]
     (bind [x p]
       (value (more x)))))
 
@@ -464,8 +464,8 @@
   `op` to the values returned by `p`."
   [p op]
   (letfn [(scan [] (bind [x p] (more x)))
-          (more [x] (choice (bind [f op, y (scan)] (value (f x y)))
-                            (value x)))]
+          (more [x] (alt (bind [f op, y (scan)] (value (f x y)))
+                         (value x)))]
     (scan)))
 
 ;;; Tricky combinators
@@ -482,8 +482,8 @@
   keyword is not followed by a legal identifier character, in which case the
   keyword is actually an identifier (for example `lets`)."
   [p]
-  (trim (choice (bind [c (trim p)] (unexpected (delay (str c))))
-                (value nil))))
+  (trim (alt (bind [c (trim p)] (unexpected (delay (str c))))
+             (value nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -565,13 +565,13 @@
          -input)
 
   (parse (error "oops") -input)
-  (parse (choice (value :ok) (error "oops")) -input)
-  (parse (choice (error "oops") (value :ok)) -input)
-  (parse (choice (error "oops") (error "oops2") (value :ok)) -input)
-  (parse (choice (error "oops") (error "oops2")) -input)
-  (def -p (choice (error "oops") (value :ok)))
-  (def -p (choice (error "oops") (error "oops2") (value :ok)))
-  (def -p (choice (value :ok) (error "oops") (error "oops2")))
+  (parse (alt (value :ok) (error "oops")) -input)
+  (parse (alt (error "oops") (value :ok)) -input)
+  (parse (alt (error "oops") (error "oops2") (value :ok)) -input)
+  (parse (alt (error "oops") (error "oops2")) -input)
+  (def -p (alt (error "oops") (value :ok)))
+  (def -p (alt (error "oops") (error "oops2") (value :ok)))
+  (def -p (alt (value :ok) (error "oops") (error "oops2")))
   (parse -p -input)
   (parse (trim (error "oops")) -input)
   (parse (trim (value :ok)) -input)
