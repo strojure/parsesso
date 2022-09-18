@@ -76,13 +76,12 @@
 ;;; parsers
 
 (defn unexpected
-  "The parser @unexpected msg@ always fails with an unexpected error
-  message @msg@ without consuming any input.
+  "The parser `unexpected msg` always fails with an unexpected error message
+  `msg` without consuming any input.
 
-  The parsers 'fail', ('<?>') and @unexpected@ are the three parsers
-  used to generate error messages. Of these, only ('<?>') is commonly
-  used. For an example of the use of @unexpected@, see the definition
-  of 'Text.Parsec.Combinator.notFollowedBy'."
+  The parsers 'error', 'label' and `unexpected` are the three parsers used to
+  generate error messages. Of these, only `label` is commonly used. For an
+  example of the use of `unexpected`, see the definition of `not-followed-by`."
   [msg]
   (parser
     (fn [state context]
