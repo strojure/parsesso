@@ -9,32 +9,35 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol IContinuation
-  (continue
-    [p state ctx]
-    [c]
-    "Continues parser call.
-    The `(continue p state ctx)` returns continuation of `(p state ctx)`.
-    The `(continue c)` invokes executes continuation `c`."))
+(defprotocol ICont
+  (run-cont [c]))
 
 (deftype Continue [f]
-  IContinuation (continue [_] (f)))
+  ICont (run-cont [_] (f)))
 
-;; TODO: Apply continuation to reply context (code smell)?
+(defprotocol IParser
+  (continue [p state ctx]
+    "Applies parser function in continuation."))
+
 (extend-type Context
-  IContinuation
+  IParser
   (continue [ctx p state]
-    ;; TODO: Reuse `(continue p state ctx)`?
+    ;; No reuse `(continue p state ctx)` for performance.
     (Continue. (fn [] (p state ctx)))))
 
-#?(:clj (deftype Parser [parser-fn]
-          IFn
-          (invoke [_ state] (parser-fn state (re/new-context)))
-          (invoke [_ state ctx] (parser-fn state ctx))
-          IContinuation
-          (continue [_ state ctx] (Continue. (fn [] (parser-fn state ctx))))))
+#?(:clj
+   (deftype Parser [f]
+     IFn
+     (invoke [_p state] (f state (re/new-context)))
+     (invoke [_p state ctx] (f state ctx))
+     IParser
+     (continue [_p state ctx] (Continue. (fn [] (f state ctx))))))
 
-(defn parser [parser-fn] (Parser. parser-fn))
+(defn parser
+  "Wraps function `(fn [state context])` in the instance of `Parser`."
+  [f]
+  (Parser. f))
+
 (defn parser? [p] (instance? Parser p))
 
 (defrecord State [input pos user])
@@ -385,8 +388,8 @@
   [p sep]
   (bind [x p]
     (alt (bind [_ sep, xs (sep-end-opt p sep)]
-              ;; TODO: cons?
-              (value (cons x xs)))
+           ;; TODO: cons?
+           (value (cons x xs)))
          (value [x]))))
 
 (defn sep-end-opt
@@ -513,7 +516,7 @@
   ;; TODO: Initialize source pos
   (loop [reply (p (State. (seq input) 1 nil))]
     (if (instance? Continue reply)
-      (recur (continue reply))
+      (recur (run-cont reply))
       reply)))
 
 (comment
