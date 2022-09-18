@@ -11,6 +11,7 @@ Parser combinators for Clojure(Script).
 
 ## Inspiration
 
+* [haskell/parsec](https://github.com/haskell/parsec)
 * [blancas/kern](https://github.com/blancas/kern)
 * [youngnh/parsatron](https://github.com/youngnh/parsatron)
 * [rm-hull/jasentaa](https://github.com/rm-hull/jasentaa)
