@@ -240,22 +240,20 @@
   (parse (choice (token #(= \b %)) (token #(= \a %))) -input)
   )
 
-;; TODO: Better name for `many-error`?
-(defn- many-error
+(defn- throw-empty-input
   [sym]
   (fn [_ _ _]
-    (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty string.") {}))))
+    (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty input.") {}))))
 
 ;; TODO: return nil or [] for empty result?
-;; TODO: rename `many` to something like reduce/collect etc.?
-(defn many-opt
+(defn take*
   "Applies the parser `p` zero or more times. Returns a vector of the returned
   values or `p`. Optional `init` is a collection to add values to."
-  ([p] (many-opt p []))
+  ([p] (take* p []))
   ([p init]
    (parser
      (fn [state context]
-       (let [context (re/set-empty-ok context (many-error 'many-opt))
+       (let [context (re/set-empty-ok context (throw-empty-input 'take*))
              walk (fn walk [xs x s _e]
                     (let [xs (conj! xs x)]
                       (-> context
@@ -273,15 +271,15 @@
   (def -input (seq "abc123"))
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
-  (parse (many-opt (token #(Character/isLetter ^char %))) -input)
+  (parse (take* (token #(Character/isLetter ^char %))) -input)
   )
 
-(defn skip-opt
+(defn skip*
   "Applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
     (fn [state context]
-      (let [context (-> context (re/set-empty-ok (many-error 'skip-opt)))
+      (let [context (-> context (re/set-empty-ok (throw-empty-input 'skip*)))
             walk (fn walk [_x s _e]
                    (-> context
                        (re/set-consumed-ok walk)
@@ -297,7 +295,7 @@
   (def -input (seq "abc123"))
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
-  (parse (skip-opt (token #(Character/isLetter ^char %))) -input)
+  (parse (skip* (token #(Character/isLetter ^char %))) -input)
   )
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -359,104 +357,114 @@
    (bind [_ open, x p, _ close]
      (value x))))
 
-(defn skip-req
+(defn skip+
   "Applies the parser `p` /one/ or more times, skipping its result."
   [p]
   (bind [_ p]
-    (skip-opt p)))
+    (skip* p)))
 
-(defn many-req
+(defn take+
   "Applies the parser `p` /one/ or more times. Returns a list of the returned
   values of `p`."
   [p]
   (bind [x p]
-    (many-opt p [x])))
-
-(declare sep-req)
-
-(defn sep-opt
-  "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
-  vector of values returned by `p`."
-  [p sep]
-  (alt (sep-req p sep) (value nil)))
-
-(defn sep-req
-  "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
-  of values returned by `p`."
-  [p sep]
-  (bind [x p]
-    (many-opt (>> sep p) [x])))
-
-(declare sep-end-opt)
-
-(defn sep-end-req
-  "Parses /one/ or more occurrences of `p`, separated and optionally ended by
-  `sep`. Returns a vector of values returned by `p`."
-  [p sep]
-  (bind [x p]
-    (alt (bind [_ sep, xs (sep-end-opt p sep)]
-           ;; TODO: cons?
-           (value (cons x xs)))
-         (value [x]))))
-
-(defn sep-end-opt
-  "Parses /zero/ or more occurrences of `p`, separated and optionally ended by
-  `sep`. Returns a list of values returned by `p`."
-  [p sep]
-  (alt (sep-end-req p sep)
-       (value nil)))
-
-(defn end-req
-  "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
-  Returns a list of values returned by `p`."
-  [p sep]
-  (many-req (bind [x p, _ sep] (value x))))
-
-(defn end-opt
-  "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
-  Returns a list of values returned by `p`."
-  [p sep]
-  (many-req (bind [x p, _ sep] (value x))))
+    (take* p [x])))
 
 ;; TODO: argument order
 ;; TODO: Check if it should be consumed or not if n > length.
 ;; TODO: Rewrite similar to haskell?
-(defn many-count
+(defn take-count
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
   equals to `(value nil)`. Returns a list of `n` values returned by `p`."
   [n p]
-  (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
+  (if (pos? n) (bind [x p, xs (take-count (dec n) p)]
                  (value (cons x xs)))
                (value nil)))
 
 (comment
-  (parse (many-count 2 (token #{\x})) "xxxyyy")
-  (parse (many-count 4 (token #{\x})) "xxxyyy")
+  (parse (take-count 2 (token #{\x})) "xxxyyy")
+  (parse (take-count 4 (token #{\x})) "xxxyyy")
   )
 
-(declare chain-right-req)
+(declare sep-by+)
 
-(defn chain-right
-  "Parses /zero/ or more occurrences of `p`, separated by `op` Returns a value
+(defn sep-by*
+  "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
+  vector of values returned by `p`."
+  [p sep]
+  (alt (sep-by+ p sep) (value nil)))
+
+(defn sep-by+
+  "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
+  of values returned by `p`."
+  [p sep]
+  (bind [x p]
+    (take* (>> sep p) [x])))
+
+(defn sep-by-end*
+  "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a list of values returned by `p`."
+  [p sep]
+  (take* (bind [x p, _ sep] (value x))))
+
+(defn sep-by-end+
+  "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a list of values returned by `p`."
+  [p sep]
+  (take+ (bind [x p, _ sep] (value x))))
+
+(declare sep-by-end?+)
+
+(defn sep-by-end?*
+  "Parses /zero/ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a list of values returned by `p`."
+  [p sep]
+  (alt (sep-by-end?+ p sep)
+       (value nil)))
+
+(defn sep-by-end?+
+  "Parses /one/ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a vector of values returned by `p`."
+  [p sep]
+  (bind [x p]
+    (alt (bind [_ sep, xs (sep-by-end?* p sep)]
+           ;; TODO: cons?
+           (value (cons x xs)))
+         (value [x]))))
+
+(declare chain-right+)
+
+(defn chain-right*
+  "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
   obtained by a /right/ associative application of all functions returned by
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (alt (chain-right-req p op)
+  (alt (chain-right+ p op)
        (value x)))
 
-(declare chain-left-req)
+(defn chain-right+
+  "Parses /one/ or more occurrences of `p`, separated by `op`. Returns a value
+  obtained by a /right/ associative application of all functions returned by
+  `op` to the values returned by `p`."
+  [p op]
+  (letfn [(scan [] (bind [x p] (more x)))
+          (more [x] (alt (bind [f op, y (scan)] (value (f x y)))
+                         (value x)))]
+    (scan)))
 
-(defn chain-left-opt
+(declare chain-left+)
+
+(defn chain-left*
   "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
   obtained by a /left/ associative application of all functions returned by `op`
   to the values returned by `p`. If there are zero occurrences of `p`, the value
   `x` is returned."
   [p op x]
-  (alt (chain-left-req p op)
+  (alt (chain-left+ p op)
        (value x)))
 
-(defn chain-left-req
+(defn chain-left+
   "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
   obtained by a /left/ associative application of all functions returned by `op`
   to the values returned by `p`. This parser can for example be used to
@@ -466,16 +474,6 @@
                          (value x)))]
     (bind [x p]
       (value (more x)))))
-
-(defn chain-right-req
-  "Parses /one/ or more occurrences of |p|, separated by `op` Returns a value
-  obtained by a /right/ associative application of all functions returned by
-  `op` to the values returned by `p`."
-  [p op]
-  (letfn [(scan [] (bind [x p] (more x)))
-          (more [x] (alt (bind [f op, y (scan)] (value (f x y)))
-                         (value x)))]
-    (scan)))
 
 ;;; Tricky combinators
 
@@ -535,25 +533,25 @@
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
 
-  (-> (many-opt (token #(Character/isLetter ^char %)))
+  (-> (take* (token #(Character/isLetter ^char %)))
       (parse -input))
-  (-> (many-req (token #(Character/isLetter ^char %)))
+  (-> (take+ (token #(Character/isLetter ^char %)))
       (parse -input))
 
   (-> (>> (token #(Character/isLetter ^char %))
           (token #(Character/isDigit ^char %)))
       (parse -input))
-  (-> (sep-opt (token #(Character/isLetter ^char %))
+  (-> (sep-by* (token #(Character/isLetter ^char %))
                (token #(Character/isDigit ^char %)))
       (parse -input))
-  (-> (sep-req (token #(Character/isLetter ^char %))
+  (-> (sep-by+ (token #(Character/isLetter ^char %))
                (token #(Character/isDigit ^char %)))
       (parse -input))
-  (-> (sep-end-opt (token #(Character/isLetter ^char %))
-                   (token #(Character/isDigit ^char %)))
+  (-> (sep-by-end?* (token #(Character/isLetter ^char %))
+                    (token #(Character/isDigit ^char %)))
       (parse -input))
-  (-> (sep-end-req (token #(Character/isLetter ^char %))
-                   (token #(Character/isDigit ^char %)))
+  (-> (sep-by-end?+ (token #(Character/isLetter ^char %))
+                    (token #(Character/isDigit ^char %)))
       (parse -input))
 
   (parse (optional (error :ok)) nil)
@@ -561,7 +559,7 @@
   (def -input (seq "[]"))
   (def -input (seq "[abc]"))
   (def -input (seq "[abc123]"))
-  (-> (many-opt (token #(Character/isLetter ^char %)))
+  (-> (take* (token #(Character/isLetter ^char %)))
       (between (token #(= \[ %)) (token #(= \] %)))
       (parse -input))
 
