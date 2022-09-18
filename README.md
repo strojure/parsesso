@@ -1,8 +1,8 @@
-# parsessor
+# parsesso
 
 Parser combinators for Clojure(Script).
 
-[![Clojars Project](https://img.shields.io/clojars/v/com.github.strojure/parsessor.svg)](https://clojars.org/com.github.strojure/parsessor)
+[![Clojars Project](https://img.shields.io/clojars/v/com.github.strojure/parsesso.svg)](https://clojars.org/com.github.strojure/parsesso)
 
 ## Motivation
 

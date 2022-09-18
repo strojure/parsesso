@@ -1,8 +1,8 @@
-(ns strojure.parsessor.core
-  (:require [strojure.parsessor.impl.pos :as pos]
-            [strojure.parsessor.impl.reply :as re])
+(ns strojure.parsesso.core
+  (:require [strojure.parsesso.impl.pos :as pos]
+            [strojure.parsesso.impl.reply :as re])
   (:import (clojure.lang IFn)
-           (strojure.parsessor.impl.reply Context)))
+           (strojure.parsesso.impl.reply Context)))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))

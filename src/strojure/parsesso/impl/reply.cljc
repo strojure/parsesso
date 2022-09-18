@@ -1,4 +1,4 @@
-(ns strojure.parsessor.impl.reply)
+(ns strojure.parsesso.impl.reply)
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
