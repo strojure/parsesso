@@ -6,45 +6,32 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defprotocol IContext
-  (consumed-ok, [_ value state error])
-  (consumed-err [_ error])
-  (empty-ok,,,, [_ value state error])
-  (empty-err,,, [_ error])
-  (set-consumed-ok, [_ f])
-  (set-consumed-err [_ f])
-  (set-empty-ok,,,, [_ f])
-  (set-empty-err,,, [_ f]))
+  (c-ok, [_ value state error] "Replies with value as consumed (consumed-ok).")
+  (c-err [_ error],,,,,,,,,,,, "Fails with error as consumed (consumed-error).")
+  (e-ok, [_ value state error] "Replies with value as not consumed (empty-ok).")
+  (e-err [_ error],,,,,,,,,,,, "Fails with error as not consumed (empty-error).")
+  (set-c-ok, [_ f] "Sets new function as `c-ok`")
+  (set-c-err [_ f] "Sets new function as `c-err`")
+  (set-e-ok, [_ f] "Sets new function as `e-ok`")
+  (set-e-err [_ f] "Sets new function as `e-err`"))
 
 #_:clj-kondo/ignore
-(deftype Context [consumed-ok, consumed-err, empty-ok, empty-err]
+(deftype Context [c-ok, c-err, e-ok, e-err]
   IContext
-  (consumed-ok, [_ x s e] (consumed-ok x s e))
-  (consumed-err [_ e],,,, (consumed-err e))
-  (empty-ok,,,, [_ x s e] (empty-ok x s e))
-  (empty-err,,, [_ e],,,, (empty-err e))
-  (set-consumed-ok, [_ f] (Context. f, consumed-err, empty-ok, empty-err))
-  (set-consumed-err [_ f] (Context. consumed-ok, f, empty-ok, empty-err))
-  (set-empty-ok,,,, [_ f] (Context. consumed-ok, consumed-err, f, empty-err))
-  (set-empty-err,,, [_ f] (Context. consumed-ok, consumed-err, empty-ok, f)))
+  (c-ok, [_ x s e] (c-ok x s e))
+  (c-err [_ e],,,, (c-err e))
+  (e-ok, [_ x s e] (e-ok x s e))
+  (e-err [_ e],,,, (e-err e))
+  (set-c-ok, [_ f] (Context. f c-err e-ok, e-err))
+  (set-c-err [_ f] (Context. c-ok f e-ok e-err))
+  (set-e-ok, [_ f] (Context. c-ok c-err f e-err))
+  (set-e-err [_ f] (Context. c-ok c-err e-ok f)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol IReply
-  (reply [this ctx]))
+(defrecord Value [value consumed state error])
 
-(defrecord Value [value consumed state error]
-  IReply
-  (reply [_ ctx]
-    (if consumed
-      (consumed-ok ctx value state error)
-      (empty-ok ctx value state error))))
-
-(defrecord Failure [consumed error]
-  IReply
-  (reply [_ ctx]
-    (if consumed
-      (consumed-err ctx error)
-      (empty-err ctx error))))
+(defrecord Failure [consumed error])
 
 (defn value? [reply] (instance? Value reply))
 

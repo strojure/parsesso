@@ -1,6 +1,6 @@
 (ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as re])
+            [strojure.parsesso.impl.reply :as r])
   (:import (clojure.lang IFn)
            (strojure.parsesso.impl.reply Context)))
 
@@ -28,7 +28,7 @@
 #?(:clj
    (deftype Parser [f]
      IFn
-     (invoke [_p state] (f state (re/new-context)))
+     (invoke [_p state] (f state (r/new-context)))
      (invoke [_p state context] (f state context))
      IParser
      (continue [_p state context] (Continue. (fn [] (f state context))))))
@@ -85,13 +85,13 @@
   [msg]
   (parser
     (fn [state context]
-      (re/empty-err context (new-error-message :msg/un-expect msg (:pos state))))))
+      (r/e-err context (new-error-message :msg/un-expect msg (:pos state))))))
 
 (defn value
   [x]
   (parser
     (fn [state context]
-      (re/empty-ok context x state (unknown-error state)))))
+      (r/e-ok context x state (unknown-error state)))))
 
 (defn bind*
   "m - parser, f - (fn [x] parser), returns parser"
@@ -104,25 +104,23 @@
           ;;   continuation
           ;; - if (f x) doesn't consume input, but errors, we return the error in the
           ;;   'consumed-err' continuation
-          (re/set-consumed-ok
-            (fn [x s e]
-              (-> context
-                  (re/set-empty-ok
-                    (fn [x s ee] (re/consumed-ok context x s (if (error-is-unknown e) ee (merge-error e ee)))))
-                  (re/set-empty-err
-                    (fn [ee] (re/consumed-err context (if (error-is-unknown e) ee (merge-error e ee)))))
-                  (continue (f x) s))))
-          (re/set-empty-ok
-            (fn [x s e]
-              (if (error-is-unknown e)
-                (continue context (f x) s)
-                ;; - in these cases, (f x) can return as empty
-                (-> context
-                    (re/set-empty-ok
-                      (fn [x s ee] (re/empty-ok context x s (merge-error e ee))))
-                    (re/set-empty-err
-                      (fn [ee] (re/empty-err context (merge-error e ee))))
-                    (continue (f x) s)))))
+          (r/set-c-ok (fn [x s e]
+                        (-> context
+                            (r/set-e-ok (fn [x s ee]
+                                          (r/c-ok context x s (if (error-is-unknown e) ee (merge-error e ee)))))
+                            (r/set-e-err (fn [ee]
+                                           (r/c-err context (if (error-is-unknown e) ee (merge-error e ee)))))
+                            (continue (f x) s))))
+          (r/set-e-ok (fn [x s e]
+                        (if (error-is-unknown e)
+                          (continue context (f x) s)
+                          ;; - in these cases, (f x) can return as empty
+                          (-> context
+                              (r/set-e-ok (fn [x s ee]
+                                            (r/e-ok context x s (merge-error e ee))))
+                              (r/set-e-err (fn [ee]
+                                             (r/e-err context (merge-error e ee))))
+                              (continue (f x) s)))))
           (continue p state)))))
 
 (defn error
@@ -130,7 +128,7 @@
   [msg]
   (parser
     (fn [state context]
-      (re/empty-err context (new-error-message :msg/message msg (:pos state))))))
+      (r/e-err context (new-error-message :msg/message msg (:pos state))))))
 
 ;; TODO: remove zero?
 (declare zero)
@@ -138,6 +136,7 @@
 ;; TODO: remove plus?
 (declare plus)
 
+;; TODO: Remove labels from API?
 (defn labels
   [p messages]
   (parser
@@ -148,11 +147,11 @@
                   msg,, (set-error-message e :msg/expect msg)
                   :else (set-error-message e :msg/expect "")))]
         (-> context
-            (re/set-empty-ok
-              (fn [x s e] (re/empty-ok context x s (cond-> e (not (error-is-unknown e))
-                                                             (set-expect-errors messages)))))
-            (re/set-empty-err
-              (fn [e] (re/empty-err context (set-expect-errors e messages))))
+            (r/set-e-ok (fn [x s e]
+                          (r/e-ok context x s (cond-> e (not (error-is-unknown e))
+                                                        (set-expect-errors messages)))))
+            (r/set-e-err (fn [e]
+                           (r/e-err context (set-expect-errors e messages))))
             (continue p state))))))
 
 (defn label
@@ -181,8 +180,7 @@
   (parser
     (fn [state context]
       (-> context
-          (re/set-consumed-err
-            (partial re/empty-err context))
+          (r/set-c-err (partial r/e-err context))
           (continue p state)))))
 
 (comment
@@ -197,10 +195,10 @@
   [p]
   (parser
     (fn [state context]
-      (let [empty-ok (fn [x _ _] (re/empty-ok context x state (new-error-unknown (:pos state))))]
+      (let [e-ok (fn [x _ _] (r/e-ok context x state (new-error-unknown (:pos state))))]
         (-> context
-            (re/set-consumed-ok empty-ok)
-            (re/set-empty-ok empty-ok)
+            (r/set-c-ok e-ok)
+            (r/set-e-ok e-ok)
             (continue p state))))))
 
 (defn- unexpect-error
@@ -228,9 +226,9 @@
                    new-pos (pos-fn pos tok new-input)
                    new-state (->State new-input new-pos (cond->> (:user state)
                                                           user-fn (user-fn pos tok new-input)))]
-               (re/consumed-ok context tok new-state (new-error-unknown new-pos)))
-             (re/empty-err context (unexpect-error (delay (msg-fn tok)) (:pos state)))))
-         (re/empty-err context (unexpect-error "" (:pos state))))))))
+               (r/c-ok context tok new-state (new-error-unknown new-pos)))
+             (r/e-err context (unexpect-error (delay (msg-fn tok)) (:pos state)))))
+         (r/e-err context (unexpect-error "" (:pos state))))))))
 
 (comment
   (def -input "abc")
@@ -253,17 +251,17 @@
   ([p init]
    (parser
      (fn [state context]
-       (let [context (re/set-empty-ok context (throw-empty-input 'take*))
+       (let [context (-> context (r/set-e-ok (throw-empty-input 'take*)))
              walk (fn walk [xs x s _e]
                     (let [xs (conj! xs x)]
                       (-> context
-                          (re/set-consumed-ok (partial walk xs))
-                          (re/set-empty-err
-                            (fn [e] (re/consumed-ok context (persistent! xs) s e)))
+                          (r/set-c-ok (partial walk xs))
+                          (r/set-e-err (fn [e]
+                                         (r/c-ok context (persistent! xs) s e)))
                           (continue p s))))]
          (-> context
-             (re/set-consumed-ok (partial walk (transient init)))
-             (re/set-empty-err (partial re/consumed-ok context init state))
+             (r/set-c-ok (partial walk (transient init)))
+             (r/set-e-err (partial r/c-ok context init state))
              (continue p state)))))))
 
 (comment
@@ -279,15 +277,15 @@
   [p]
   (parser
     (fn [state context]
-      (let [context (-> context (re/set-empty-ok (throw-empty-input 'skip*)))
+      (let [context (-> context (r/set-e-ok (throw-empty-input 'skip*)))
             walk (fn walk [_x s _e]
                    (-> context
-                       (re/set-consumed-ok walk)
-                       (re/set-empty-err (partial re/consumed-ok context nil s))
+                       (r/set-c-ok walk)
+                       (r/set-e-err (partial r/c-ok context nil s))
                        (continue p s)))]
         (-> context
-            (re/set-consumed-ok walk)
-            (re/set-empty-err (partial re/consumed-ok context nil state))
+            (r/set-c-ok walk)
+            (r/set-e-err (partial r/c-ok context nil state))
             (continue p state))))))
 
 (comment
@@ -324,13 +322,13 @@
    (parser
      (fn [state context]
        (-> context
-           (re/set-empty-err
-             (fn [e] (-> context
-                         (re/set-empty-ok
-                           (fn [x s ee] (re/empty-ok context x s (merge-error e ee))))
-                         (re/set-empty-err
-                           (fn [ee] (re/empty-err context (merge-error e ee))))
-                         (continue p2 state))))
+           (r/set-e-err (fn [e]
+                          (-> context
+                              (r/set-e-ok (fn [x s ee]
+                                            (r/e-ok context x s (merge-error e ee))))
+                              (r/set-e-err (fn [ee]
+                                             (r/e-err context (merge-error e ee))))
+                              (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
    (-> (alt p1 p2) (alt p3)))
