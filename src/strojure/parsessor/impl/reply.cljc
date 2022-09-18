@@ -27,13 +27,6 @@
   (set-empty-ok,,,, [_ f] (Context. consumed-ok, consumed-err, f, empty-err))
   (set-empty-err,,, [_ f] (Context. consumed-ok, consumed-err, empty-ok, f)))
 
-(defn new-context
-  []
-  (Context. (fn consumed-ok, [x s e] (Value. x true s e))
-            (fn consumed-err [e],,,, (Failure. true e))
-            (fn empty-ok,,,, [x s e] (Value. x false s e))
-            (fn empty-err,,, [e],,,, (Failure. false e))))
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defprotocol IReply
@@ -58,5 +51,14 @@
 (defn failure? [reply] (instance? Failure reply))
 
 (def consumed? :consumed)
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defn new-context
+  []
+  (Context. (fn consumed-ok, [x s e] (Value. x true s e))
+            (fn consumed-err [e],,,, (Failure. true e))
+            (fn empty-ok,,,, [x s e] (Value. x false s e))
+            (fn empty-err,,, [e],,,, (Failure. false e))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
