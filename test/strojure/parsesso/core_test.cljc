@@ -1,5 +1,6 @@
 (ns strojure.parsesso.core-test
-  (:require [clojure.test :as test :refer [deftest testing]]
+  (:require [clojure.string :as string]
+            [clojure.test :as test :refer [deftest testing]]
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.reply :as r]))
 
@@ -529,6 +530,66 @@
                     (tok :END))
        (concat (take 10000 (cycle [:A1 :A2 :A3])) [:END]))
     {:value (take 10000 (cycle [:A1 :A2 :A3])), :consumed true}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(deftest debug-state-t
+  (test/are [expr result] (= result expr)
+
+    (-> (p (p/bind [_ (p/debug-state "a") a (tok :A)
+                    _ (p/debug-state "b") b (tok :B)]
+             [a b])
+           [:A :B :C])
+        (with-out-str)
+        (string/split-lines))
+    ["a: [:A :B :C]"
+     "b: [:B :C]"]
+
+    (-> (p (p/bind [_ (p/debug-state "a") a (tok :A)
+                    _ (p/debug-state "b") b (tok :B)]
+             [a b])
+           [:A :B])
+        (with-out-str)
+        (string/split-lines))
+    ["a: [:A :B]"
+     "b: [:B]"]
+
+    (-> (p (p/bind [a (tok :A) _ (p/debug-state "a")
+                    b (tok :B) _ (p/debug-state "b")]
+             [a b])
+           [:A :B])
+        (with-out-str)
+        (string/split-lines))
+    ["a: [:B]"]
+
+    ))
+
+(deftest debug-parser-t
+  (test/are [expr result] (= result expr)
+
+    (-> (p (p/bind [a (p/debug-parser "a" (tok :A))
+                    b (p/debug-parser "b" (tok :B))]
+             [a b])
+           [:A :B :C])
+        (with-out-str)
+        (string/split-lines))
+    ["a: [:A :B :C]"
+     "a  backtracked"
+     "b: [:B :C]"
+     "b  backtracked"]
+
+    (-> (p (p/bind [a (p/debug-parser "a" (tok :A))
+                    b (p/debug-parser "b" (tok :B))]
+             [a b])
+           [:A :B])
+        (with-out-str)
+        (string/split-lines))
+    ["a: [:A :B]"
+     "a  backtracked"
+     "b: [:B]"
+     "b  backtracked"]
 
     ))
 

@@ -497,16 +497,26 @@
                           (value (cons x xs)))))]
     (scan)))
 
-;; | @parserTrace label@ is an impure function, implemented with "Debug.Trace" that
-;; prints to the console the remaining parser state at the time it is invoked.
-;; It is intended to be used for debugging parsers by inspecting their intermediate states.
-(declare trace-parser)
+(defn debug-state
+  "Prints the remaining parser state at the time it is invoked. It is intended
+  to be used for debugging parsers by inspecting their intermediate states."
+  [label]
+  (alt (trim (bind [x (trim (many+ any-token))
+                    _ (do (println (str label ": " x))
+                          (trim eof))]
+               (error x)))
+       (value nil)))
 
-;; | @parserTraced label p@ is an impure function, implemented with "Debug.Trace" that
-;; prints to the console the remaining parser state at the time it is invoked.
-;; It then continues to apply parser @p@, and if @p@ fails will indicate that
-;; the label has been backtracked.
-(declare traced-parser)
+(defn debug-parser
+  "Prints to the console the remaining parser state at the time it is invoked.
+  It then continues to apply parser `p`, and if `p` fails will indicate that the
+  label has been backtracked. It is intended to be used for debugging parsers by
+  inspecting their intermediate states."
+  [label p]
+  (bind [_ (debug-state label)]
+    (alt p
+         (do (println (str label "  backtracked"))
+             (error label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
