@@ -35,7 +35,7 @@
 
 (defn value? [reply] (instance? Value reply))
 
-(defn failure? [reply] (instance? Failure reply))
+(defn error? [reply] (instance? Failure reply))
 
 (def consumed? :consumed)
 

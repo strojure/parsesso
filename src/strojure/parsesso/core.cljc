@@ -130,12 +130,6 @@
     (fn [state context]
       (r/e-err context (new-error-message :msg/message msg (:pos state))))))
 
-;; TODO: remove zero?
-(declare zero)
-
-;; TODO: remove plus?
-(declare plus)
-
 ;; TODO: Remove labels from API?
 (defn labels
   [p messages]
@@ -244,24 +238,24 @@
     (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty input.") {}))))
 
 ;; TODO: return nil or [] for empty result?
-(defn take*
+(defn many*
   "Applies the parser `p` zero or more times. Returns a vector of the returned
   values or `p`. Optional `init` is a collection to add values to."
-  ([p] (take* p []))
+  ([p] (many* p []))
   ([p init]
    (parser
      (fn [state context]
-       (let [context (-> context (r/set-e-ok (throw-empty-input 'take*)))
+       (let [my-context (-> context (r/set-e-ok (throw-empty-input 'many*)))
              walk (fn walk [xs x s _e]
                     (let [xs (conj! xs x)]
-                      (-> context
+                      (-> my-context
                           (r/set-c-ok (partial walk xs))
                           (r/set-e-err (fn [e]
                                          (r/c-ok context (persistent! xs) s e)))
                           (continue p s))))]
-         (-> context
+         (-> my-context
              (r/set-c-ok (partial walk (transient init)))
-             (r/set-e-err (partial r/c-ok context init state))
+             (r/set-e-err (partial r/e-ok context init state))
              (continue p state)))))))
 
 (comment
@@ -269,7 +263,7 @@
   (def -input (seq "abc123"))
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
-  (parse (take* (token #(Character/isLetter ^char %))) -input)
+  (parse (many* (token #(Character/isLetter ^char %))) -input)
   )
 
 (defn skip*
@@ -277,15 +271,15 @@
   [p]
   (parser
     (fn [state context]
-      (let [context (-> context (r/set-e-ok (throw-empty-input 'skip*)))
+      (let [my-context (-> context (r/set-e-ok (throw-empty-input 'skip*)))
             walk (fn walk [_x s _e]
-                   (-> context
+                   (-> my-context
                        (r/set-c-ok walk)
                        (r/set-e-err (partial r/c-ok context nil s))
                        (continue p s)))]
-        (-> context
+        (-> my-context
             (r/set-c-ok walk)
-            (r/set-e-err (partial r/c-ok context nil state))
+            (r/set-e-err (partial r/e-ok context nil state))
             (continue p state))))))
 
 (comment
@@ -299,11 +293,6 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; combinators
-
-;; TODO: consider >> in api
-(defn >>
-  [p1 p2]
-  (bind* p1 (fn const [_] p2)))
 
 (defmacro bind
   [[& bindings] & body]
@@ -335,10 +324,11 @@
   ([p1 p2 p3 & more]
    (reduce alt (list* p1 p2 p3 more))))
 
+;; TODO: Better name for `option`?
 (defn option
   "Tries to apply parser `p`. If `p` fails without consuming input, it returns
   the value `x`, otherwise the value returned by `p`."
-  [x p]
+  [p x]
   (alt p (value x)))
 
 (defn optional
@@ -361,27 +351,27 @@
   (bind [_ p]
     (skip* p)))
 
-(defn take+
+(defn many+
   "Applies the parser `p` /one/ or more times. Returns a list of the returned
   values of `p`."
   [p]
   (bind [x p]
-    (take* p [x])))
+    (many* p [x])))
 
 ;; TODO: argument order
 ;; TODO: Check if it should be consumed or not if n > length.
 ;; TODO: Rewrite similar to haskell?
-(defn take-count
+(defn many-count
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
   equals to `(value nil)`. Returns a list of `n` values returned by `p`."
   [n p]
-  (if (pos? n) (bind [x p, xs (take-count (dec n) p)]
+  (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
                  (value (cons x xs)))
                (value nil)))
 
 (comment
-  (parse (take-count 2 (token #{\x})) "xxxyyy")
-  (parse (take-count 4 (token #{\x})) "xxxyyy")
+  (parse (many-count 2 (token #{\x})) "xxxyyy")
+  (parse (many-count 4 (token #{\x})) "xxxyyy")
   )
 
 (declare sep-by+)
@@ -397,19 +387,19 @@
   of values returned by `p`."
   [p sep]
   (bind [x p]
-    (take* (>> sep p) [x])))
+    (many* (bind [_ sep] p) [x])))
 
 (defn sep-by-end*
   "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (take* (bind [x p, _ sep] (value x))))
+  (many* (bind [x p, _ sep] (value x))))
 
 (defn sep-by-end+
   "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (take+ (bind [x p, _ sep] (value x))))
+  (many+ (bind [x p, _ sep] (value x))))
 
 (declare sep-by-end?+)
 
@@ -531,9 +521,9 @@
   (def -input (seq "123"))
   (def -input (repeat 10000 \a))
 
-  (-> (take* (token #(Character/isLetter ^char %)))
+  (-> (many* (token #(Character/isLetter ^char %)))
       (parse -input))
-  (-> (take+ (token #(Character/isLetter ^char %)))
+  (-> (many+ (token #(Character/isLetter ^char %)))
       (parse -input))
 
   (-> (>> (token #(Character/isLetter ^char %))
@@ -557,7 +547,7 @@
   (def -input (seq "[]"))
   (def -input (seq "[abc]"))
   (def -input (seq "[abc123]"))
-  (-> (take* (token #(Character/isLetter ^char %)))
+  (-> (many* (token #(Character/isLetter ^char %)))
       (between (token #(= \[ %)) (token #(= \] %)))
       (parse -input))
 
