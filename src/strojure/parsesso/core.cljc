@@ -487,9 +487,15 @@
   (-> (not-followed-by any-token)
       (label "end of input")))
 
-;; | @manyTill p end@ applies parser @p@ /zero/ or more times until
-;; parser @end@ succeeds. Returns the list of values returned by @p@.
-(declare many-till)
+(defn many-till
+  "Applies parser `p` /zero/ or more times until parser `end` succeeds. Returns
+  the list of values returned by `p`."
+  [p end]
+  (letfn [(scan [] (alt (bind [_ end]
+                          (value nil))
+                        (bind [x p, xs (scan)]
+                          (value (cons x xs)))))]
+    (scan)))
 
 ;; | @parserTrace label@ is an impure function, implemented with "Debug.Trace" that
 ;; prints to the console the remaining parser state at the time it is invoked.

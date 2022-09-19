@@ -321,6 +321,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+;; TODO: Test `many` for very long input.
 (deftest many-t
 
   (testing 'p/many*
@@ -491,5 +492,44 @@
       {:value :<NA>, :consumed false}
 
       )))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(deftest many-till-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       [:A1 :A2 :A3 :END])
+    {:value [:A1 :A2 :A3], :consumed true}
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       [:A1 :A2 :A3 :B :END])
+    {:value :<NA>, :consumed true}
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       [:B :END])
+    {:value :<NA>, :consumed false}
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       [:END])
+    {:value nil, :consumed true}
+
+    (p (p/many-till (p/alt (tok :A1 :A2 :A3)
+                           (p/many-till (tok :B1 :B2 :B3)
+                                        (tok :END)))
+                    (tok :END))
+       [:A1 :A2 :A3 :B1 :B2 :B3 :END :A1 :A2 :A3 :END])
+    {:value [:A1 :A2 :A3 [:B1 :B2 :B3] :A1 :A2 :A3], :consumed true}
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       (concat (take 10000 (cycle [:A1 :A2 :A3])) [:END]))
+    {:value (take 10000 (cycle [:A1 :A2 :A3])), :consumed true}
+
+    ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
