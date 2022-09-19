@@ -1,8 +1,10 @@
 (ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as r])
-  (:import (clojure.lang IFn)
-           (strojure.parsesso.impl.reply Context)))
+            #?(:clj  [strojure.parsesso.impl.reply :as r]
+               :cljs [strojure.parsesso.impl.reply :as r :refer [Context]]))
+  #?(:clj  (:import (clojure.lang IFn)
+                    (strojure.parsesso.impl.reply Context))
+     :cljs (:require-macros [strojure.parsesso.core :refer [bind]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -30,6 +32,13 @@
      IFn
      (invoke [_p state] (f state (r/new-context)))
      (invoke [_p state context] (f state context))
+     IParser
+     (continue [_p state context] (Continue. (fn [] (f state context)))))
+   :cljs
+   (deftype Parser [f]
+     IFn
+     (-invoke [_p state] (f state (r/new-context)))
+     (-invoke [_p state context] (f state context))
      IParser
      (continue [_p state context] (Continue. (fn [] (f state context))))))
 
