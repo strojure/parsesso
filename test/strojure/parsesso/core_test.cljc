@@ -367,11 +367,11 @@
 
       (p (p/many* (tok :D :E :F))
          [:A :B :C :D :E :F])
-      {:value [], :consumed false}
+      {:value nil, :consumed false}
 
       (p (p/many* (tok :A :B :C))
          [])
-      {:value [], :consumed false}
+      {:value nil, :consumed false}
 
       ))
 
@@ -577,8 +577,8 @@
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
-    ["a: [:A :B :C]"
-     "b: [:B :C]"]
+    ["a: (:A :B :C)"
+     "b: (:B :C)"]
 
     (-> (p (p/bind [_ (p/debug-state "a") a (tok :A)
                     _ (p/debug-state "b") b (tok :B)]
@@ -586,8 +586,8 @@
            [:A :B])
         (with-out-str)
         (string/split-lines))
-    ["a: [:A :B]"
-     "b: [:B]"]
+    ["a: (:A :B)"
+     "b: (:B)"]
 
     (-> (p (p/bind [a (tok :A) _ (p/debug-state "a")
                     b (tok :B) _ (p/debug-state "b")]
@@ -595,7 +595,7 @@
            [:A :B])
         (with-out-str)
         (string/split-lines))
-    ["a: [:B]"]
+    ["a: (:B)"]
 
     ))
 
@@ -608,9 +608,9 @@
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
-    ["a: [:A :B :C]"
+    ["a: (:A :B :C)"
      "a  backtracked"
-     "b: [:B :C]"
+     "b: (:B :C)"
      "b  backtracked"]
 
     (-> (p (p/bind [a (p/debug-parser "a" (tok :A))
@@ -619,9 +619,9 @@
            [:A :B])
         (with-out-str)
         (string/split-lines))
-    ["a: [:A :B]"
+    ["a: (:A :B)"
      "a  backtracked"
-     "b: [:B]"
+     "b: (:B)"
      "b  backtracked"]
 
     ))

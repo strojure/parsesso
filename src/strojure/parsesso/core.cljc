@@ -134,26 +134,24 @@
              (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
          (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state))))))))
 
-;; TODO: return nil or [] for empty result?
 (defn many*
-  "This parser applies the parser `p` zero or more times. Returns a vector of
+  "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`. Optional `init` is a collection to add values to."
-  ([p] (many* p []))
-  ([p init]
-   (parser
-     (fn [state context]
-       (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'many*)))
-             walk (fn walk [xs x s _e]
-                    (let [xs (conj! xs x)]
-                      (-> my-context
-                          (r/set-c-ok (partial walk xs))
-                          (r/set-e-err (fn [e]
-                                         (r/c-ok context (persistent! xs) s e)))
-                          (continue p s))))]
-         (-> my-context
-             (r/set-c-ok (partial walk (transient init)))
-             (r/set-e-err (partial r/e-ok context init state))
-             (continue p state)))))))
+  [p]
+  (parser
+    (fn [state context]
+      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'many*)))
+            walk (fn walk [xs x s _e]
+                   (let [xs (conj! xs x)]
+                     (-> my-context
+                         (r/set-c-ok (partial walk xs))
+                         (r/set-e-err (fn [e]
+                                        (r/c-ok context (seq (persistent! xs)) s e)))
+                         (continue p s))))]
+        (-> my-context
+            (r/set-c-ok (partial walk (transient [])))
+            (r/set-e-err (partial r/e-ok context nil state))
+            (continue p state))))))
 
 (defn skip*
   "This parser applies the parser `p` zero or more times, skipping its result."
@@ -272,18 +270,18 @@
   (and p (skip* p)))
 
 (defn many+
-  "This parser applies the parser `p` /one/ or more times. Returns a list of the
-  returned values of `p`."
+  "This parser applies the parser `p` /one/ or more times. Returns a sequence of
+  the returned values of `p`."
   [p]
-  (bind [x p]
-    (many* p [x])))
+  (bind [x p, xs (many* p)]
+    (return (cons x xs))))
 
 ;; TODO: argument order
 ;; TODO: Check if it should be consumed or not if n > length.
 ;; TODO: Rewrite similar to haskell?
 (defn many-count
   "This parser parses `n` occurrences of `p`. If `n` is smaller or equal to
-  zero, the parser equals to `(return nil)`. Returns a list of `n` values
+  zero, the parser equals to `(return nil)`. Returns a sequence of `n` values
   returned by `p`."
   [n p]
   (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
@@ -294,27 +292,27 @@
 
 (defn sep-by*
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
-  Returns a vector of values returned by `p`."
+  Returns a sequence of values returned by `p`."
   [p sep]
   (or (sep-by+ p sep)
       (return nil)))
 
 (defn sep-by+
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
-  Returns a vector of values returned by `p`."
+  Returns a sequence of values returned by `p`."
   [p sep]
-  (bind [x p]
-    (many* (and sep p) [x])))
+  (bind [x p, xs (many* (and sep p))]
+    (return (cons x xs))))
 
 (defn sep-by-end*
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a list of values returned by `p`."
+  `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (many* (bind [x p, _ sep] (return x))))
 
 (defn sep-by-end+
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a list of values returned by `p`."
+  `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (many+ (bind [x p, _ sep] (return x))))
 
@@ -322,18 +320,17 @@
 
 (defn sep-by-end?*
   "This parser parses /zero/ or more occurrences of `p`, separated and
-  optionally ended by `sep`. Returns a list of values returned by `p`."
+  optionally ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (or (sep-by-end?+ p sep)
       (return nil)))
 
 (defn sep-by-end?+
   "This parser parses /one/ or more occurrences of `p`, separated and optionally
-  ended by `sep`. Returns a vector of values returned by `p`."
+  ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (bind [x p]
     (or (bind [_ sep, xs (sep-by-end?* p sep)]
-          ;; TODO: cons?
           (return (cons x xs)))
         (return [x]))))
 
@@ -407,7 +404,7 @@
 
 (defn many-till
   "This parser applies parser `p` /zero/ or more times until parser `end`
-  succeeds. Returns the list of values returned by `p`."
+  succeeds. Returns a sequence of values returned by `p`."
   [p end]
   (letfn [(scan [] (or (and end (return nil))
                        (bind [x p, xs (scan)]
