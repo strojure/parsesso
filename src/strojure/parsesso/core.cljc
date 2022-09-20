@@ -1,4 +1,5 @@
 (ns strojure.parsesso.core
+  (:refer-clojure :exclude [or])
   (:require [strojure.parsesso.impl.pos :as pos]
             #?(:clj  [strojure.parsesso.impl.reply :as r]
                :cljs [strojure.parsesso.impl.reply :as r :refer [Context Failure]]))
@@ -173,7 +174,7 @@
   [p msg]
   (labels p [msg]))
 
-(defn trim
+(defn accept
   "Behaves like parser `p`, except that it pretends that it hasn't consumed any
   input when an error occurs.
 
@@ -187,11 +188,6 @@
       (-> context
           (r/set-c-err (partial r/e-err context))
           (continue p state)))))
-
-(comment
-  (parse (trim (>> (token #{\x}) (token #{\x}))) "xy")
-  (parse (trim (>> (token #{\x}) (token #{\x}))) "xx")
-  )
 
 (defn look-ahead
   ;; TODO: Update reference to `try`.
@@ -315,7 +311,7 @@
                               (cond-> p# (not (parser? p#)) (return)))))
       `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
-(defn alt
+(defn or
   "Tries to apply the parsers in order, until one of them succeeds. Returns the
   value of the succeeding parser."
   ([p1 p2]
@@ -331,23 +327,23 @@
                               (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
-   (-> (alt p1 p2) (alt p3)))
+   (-> (or p1 p2) (or p3)))
   ([p1 p2 p3 & more]
-   (reduce alt (list* p1 p2 p3 more))))
+   (reduce or (list* p1 p2 p3 more))))
 
 ;; TODO: Better name for `option`?
 (defn option
   "Tries to apply parser `p`. If `p` fails without consuming input, it returns
   the value `x`, otherwise the value returned by `p`."
   [p x]
-  (alt p (return x)))
+  (or p (return x)))
 
 (defn optional
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (alt (bind [_ p] (return nil))
-       (return nil)))
+  (or (bind [_ p] (return nil))
+      (return nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
@@ -391,7 +387,7 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (alt (sep-by+ p sep) (return nil)))
+  (or (sep-by+ p sep) (return nil)))
 
 (defn sep-by+
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -418,18 +414,18 @@
   "Parses /zero/ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a list of values returned by `p`."
   [p sep]
-  (alt (sep-by-end?+ p sep)
-       (return nil)))
+  (or (sep-by-end?+ p sep)
+      (return nil)))
 
 (defn sep-by-end?+
   "Parses /one/ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a vector of values returned by `p`."
   [p sep]
   (bind [x p]
-    (alt (bind [_ sep, xs (sep-by-end?* p sep)]
-           ;; TODO: cons?
-           (return (cons x xs)))
-         (return [x]))))
+    (or (bind [_ sep, xs (sep-by-end?* p sep)]
+          ;; TODO: cons?
+          (return (cons x xs)))
+        (return [x]))))
 
 (declare chain-right+)
 
@@ -439,8 +435,8 @@
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (alt (chain-right+ p op)
-       (return x)))
+  (or (chain-right+ p op)
+      (return x)))
 
 (defn chain-right+
   "Parses /one/ or more occurrences of `p`, separated by `op`. Returns a value
@@ -448,8 +444,8 @@
   `op` to the values returned by `p`."
   [p op]
   (letfn [(scan [] (bind [x p] (more x)))
-          (more [x] (alt (bind [f op, y (scan)] (return (f x y)))
-                         (return x)))]
+          (more [x] (or (bind [f op, y (scan)] (return (f x y)))
+                        (return x)))]
     (scan)))
 
 (declare chain-left+)
@@ -460,8 +456,8 @@
   to the values returned by `p`. If there are zero occurrences of `p`, the value
   `x` is returned."
   [p op x]
-  (alt (chain-left+ p op)
-       (return x)))
+  (or (chain-left+ p op)
+      (return x)))
 
 (defn chain-left+
   "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
@@ -469,8 +465,8 @@
   to the values returned by `p`. This parser can for example be used to
   eliminate left recursion which typically occurs in expression grammars."
   [p op]
-  (letfn [(more [x] (alt (bind [f op, y p] (more (f x y)))
-                         (return x)))]
+  (letfn [(more [x] (or (bind [f op, y p] (more (f x y)))
+                        (return x)))]
     (bind [x p]
       (return (more x)))))
 
@@ -488,8 +484,8 @@
   keyword is not followed by a legal identifier character, in which case the
   keyword is actually an identifier (for example `lets`)."
   [p]
-  (trim (alt (bind [c (trim p)] (unexpected (delay (str c))))
-             (return nil))))
+  (accept (or (bind [c (accept p)] (unexpected (delay (str c))))
+              (return nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -502,21 +498,21 @@
   "Applies parser `p` /zero/ or more times until parser `end` succeeds. Returns
   the list of values returned by `p`."
   [p end]
-  (letfn [(scan [] (alt (bind [_ end]
-                          (return nil))
-                        (bind [x p, xs (scan)]
-                          (return (cons x xs)))))]
+  (letfn [(scan [] (or (bind [_ end]
+                         (return nil))
+                       (bind [x p, xs (scan)]
+                         (return (cons x xs)))))]
     (scan)))
 
 (defn debug-state
   "Prints the remaining parser state at the time it is invoked. It is intended
   to be used for debugging parsers by inspecting their intermediate states."
   [label]
-  (alt (trim (bind [x (trim (many+ any-token))
-                    _ (do (println (str label ": " x))
-                          (trim eof))]
-               (fail x)))
-       (return nil)))
+  (or (accept (bind [x (accept (many+ any-token))
+                     _ (do (println (str label ": " x))
+                           (accept eof))]
+                (fail x)))
+      (return nil)))
 
 (defn debug-parser
   "Prints to the console the remaining parser state at the time it is invoked.
@@ -525,9 +521,9 @@
   inspecting their intermediate states."
   [label p]
   (bind [_ (debug-state label)]
-    (alt p
-         (do (println (str label "  backtracked"))
-             (fail label)))))
+    (or p
+        (do (println (str label "  backtracked"))
+            (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -587,16 +583,16 @@
          -input)
 
   (parse (fail "oops") -input)
-  (parse (alt (return :ok) (fail "oops")) -input)
-  (parse (alt (fail "oops") (return :ok)) -input)
-  (parse (alt (fail "oops") (fail "oops2") (return :ok)) -input)
-  (parse (alt (fail "oops") (fail "oops2")) -input)
-  (def -p (alt (fail "oops") (return :ok)))
-  (def -p (alt (fail "oops") (fail "oops2") (return :ok)))
-  (def -p (alt (return :ok) (fail "oops") (fail "oops2")))
+  (parse (or (return :ok) (fail "oops")) -input)
+  (parse (or (fail "oops") (return :ok)) -input)
+  (parse (or (fail "oops") (fail "oops2") (return :ok)) -input)
+  (parse (or (fail "oops") (fail "oops2")) -input)
+  (def -p (or (fail "oops") (return :ok)))
+  (def -p (or (fail "oops") (fail "oops2") (return :ok)))
+  (def -p (or (return :ok) (fail "oops") (fail "oops2")))
   (parse -p -input)
-  (parse (trim (fail "oops")) -input)
-  (parse (trim (return :ok)) -input)
+  (parse (accept (fail "oops")) -input)
+  (parse (accept (return :ok)) -input)
 
   )
 
