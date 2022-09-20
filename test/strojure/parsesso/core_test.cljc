@@ -1,8 +1,7 @@
 (ns strojure.parsesso.core-test
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest testing]]
-            [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.reply :as r]))
+            [strojure.parsesso.core :as p]))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -17,29 +16,29 @@
   [parser input]
   (let [result (p/parse parser input)]
     (cond-> result
-      (r/error? result) (assoc :value :<NA>)
+      (p/error? result) (assoc :value :<NA>)
       :then,,,,,,,,,,,, (select-keys [:value :consumed]))))
 
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/alt (p/bind [_ parser] (p/error "Oops"))
+  (p/alt (p/bind [_ parser] (p/fail "Oops"))
          parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest value-t
+(deftest return-t
   (test/are [expr result] (= result expr)
-    (p (p/value :A) []) #_$ {:value :A, :consumed false}
-    (p (p/value :A) [:B]) #_$ {:value :A, :consumed false}
-    (p (fail-consumed (p/value :A)) []) #_$ {:value :A, :consumed false}
+    (p (p/return :A) []) #_$ {:value :A, :consumed false}
+    (p (p/return :A) [:B]) #_$ {:value :A, :consumed false}
+    (p (fail-consumed (p/return :A)) []) #_$ {:value :A, :consumed false}
     ))
 
-(deftest error-t
+(deftest fail-t
   ;; TODO: Error messages
   (test/are [expr result] (= result expr)
-    (p (p/error "Oops") []) #_$ {:value :<NA>, :consumed false}
-    (p (p/error "Oops") [:A]) #_$ {:value :<NA>, :consumed false}
+    (p (p/fail "Oops") []) #_$ {:value :<NA>, :consumed false}
+    (p (p/fail "Oops") [:A]) #_$ {:value :<NA>, :consumed false}
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -65,19 +64,19 @@
 (deftest bind-t
   (test/are [expr result] (= result expr)
 
-    (p (p/bind* (tok :A) p/value)
+    (p (p/bind* (tok :A) p/return)
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/bind* (tok :A) (fn [_] (p/error "Oops")))
+    (p (p/bind* (tok :A) (fn [_] (p/fail "Oops")))
        [:A])
     {:value :<NA>, :consumed true}
 
-    (p (p/bind* (tok :A) p/value)
+    (p (p/bind* (tok :A) p/return)
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/bind* (tok :A) (fn [_] (p/error "Oops")))
+    (p (p/bind* (tok :A) (fn [_] (p/fail "Oops")))
        [:B])
     {:value :<NA>, :consumed false}
 

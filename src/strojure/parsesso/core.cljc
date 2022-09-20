@@ -1,9 +1,9 @@
 (ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.pos :as pos]
             #?(:clj  [strojure.parsesso.impl.reply :as r]
-               :cljs [strojure.parsesso.impl.reply :as r :refer [Context]]))
+               :cljs [strojure.parsesso.impl.reply :as r :refer [Context Failure]]))
   #?(:clj  (:import (clojure.lang IFn)
-                    (strojure.parsesso.impl.reply Context))
+                    (strojure.parsesso.impl.reply Context Failure))
      :cljs (:require-macros [strojure.parsesso.core :refer [bind]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -48,6 +48,8 @@
   (Parser. f))
 
 (defn parser? [p] (instance? Parser p))
+
+(defn error? [reply] (instance? Failure reply))
 
 (defrecord State [input pos user])
 
@@ -96,7 +98,7 @@
     (fn [state context]
       (r/e-err context (new-error-message :msg/un-expect msg (:pos state))))))
 
-(defn value
+(defn return
   [x]
   (parser
     (fn [state context]
@@ -132,7 +134,7 @@
                               (continue (f x) s)))))
           (continue p state)))))
 
-(defn error
+(defn fail
   "Always fails without consuming any input."
   [msg]
   (parser
@@ -310,7 +312,7 @@
     (if (= 2 (count bindings))
       `(bind* ~p (fn [~sym] (let [p# ~@body]
                               ;; Allow return value directly in body
-                              (cond-> p# (not (parser? p#)) (value)))))
+                              (cond-> p# (not (parser? p#)) (return)))))
       `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 (defn alt
@@ -338,21 +340,21 @@
   "Tries to apply parser `p`. If `p` fails without consuming input, it returns
   the value `x`, otherwise the value returned by `p`."
   [p x]
-  (alt p (value x)))
+  (alt p (return x)))
 
 (defn optional
   "Tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
   fails after consuming input. It discards the result of `p`."
   [p]
-  (alt (bind [_ p] (value nil))
-       (value nil)))
+  (alt (bind [_ p] (return nil))
+       (return nil)))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`."
   ([p around] (between p around around))
   ([p open close]
    (bind [_ open, x p, _ close]
-     (value x))))
+     (return x))))
 
 (defn skip+
   "Applies the parser `p` /one/ or more times, skipping its result."
@@ -375,8 +377,8 @@
   equals to `(value nil)`. Returns a list of `n` values returned by `p`."
   [n p]
   (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
-                 (value (cons x xs)))
-               (value nil)))
+                 (return (cons x xs)))
+               (return nil)))
 
 (comment
   (parse (many-count 2 (token #{\x})) "xxxyyy")
@@ -389,7 +391,7 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (alt (sep-by+ p sep) (value nil)))
+  (alt (sep-by+ p sep) (return nil)))
 
 (defn sep-by+
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -402,13 +404,13 @@
   "Parses /zero/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (many* (bind [x p, _ sep] (value x))))
+  (many* (bind [x p, _ sep] (return x))))
 
 (defn sep-by-end+
   "Parses /one/ or more occurrences of `p`, separated and ended by `sep`.
   Returns a list of values returned by `p`."
   [p sep]
-  (many+ (bind [x p, _ sep] (value x))))
+  (many+ (bind [x p, _ sep] (return x))))
 
 (declare sep-by-end?+)
 
@@ -417,7 +419,7 @@
   `sep`. Returns a list of values returned by `p`."
   [p sep]
   (alt (sep-by-end?+ p sep)
-       (value nil)))
+       (return nil)))
 
 (defn sep-by-end?+
   "Parses /one/ or more occurrences of `p`, separated and optionally ended by
@@ -426,8 +428,8 @@
   (bind [x p]
     (alt (bind [_ sep, xs (sep-by-end?* p sep)]
            ;; TODO: cons?
-           (value (cons x xs)))
-         (value [x]))))
+           (return (cons x xs)))
+         (return [x]))))
 
 (declare chain-right+)
 
@@ -438,7 +440,7 @@
   value `x` is returned."
   [p op x]
   (alt (chain-right+ p op)
-       (value x)))
+       (return x)))
 
 (defn chain-right+
   "Parses /one/ or more occurrences of `p`, separated by `op`. Returns a value
@@ -446,8 +448,8 @@
   `op` to the values returned by `p`."
   [p op]
   (letfn [(scan [] (bind [x p] (more x)))
-          (more [x] (alt (bind [f op, y (scan)] (value (f x y)))
-                         (value x)))]
+          (more [x] (alt (bind [f op, y (scan)] (return (f x y)))
+                         (return x)))]
     (scan)))
 
 (declare chain-left+)
@@ -459,7 +461,7 @@
   `x` is returned."
   [p op x]
   (alt (chain-left+ p op)
-       (value x)))
+       (return x)))
 
 (defn chain-left+
   "Parses /one/ or more occurrences of `p`, separated by `op` Returns a value
@@ -468,9 +470,9 @@
   eliminate left recursion which typically occurs in expression grammars."
   [p op]
   (letfn [(more [x] (alt (bind [f op, y p] (more (f x y)))
-                         (value x)))]
+                         (return x)))]
     (bind [x p]
-      (value (more x)))))
+      (return (more x)))))
 
 ;;; Tricky combinators
 
@@ -487,7 +489,7 @@
   keyword is actually an identifier (for example `lets`)."
   [p]
   (trim (alt (bind [c (trim p)] (unexpected (delay (str c))))
-             (value nil))))
+             (return nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -501,9 +503,9 @@
   the list of values returned by `p`."
   [p end]
   (letfn [(scan [] (alt (bind [_ end]
-                          (value nil))
+                          (return nil))
                         (bind [x p, xs (scan)]
-                          (value (cons x xs)))))]
+                          (return (cons x xs)))))]
     (scan)))
 
 (defn debug-state
@@ -513,8 +515,8 @@
   (alt (trim (bind [x (trim (many+ any-token))
                     _ (do (println (str label ": " x))
                           (trim eof))]
-               (error x)))
-       (value nil)))
+               (fail x)))
+       (return nil)))
 
 (defn debug-parser
   "Prints to the console the remaining parser state at the time it is invoked.
@@ -525,7 +527,7 @@
   (bind [_ (debug-state label)]
     (alt p
          (do (println (str label "  backtracked"))
-             (error label)))))
+             (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -567,7 +569,7 @@
                     (token #(Character/isDigit ^char %)))
       (parse -input))
 
-  (parse (optional (error :ok)) nil)
+  (parse (optional (fail :ok)) nil)
 
   (def -input (seq "[]"))
   (def -input (seq "[abc]"))
@@ -576,25 +578,25 @@
       (between (token #(= \[ %)) (token #(= \] %)))
       (parse -input))
 
-  (parse (value :ok) -input)
-  (parse (bind* (value :ok) #(value (str %))) -input)
-  (parse (bind* (error :x1) (fn [x] (value :x2))) -input)
-  (parse (bind [x (value :x)
-                y (value {:y x})]
+  (parse (return :ok) -input)
+  (parse (bind* (return :ok) #(return (str %))) -input)
+  (parse (bind* (fail :x1) (fn [x] (return :x2))) -input)
+  (parse (bind [x (return :x)
+                y (return {:y x})]
            y)
          -input)
 
-  (parse (error "oops") -input)
-  (parse (alt (value :ok) (error "oops")) -input)
-  (parse (alt (error "oops") (value :ok)) -input)
-  (parse (alt (error "oops") (error "oops2") (value :ok)) -input)
-  (parse (alt (error "oops") (error "oops2")) -input)
-  (def -p (alt (error "oops") (value :ok)))
-  (def -p (alt (error "oops") (error "oops2") (value :ok)))
-  (def -p (alt (value :ok) (error "oops") (error "oops2")))
+  (parse (fail "oops") -input)
+  (parse (alt (return :ok) (fail "oops")) -input)
+  (parse (alt (fail "oops") (return :ok)) -input)
+  (parse (alt (fail "oops") (fail "oops2") (return :ok)) -input)
+  (parse (alt (fail "oops") (fail "oops2")) -input)
+  (def -p (alt (fail "oops") (return :ok)))
+  (def -p (alt (fail "oops") (fail "oops2") (return :ok)))
+  (def -p (alt (return :ok) (fail "oops") (fail "oops2")))
   (parse -p -input)
-  (parse (trim (error "oops")) -input)
-  (parse (trim (value :ok)) -input)
+  (parse (trim (fail "oops")) -input)
+  (parse (trim (return :ok)) -input)
 
   )
 
