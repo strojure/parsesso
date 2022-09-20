@@ -22,7 +22,7 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/or (p/bind [_ parser] (p/fail "Oops"))
+  (p/or (p/and parser (p/fail "Oops"))
         parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -91,6 +91,35 @@
     (p (p/bind* (tok :A) (fn [_] (tok :B)))
        [:A :A])
     {:value :<NA>, :consumed true}
+
+    ))
+
+(deftest and-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/and (tok :A) (tok :B))
+       [:A :B])
+    {:value :B, :consumed true}
+
+    (p (p/and (tok :A) (tok :B))
+       [:A :A])
+    {:value :<NA>, :consumed true}
+
+    (p (p/and (tok :A) (tok :B))
+       [:A])
+    {:value :<NA>, :consumed true}
+
+    (p (p/and (fail-consumed (tok :A)) (tok :B))
+       [:A :B])
+    {:value :<NA>, :consumed true}
+
+    (p (p/and (tok :A) (fail-consumed (tok :B)))
+       [:A :B])
+    {:value :<NA>, :consumed true}
+
+    (p (p/and (tok :A) (tok :B) (tok :C))
+       [:A :B :C])
+    {:value :C, :consumed true}
 
     ))
 
