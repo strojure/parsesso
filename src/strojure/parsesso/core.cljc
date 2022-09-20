@@ -1,10 +1,11 @@
 (ns strojure.parsesso.core
   (:refer-clojure :exclude [or])
-  (:require [strojure.parsesso.impl.pos :as pos]
-            #?(:clj  [strojure.parsesso.impl.reply :as r]
-               :cljs [strojure.parsesso.impl.reply :as r :refer [Context Failure]]))
-  #?(:clj  (:import (clojure.lang IFn)
-                    (strojure.parsesso.impl.reply Context Failure))
+  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
+            [strojure.parsesso.impl.error :as e]
+            [strojure.parsesso.impl.pos :as pos]
+            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
+  #?(:clj  (:import (strojure.parsesso.impl.core Continue Parser)
+                    (strojure.parsesso.impl.reply Failure))
      :cljs (:require-macros [strojure.parsesso.core :refer [bind]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -12,76 +13,14 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol ICont
-  (run-cont [c]))
-
-(deftype Continue [f]
-  ICont (run-cont [_] (f)))
-
-(defprotocol IParser
-  (continue [p state context]
-    "Applies parser function in continuation."))
-
-(extend-type Context
-  IParser
-  (continue [context p state]
-    ;; No reuse `(continue p state context)` for performance.
-    (Continue. (fn [] (p state context)))))
-
-#?(:clj
-   (deftype Parser [f]
-     IFn
-     (invoke [_p state] (f state (r/new-context)))
-     (invoke [_p state context] (f state context))
-     IParser
-     (continue [_p state context] (Continue. (fn [] (f state context)))))
-   :cljs
-   (deftype Parser [f]
-     IFn
-     (-invoke [_p state] (f state (r/new-context)))
-     (-invoke [_p state context] (f state context))
-     IParser
-     (continue [_p state context] (Continue. (fn [] (f state context))))))
-
 (defn parser
   "Wraps function `(fn [state context])` in the instance of `Parser`."
   [f]
-  (Parser. f))
+  (impl/->Parser f))
 
 (defn parser? [p] (instance? Parser p))
 
-(defn error? [reply] (instance? Failure reply))
-
-(defrecord State [input pos user])
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-(defrecord ParseError [pos messages])
-
-(defn new-error-unknown [pos] (ParseError. pos nil))
-(defn new-error-message [typ msg pos] (ParseError. pos [[typ msg]]))
-
-(defn error-is-unknown [error] (nil? (:messages error)))
-
-(defn merge-error [e1 e2]
-  (let [m1 (:messages e1), m2 (:messages e2)]
-    (cond (and m1 (nil? m2)) e1
-          (and m2 (nil? m1)) e2
-          :else (let [pos1 (:pos e1)]
-                  (case (compare pos1 (:pos e2))
-                    1 e1, -1 e2, (ParseError. pos1 (reduce conj m1 m2)))))))
-
-(defn unknown-error [state]
-  (new-error-unknown (:pos state)))
-
-(defn add-error-message
-  [err typ msg]
-  (update err :messages (fnil conj []) [typ msg]))
-
-(defn set-error-message
-  [err typ msg]
-  ;; TODO: filter duplicates
-  (update err :messages (fnil conj []) [typ msg]))
+(def continue impl/continue)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -97,13 +36,13 @@
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (new-error-message :msg/un-expect msg (:pos state))))))
+      (r/e-err context (e/new-message ::e/un-expect msg (:pos state))))))
 
 (defn return
   [x]
   (parser
     (fn [state context]
-      (r/e-ok context x state (unknown-error state)))))
+      (r/e-ok context x state (e/new-empty (:pos state))))))
 
 (defn bind*
   "m - parser, f - (fn [x] parser), returns parser"
@@ -119,19 +58,19 @@
           (r/set-c-ok (fn [x s e]
                         (-> context
                             (r/set-e-ok (fn [x s ee]
-                                          (r/c-ok context x s (if (error-is-unknown e) ee (merge-error e ee)))))
+                                          (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee)))))
                             (r/set-e-err (fn [ee]
-                                           (r/c-err context (if (error-is-unknown e) ee (merge-error e ee)))))
+                                           (r/c-err context (if (e/empty? e) ee (e/merge-error e ee)))))
                             (continue (f x) s))))
           (r/set-e-ok (fn [x s e]
-                        (if (error-is-unknown e)
+                        (if (e/empty? e)
                           (continue context (f x) s)
                           ;; - in these cases, (f x) can return as empty
                           (-> context
                               (r/set-e-ok (fn [x s ee]
-                                            (r/e-ok context x s (merge-error e ee))))
+                                            (r/e-ok context x s (e/merge-error e ee))))
                               (r/set-e-err (fn [ee]
-                                             (r/e-err context (merge-error e ee))))
+                                             (r/e-err context (e/merge-error e ee))))
                               (continue (f x) s)))))
           (continue p state)))))
 
@@ -140,7 +79,7 @@
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (new-error-message :msg/message msg (:pos state))))))
+      (r/e-err context (e/new-message ::e/message msg (:pos state))))))
 
 ;; TODO: Remove labels from API?
 (defn labels
@@ -149,12 +88,12 @@
     (fn [state context]
       (letfn [(set-expect-errors [e [msg & more :as messages]]
                 (cond
-                  more, (->> messages (reduce (fn [e msg] (add-error-message e :msg/expect msg)) e))
-                  msg,, (set-error-message e :msg/expect msg)
-                  :else (set-error-message e :msg/expect "")))]
+                  more, (->> messages (reduce (fn [e msg] (e/add-message e ::e/expect msg)) e))
+                  msg,, (e/set-message e ::e/expect msg)
+                  :else (e/set-message e ::e/expect "")))]
         (-> context
             (r/set-e-ok (fn [x s e]
-                          (r/e-ok context x s (cond-> e (not (error-is-unknown e))
+                          (r/e-ok context x s (cond-> e (not (e/empty? e))
                                                         (set-expect-errors messages)))))
             (r/set-e-err (fn [e]
                            (r/e-err context (set-expect-errors e messages))))
@@ -196,27 +135,20 @@
   [p]
   (parser
     (fn [state context]
-      (let [e-ok (fn [x _ _] (r/e-ok context x state (new-error-unknown (:pos state))))]
+      (let [e-ok (fn [x _ _] (r/e-ok context x state (e/new-empty (:pos state))))]
         (-> context
             (r/set-c-ok e-ok)
             (r/set-e-ok e-ok)
             (continue p state))))))
 
-(defn- unexpect-error
-  [msg pos]
-  (new-error-message :msg/sys-unexpect msg pos))
-
-(def token-msg (partial str "token: "))
-
-;; TODO: optimal order of arguments?
 (defn token
   "Returns the parser which accepts a token when `(pred token)` returns logical
   true. The token can be shown in error message using `(msg-fn token)`."
-  ([pred] (token pred token-msg pos/next-pos nil))
-  ([pred, msg-fn] (token pred msg-fn pos/next-pos nil))
+  ([pred],,,,,,,,,,,,,,,, (token pred pos/next-pos (partial str "token: ") nil))
+  ([pred, msg-fn],,,,,,,, (token pred pos/next-pos msg-fn nil))
   ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  ([pred, msg-fn, pos-fn] (token pred msg-fn pos-fn nil))
-  ([pred, msg-fn, pos-fn, user-fn]
+  ([pred, pos-fn, msg-fn] (token pred pos-fn msg-fn nil))
+  ([pred, pos-fn, msg-fn, user-fn]
    (parser
      (fn [state context]
        (if-let [input (seq (:input state))]
@@ -225,11 +157,11 @@
              (let [pos (:pos state)
                    new-input (rest input)
                    new-pos (pos-fn pos tok new-input)
-                   new-state (->State new-input new-pos (cond->> (:user state)
-                                                          user-fn (user-fn pos tok new-input)))]
-               (r/c-ok context tok new-state (new-error-unknown new-pos)))
-             (r/e-err context (unexpect-error (delay (msg-fn tok)) (:pos state)))))
-         (r/e-err context (unexpect-error "" (:pos state))))))))
+                   new-state (impl/->State new-input new-pos (cond->> (:user state)
+                                                               user-fn (user-fn pos tok new-input)))]
+               (r/c-ok context tok new-state (e/new-empty new-pos)))
+             (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
+         (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state))))))))
 
 (comment
   (def -input "abc")
@@ -239,11 +171,6 @@
   (parse (choice (token #(= \b %)) (token #(= \a %))) -input)
   )
 
-(defn- throw-empty-input
-  [sym]
-  (fn [_ _ _]
-    (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty input.") {}))))
-
 ;; TODO: return nil or [] for empty result?
 (defn many*
   "Applies the parser `p` zero or more times. Returns a vector of the returned
@@ -252,7 +179,7 @@
   ([p init]
    (parser
      (fn [state context]
-       (let [my-context (-> context (r/set-e-ok (throw-empty-input 'many*)))
+       (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'many*)))
              walk (fn walk [xs x s _e]
                     (let [xs (conj! xs x)]
                       (-> my-context
@@ -278,7 +205,7 @@
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (throw-empty-input 'skip*)))
+      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip*)))
             walk (fn walk [_x s _e]
                    (-> my-context
                        (r/set-c-ok walk)
@@ -321,9 +248,9 @@
            (r/set-e-err (fn [e]
                           (-> context
                               (r/set-e-ok (fn [x s ee]
-                                            (r/e-ok context x s (merge-error e ee))))
+                                            (r/e-ok context x s (e/merge-error e ee))))
                               (r/set-e-err (fn [ee]
-                                             (r/e-err context (merge-error e ee))))
+                                             (r/e-err context (e/merge-error e ee))))
                               (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
@@ -387,7 +314,8 @@
   "Parses /zero/ or more occurrences of `p`, separated by `sep`. Returns a
   vector of values returned by `p`."
   [p sep]
-  (or (sep-by+ p sep) (return nil)))
+  (or (sep-by+ p sep)
+      (return nil)))
 
 (defn sep-by+
   "Parses /one/ or more occurrences of `p`, separated by `sep`. Returns a vector
@@ -475,7 +403,7 @@
 (def any-token
   "Accepts any kind of token. It is for example used to implement 'eof'. Returns
   the accepted token."
-  (token any? token-msg (fn [pos _ _] pos)))
+  (token any? (fn [pos _ _] pos)))
 
 (defn not-followed-by
   "Only succeeds when parser `p` fails. This parser does not consume any input.
@@ -530,70 +458,11 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (loop [reply (p (State. (seq input) 1 nil))]
+  (loop [reply (p (impl/->State (seq input) 1 nil))]
     (if (instance? Continue reply)
-      (recur (run-cont reply))
+      (recur (impl/run-cont reply))
       reply)))
 
-(comment
-  (def -input (seq "a"))
-  (def -input (seq "abc123"))
-  (def -input (seq "a1b2c3"))
-  (def -input (seq "a1b2c"))
-  (def -input (seq "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
-  (def -input (seq "123"))
-  (def -input (repeat 10000 \a))
-
-  (-> (many* (token #(Character/isLetter ^char %)))
-      (parse -input))
-  (-> (many+ (token #(Character/isLetter ^char %)))
-      (parse -input))
-
-  (-> (>> (token #(Character/isLetter ^char %))
-          (token #(Character/isDigit ^char %)))
-      (parse -input))
-  (-> (sep-by* (token #(Character/isLetter ^char %))
-               (token #(Character/isDigit ^char %)))
-      (parse -input))
-  (-> (sep-by+ (token #(Character/isLetter ^char %))
-               (token #(Character/isDigit ^char %)))
-      (parse -input))
-  (-> (sep-by-end?* (token #(Character/isLetter ^char %))
-                    (token #(Character/isDigit ^char %)))
-      (parse -input))
-  (-> (sep-by-end?+ (token #(Character/isLetter ^char %))
-                    (token #(Character/isDigit ^char %)))
-      (parse -input))
-
-  (parse (optional (fail :ok)) nil)
-
-  (def -input (seq "[]"))
-  (def -input (seq "[abc]"))
-  (def -input (seq "[abc123]"))
-  (-> (many* (token #(Character/isLetter ^char %)))
-      (between (token #(= \[ %)) (token #(= \] %)))
-      (parse -input))
-
-  (parse (return :ok) -input)
-  (parse (bind* (return :ok) #(return (str %))) -input)
-  (parse (bind* (fail :x1) (fn [x] (return :x2))) -input)
-  (parse (bind [x (return :x)
-                y (return {:y x})]
-           y)
-         -input)
-
-  (parse (fail "oops") -input)
-  (parse (or (return :ok) (fail "oops")) -input)
-  (parse (or (fail "oops") (return :ok)) -input)
-  (parse (or (fail "oops") (fail "oops2") (return :ok)) -input)
-  (parse (or (fail "oops") (fail "oops2")) -input)
-  (def -p (or (fail "oops") (return :ok)))
-  (def -p (or (fail "oops") (fail "oops2") (return :ok)))
-  (def -p (or (return :ok) (fail "oops") (fail "oops2")))
-  (parse -p -input)
-  (parse (accept (fail "oops")) -input)
-  (parse (accept (return :ok)) -input)
-
-  )
+(defn error? [reply] (instance? Failure reply))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
