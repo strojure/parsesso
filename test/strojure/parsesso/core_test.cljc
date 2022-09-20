@@ -29,16 +29,16 @@
 
 (deftest return-t
   (test/are [expr result] (= result expr)
-    (p (p/return :A) []) #_$ {:value :A, :consumed false}
-    (p (p/return :A) [:B]) #_$ {:value :A, :consumed false}
-    (p (fail-consumed (p/return :A)) []) #_$ {:value :A, :consumed false}
+    (p (p/return :A) []) #_=> {:value :A, :consumed false}
+    (p (p/return :A) [:B]) #_=> {:value :A, :consumed false}
+    (p (fail-consumed (p/return :A)) []) #_=> {:value :A, :consumed false}
     ))
 
 (deftest fail-t
   ;; TODO: Error messages
   (test/are [expr result] (= result expr)
-    (p (p/fail "Oops") []) #_$ {:value :<NA>, :consumed false}
-    (p (p/fail "Oops") [:A]) #_$ {:value :<NA>, :consumed false}
+    (p (p/fail "Oops") []) #_=> {:value :<NA>, :consumed false}
+    (p (p/fail "Oops") [:A]) #_=> {:value :<NA>, :consumed false}
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -49,12 +49,12 @@
 
 (deftest token-t
   (test/are [expr result] (= result expr)
-    (p (p/token #{:A}) [:A]) #_$ {:value :A, :consumed true}
-    (p (p/token #{:A}) [:B]) #_$ {:value :<NA>, :consumed false}
-    (p (p/token #{:A}) []) #_$ {:value :<NA>, :consumed false}
-    (p (fail-consumed (p/token #{:A})) [:A]) #_$ {:value :<NA>, :consumed true}
-    (p (fail-consumed (p/token #{:A})) [:B]) #_$ {:value :<NA>, :consumed false}
-    (p (fail-consumed (p/token #{:A})) []) #_$ {:value :<NA>, :consumed false}
+    (p (p/token #{:A}) [:A]) #_=> {:value :A, :consumed true}
+    (p (p/token #{:A}) [:B]) #_=> {:value :<NA>, :consumed false}
+    (p (p/token #{:A}) []) #_=> {:value :<NA>, :consumed false}
+    (p (fail-consumed (p/token #{:A})) [:A]) #_=> {:value :<NA>, :consumed true}
+    (p (fail-consumed (p/token #{:A})) [:B]) #_=> {:value :<NA>, :consumed false}
+    (p (fail-consumed (p/token #{:A})) []) #_=> {:value :<NA>, :consumed false}
     ))
 
 (defn- tok
