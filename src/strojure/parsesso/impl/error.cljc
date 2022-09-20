@@ -1,12 +1,26 @@
 (ns strojure.parsesso.impl.error
-  (:refer-clojure :exclude [empty?]))
+  (:refer-clojure :exclude [empty?])
+  (:require [clojure.string :as string]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord ParseError [pos messages])
+;; TODO: Haskell implementation
+
+#_(defn show-error-messages
+    [-or -unknown -expecting -un-expected -eof messages]
+    (if messages
+      ...
+      -unknown))
+
+(defrecord ParseError [pos messages]
+  Object
+  (toString [_]
+    (->> (for [[t msg] messages, :when msg]
+           (str (name t) ": " (force msg)))
+         (string/join "\n"))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -21,10 +35,6 @@
 (defn set-message
   [err typ msg]
   ;; TODO: filter duplicates
-  (update err :messages (fnil conj []) [typ msg]))
-
-(defn add-message
-  [err typ msg]
   (update err :messages (fnil conj []) [typ msg]))
 
 (defn merge-error [e1 e2]

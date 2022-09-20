@@ -1,6 +1,7 @@
 (ns strojure.parsesso.core
   (:refer-clojure :exclude [and or])
-  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
+  (:require [clojure.core :as c]
+            [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
@@ -40,24 +41,6 @@
     (fn [state context]
       (r/e-err context (e/new-message ::e/message msg (:pos state))))))
 
-;; TODO: Remove labels from API?
-(defn labels
-  [p messages]
-  (parser
-    (fn [state context]
-      (letfn [(set-expect-errors [e [msg & more :as messages]]
-                (cond
-                  more, (->> messages (reduce (fn [e msg] (e/add-message e ::e/expect msg)) e))
-                  msg,, (e/set-message e ::e/expect msg)
-                  :else (e/set-message e ::e/expect "")))]
-        (-> context
-            (r/set-e-ok (fn [x s e]
-                          (r/e-ok context x s (cond-> e (not (e/empty? e))
-                                                        (set-expect-errors messages)))))
-            (r/set-e-err (fn [e]
-                           (r/e-err context (set-expect-errors e messages))))
-            (continue p state))))))
-
 (defn label
   "This parser behaves as parser `p`, but whenever the parser `p` fails /without
   consuming any input/, it replaces expect error messages with the expect error
@@ -70,7 +53,16 @@
   the `label` combinator, the message would be like '...: expecting \"let\" or
   letter', which is less friendly."
   [p msg]
-  (labels p [msg]))
+  (parser
+    (fn [state context]
+      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (c/or msg "")))]
+        (-> context
+            (r/set-e-ok (fn [x s e]
+                          (r/e-ok context x s (cond-> e (not (e/empty? e))
+                                                        (set-expect-message msg)))))
+            (r/set-e-err (fn [e]
+                           (r/e-err context (set-expect-message e msg))))
+            (continue p state))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without

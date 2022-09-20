@@ -19,6 +19,13 @@
       (p/error? result) (assoc :value :<NA>)
       :then,,,,,,,,,,,, (select-keys [:value :consumed]))))
 
+(defn- p-err
+  "Parses test input using given parser. Returns error messages."
+  [parser input]
+  (let [result (p/parse parser input)]
+    (when (p/error? result)
+      (str (:error result)))))
+
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
@@ -41,11 +48,20 @@
     (p (p/fail "Oops") [:A]) #_=> {:value :<NA>, :consumed false}
     ))
 
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
 (deftest label-t
-  ;; TODO: Test `label`
+  ;; TODO: Test error messages
+  (test/are [expr result] (= result expr)
+
+    (p-err (p/label (p/fail "Fail") "Message") [])
+    "message: Fail\nexpect: Message"
+
+    (p-err (p/label (p/fail "Fail") (delay "Message")) [])
+    "message: Fail\nexpect: Message"
+
+    )
   )
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest token-t
   (test/are [expr result] (= result expr)
