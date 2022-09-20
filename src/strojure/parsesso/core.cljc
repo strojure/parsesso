@@ -171,15 +171,14 @@
   (parser
     (fn [state context]
       (-> context
-          ;; - if (f x) consumes, those go straight up
-          ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
-          ;;   continuation
-          ;; - if (f x) doesn't consume input, but errors, we return the error in the
-          ;;   'consumed-err' continuation
           (r/set-c-ok (fn [x s e]
                         (-> context
+                            ;; - if (f x) doesn't consume input, but is okay, we still return in the
+                            ;; consumed continuation
                             (r/set-e-ok (fn [x s ee]
                                           (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee)))))
+                            ;; - if (f x) doesn't consume input, but errors, we return the error in
+                            ;; the 'consumed-err' continuation
                             (r/set-e-err (fn [ee]
                                            (r/c-err context (if (e/empty? e) ee (e/merge-error e ee)))))
                             (continue (f x) s))))
