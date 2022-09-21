@@ -233,19 +233,14 @@
   ([p1 p2 p3 & more]
    (reduce or (list* p1 p2 p3 more))))
 
-;; TODO: Better name for `option`?
-(defn option
-  "This parser tries to apply parser `p`. If `p` fails without consuming input,
-  it returns the value `x`, otherwise the value returned by `p`."
-  [p x]
-  (or p (return x)))
-
 (defn optional
-  "This parser tries to apply parser `p`. It will parse `p` or nothing. It only
-  fails if `p` fails after consuming input. It discards the result of `p`."
-  [p]
-  (or (and p (return nil))
-      (return nil)))
+  "This parser tries to apply parser `p`. If `p` fails without consuming input,
+  it returns the value `x` (or `nil`), otherwise the value returned by `p`.
+  Unlike Haskell's version it does not discard the result of `p` and behaves
+  like `option` combinator."
+  ([p] (optional p nil))
+  ([p x]
+   (or p (return x))))
 
 (defn between
   "This parser parses `open`, followed by `p` and `close`. Returns the value

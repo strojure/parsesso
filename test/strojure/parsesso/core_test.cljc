@@ -266,63 +266,64 @@
 
     ))
 
-(deftest option-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/option (tok :A) :X)
-       [:A])
-    {:value :A, :consumed true}
-
-    (p (p/option (tok :A) :X)
-       [:B])
-    {:value :X, :consumed false}
-
-    (p (p/option (tok :A) :X)
-       [])
-    {:value :X, :consumed false}
-
-    (p (p/option (fail-consumed (tok :A)) :X)
-       [:A])
-    {:value :<NA>, :consumed true}
-
-    (p (p/option (fail-consumed (tok :A)) :X)
-       [:B])
-    {:value :X, :consumed false}
-
-    (p (p/option (fail-consumed (tok :A)) :X)
-       [])
-    {:value :X, :consumed false}
-
-    ))
-
 (deftest optional-t
-  (test/are [expr result] (= result expr)
+  (testing "The `optional` without default."
+    (test/are [expr result] (= result expr)
 
-    (p (p/optional (tok :A))
-       [:A])
-    {:value nil, :consumed true}
+      (p (p/optional (tok :A))
+         [:A])
+      {:value :A, :consumed true}
 
-    (p (p/optional (tok :A))
-       [:B])
-    {:value nil, :consumed false}
+      (p (p/optional (tok :A))
+         [:B])
+      {:value nil, :consumed false}
 
-    (p (p/optional (tok :A))
-       [])
-    {:value nil, :consumed false}
+      (p (p/optional (tok :A))
+         [])
+      {:value nil, :consumed false}
 
-    (p (p/optional (fail-consumed (tok :A)))
-       [:A])
-    {:value :<NA>, :consumed true}
+      (p (p/optional (fail-consumed (tok :A)))
+         [:A])
+      {:value :<NA>, :consumed true}
 
-    (p (p/optional (fail-consumed (tok :A)))
-       [:B])
-    {:value nil, :consumed false}
+      (p (p/optional (fail-consumed (tok :A)))
+         [:B])
+      {:value nil, :consumed false}
 
-    (p (p/optional (fail-consumed (tok :A)))
-       [])
-    {:value nil, :consumed false}
+      (p (p/optional (fail-consumed (tok :A)))
+         [])
+      {:value nil, :consumed false}
 
-    ))
+      ))
+
+  (testing "The `optional` with default value."
+    (test/are [expr result] (= result expr)
+
+      (p (p/optional (tok :A) :X)
+         [:A])
+      {:value :A, :consumed true}
+
+      (p (p/optional (tok :A) :X)
+         [:B])
+      {:value :X, :consumed false}
+
+      (p (p/optional (tok :A) :X)
+         [])
+      {:value :X, :consumed false}
+
+      (p (p/optional (fail-consumed (tok :A)) :X)
+         [:A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/optional (fail-consumed (tok :A)) :X)
+         [:B])
+      {:value :X, :consumed false}
+
+      (p (p/optional (fail-consumed (tok :A)) :X)
+         [])
+      {:value :X, :consumed false}
+
+      )))
 
 (deftest between-t
   (test/are [expr result] (= result expr)
