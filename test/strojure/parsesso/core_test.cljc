@@ -208,30 +208,30 @@
 
     ))
 
-(deftest accept-t
+(deftest ack-t
   (test/are [expr result] (= result expr)
 
-    (p (p/accept (tok :A))
+    (p (p/ack (tok :A))
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/accept (tok :A))
+    (p (p/ack (tok :A))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/accept (tok :A))
+    (p (p/ack (tok :A))
        [])
     {:value :<NA>, :consumed false}
 
-    (p (p/accept (fail-consumed (tok :A)))
+    (p (p/ack (fail-consumed (tok :A)))
        [:A])
     {:value :<NA>, :consumed false}
 
-    (p (p/accept (fail-consumed (tok :A)))
+    (p (p/ack (fail-consumed (tok :A)))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/accept (fail-consumed (tok :A)))
+    (p (p/ack (fail-consumed (tok :A)))
        [])
     {:value :<NA>, :consumed false}
 

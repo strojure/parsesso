@@ -76,7 +76,7 @@
     (fn [state context]
       (r/e-err context (e/new-message ::e/un-expect msg (:pos state))))))
 
-(defn accept
+(defn ack
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -383,8 +383,8 @@
   that a keyword is not followed by a legal identifier character, in which case
   the keyword is actually an identifier (for example `lets`)."
   [p]
-  (accept (or (bind [c (accept p)] (unexpected (delay (str c))))
-              (return nil))))
+  (ack (or (bind [c (ack p)] (unexpected (delay (str c))))
+           (return nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -407,10 +407,10 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (or (accept (bind [x (accept (many+ any-token))
-                     _ (do (println (str label ": " x))
-                           (accept eof))]
-                (fail x)))
+  (or (ack (bind [x (ack (many+ any-token))
+                  _ (do (println (str label ": " x))
+                        (ack eof))]
+             (fail x)))
       (return nil)))
 
 (defn debug-parser
