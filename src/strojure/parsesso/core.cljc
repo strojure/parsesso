@@ -128,7 +128,7 @@
 
 (defn many*
   "This parser applies the parser `p` zero or more times. Returns a sequence of
-  the returned values or `p`. Optional `init` is a collection to add values to."
+  the returned values or `p`."
   [p]
   (parser
     (fn [state context]
@@ -145,12 +145,12 @@
             (r/set-e-err (partial r/e-ok context nil state))
             (continue p state))))))
 
-(defn skip*
+(defn skip-many*
   "This parser applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip*)))
+      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip-many*)))
             walk (fn walk [_x s _e]
                    (-> my-context
                        (r/set-c-ok walk)
@@ -248,19 +248,19 @@
 
 (defn sequence
   "This parser applies all parsers in `ps` sequentially and returns a sequence
-  of results if all parsers succeed."
+  of values returned by every parser if all parsers succeed."
   [ps]
   (if-let [p (first ps)]
     (bind [x p, xs (sequence (rest ps))]
       (return (cons x xs)))
     (return nil)))
 
-(defn optional
+(defn opt
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
-  Unlike Haskell's version it does not discard the result of `p` and behaves
-  like `option` combinator."
-  ([p] (optional p nil))
+  Unlike Haskell's `optional` combinator it does not discard the result of `p`
+  and behaves like `option` combinator."
+  ([p] (opt p nil))
   ([p x]
    (or p (return x))))
 
@@ -272,12 +272,12 @@
    (bind [_ open, x p, _ close]
      (return x))))
 
-(defn skip+
+(defn skip-many
   "This parser applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (and p (skip* p)))
+  (and p (skip-many* p)))
 
-(defn many+
+(defn many
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
   the returned values of `p`."
   [p]
@@ -296,49 +296,28 @@
                  (return (cons x xs)))
                (return nil)))
 
-(declare sep-by+)
-
-(defn sep-by*
-  "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`."
-  [p sep]
-  (or (sep-by+ p sep)
-      (return nil)))
-
-(defn sep-by+
+(defn sep-by
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`."
+  Returns a sequence of values returned by `p`. Wrap to `opt` for zero
+  occurrences."
   [p sep]
   (bind [x p, xs (many* (and sep p))]
     (return (cons x xs))))
 
-(defn sep-by-end*
-  "This parser parses /zero/ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a sequence of values returned by `p`."
-  [p sep]
-  (many* (bind [x p, _ sep] (return x))))
-
-(defn sep-by-end+
+(defn sep-end-by
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a sequence of values returned by `p`."
+  `sep`. Returns a sequence of values returned by `p`. Wrap to `opt` for zero
+  occurrences."
   [p sep]
-  (many+ (bind [x p, _ sep] (return x))))
+  (many (bind [x p, _ sep] (return x))))
 
-(declare sep-by-end?+)
-
-(defn sep-by-end?*
-  "This parser parses /zero/ or more occurrences of `p`, separated and
-  optionally ended by `sep`. Returns a sequence of values returned by `p`."
-  [p sep]
-  (or (sep-by-end?+ p sep)
-      (return nil)))
-
-(defn sep-by-end?+
+(defn sep-opt-end-by
   "This parser parses /one/ or more occurrences of `p`, separated and optionally
-  ended by `sep`. Returns a sequence of values returned by `p`."
+  ended by `sep`. Returns a sequence of values returned by `p`. Wrap to `opt`
+  for zero occurrences."
   [p sep]
   (bind [x p]
-    (or (bind [_ sep, xs (sep-by-end?* p sep)]
+    (or (bind [_ sep, xs (opt (sep-opt-end-by p sep))]
           (return (cons x xs)))
         (return [x]))))
 
@@ -424,7 +403,7 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (or (ack (bind [x (ack (many+ any-token))
+  (or (ack (bind [x (ack (many any-token))
                   _ (do (println (str label ": " x))
                         (ack eof))]
              (fail x)))

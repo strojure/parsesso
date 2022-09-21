@@ -324,27 +324,27 @@
   (testing "The `optional` without default."
     (test/are [expr result] (= result expr)
 
-      (p (p/optional (tok :A))
+      (p (p/opt (tok :A))
          [:A])
       {:value :A, :consumed true}
 
-      (p (p/optional (tok :A))
+      (p (p/opt (tok :A))
          [:B])
       {:value nil, :consumed false}
 
-      (p (p/optional (tok :A))
+      (p (p/opt (tok :A))
          [])
       {:value nil, :consumed false}
 
-      (p (p/optional (fail-consumed (tok :A)))
+      (p (p/opt (fail-consumed (tok :A)))
          [:A])
       {:value :<NA>, :consumed true}
 
-      (p (p/optional (fail-consumed (tok :A)))
+      (p (p/opt (fail-consumed (tok :A)))
          [:B])
       {:value nil, :consumed false}
 
-      (p (p/optional (fail-consumed (tok :A)))
+      (p (p/opt (fail-consumed (tok :A)))
          [])
       {:value nil, :consumed false}
 
@@ -353,27 +353,27 @@
   (testing "The `optional` with default value."
     (test/are [expr result] (= result expr)
 
-      (p (p/optional (tok :A) :X)
+      (p (p/opt (tok :A) :X)
          [:A])
       {:value :A, :consumed true}
 
-      (p (p/optional (tok :A) :X)
+      (p (p/opt (tok :A) :X)
          [:B])
       {:value :X, :consumed false}
 
-      (p (p/optional (tok :A) :X)
+      (p (p/opt (tok :A) :X)
          [])
       {:value :X, :consumed false}
 
-      (p (p/optional (fail-consumed (tok :A)) :X)
+      (p (p/opt (fail-consumed (tok :A)) :X)
          [:A])
       {:value :<NA>, :consumed true}
 
-      (p (p/optional (fail-consumed (tok :A)) :X)
+      (p (p/opt (fail-consumed (tok :A)) :X)
          [:B])
       {:value :X, :consumed false}
 
-      (p (p/optional (fail-consumed (tok :A)) :X)
+      (p (p/opt (fail-consumed (tok :A)) :X)
          [])
       {:value :X, :consumed false}
 
@@ -450,18 +450,18 @@
 
       ))
 
-  (testing 'p/many+
+  (testing 'p/many
     (test/are [expr result] (= result expr)
 
-      (p (p/many+ (tok :A :B :C))
+      (p (p/many (tok :A :B :C))
          [:A :B :C :D :E :F])
       {:value [:A :B :C], :consumed true}
 
-      (p (p/many+ (tok :D :E :F))
+      (p (p/many (tok :D :E :F))
          [:A :B :C :D :E :F])
       {:value :<NA>, :consumed false}
 
-      (p (p/many+ (tok :A :B :C))
+      (p (p/many (tok :A :B :C))
          [])
       {:value :<NA>, :consumed false}
 
@@ -506,35 +506,35 @@
 
 (deftest skip-t
 
-  (testing 'p/skip*
+  (testing 'p/skip-many*
     (test/are [expr result] (= result expr)
 
-      (p (p/skip* (tok :A))
+      (p (p/skip-many* (tok :A))
          [:A :A :A :B :B :B])
       {:value nil, :consumed true}
 
-      (p (p/skip* (tok :A))
+      (p (p/skip-many* (tok :A))
          [:B :B :B])
       {:value nil, :consumed false}
 
-      (p (p/skip* (tok :A))
+      (p (p/skip-many* (tok :A))
          [])
       {:value nil, :consumed false}
 
       ))
 
-  (testing 'p/skip+
+  (testing 'p/skip-many
     (test/are [expr result] (= result expr)
 
-      (p (p/skip+ (tok :A))
+      (p (p/skip-many (tok :A))
          [:A :A :A :B :B :B])
       {:value nil, :consumed true}
 
-      (p (p/skip+ (tok :A))
+      (p (p/skip-many (tok :A))
          [:B :B :B])
       {:value :<NA>, :consumed false}
 
-      (p (p/skip+ (tok :A))
+      (p (p/skip-many (tok :A))
          [])
       {:value :<NA>, :consumed false}
 
@@ -544,61 +544,229 @@
 
 (deftest sep-by-t
 
-  (testing 'p/sep-by*
+  (testing "One or more occurrences."
     (test/are [expr result] (= result expr)
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [:A :S :A :S :A])
       {:value [:A :A :A], :consumed true}
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [:A :S :A :S :A :S])
       {:value :<NA>, :consumed true}
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [:A :S :A :S :A :B])
       {:value [:A :A :A], :consumed true}
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [])
-      {:value nil, :consumed false}
+      {:value :<NA>, :consumed false}
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [:B])
-      {:value nil, :consumed false}
+      {:value :<NA>, :consumed false}
 
-      (p (p/sep-by* (tok :A) (tok :S))
+      (p (p/sep-by (tok :A) (tok :S))
          [:S])
-      {:value nil, :consumed false}
+      {:value :<NA>, :consumed false}
 
       ))
 
-  (testing 'p/sep-by+
+  (testing "Zero or more occurrences."
     (test/are [expr result] (= result expr)
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
          [:A :S :A :S :A])
       {:value [:A :A :A], :consumed true}
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
          [:A :S :A :S :A :S])
       {:value :<NA>, :consumed true}
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
          [:A :S :A :S :A :B])
       {:value [:A :A :A], :consumed true}
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
+         [])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
+         [:B])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-by (tok :A) (tok :S)))
+         [:S])
+      {:value nil, :consumed false}
+
+      )))
+
+(deftest sep-end-by-t
+
+  (testing "One or more occurrences."
+    (test/are [expr result] (= result expr)
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :B])
+      {:value :<NA>, :consumed true}
+
+      (p (p/sep-end-by (tok :A) (tok :S))
          [])
       {:value :<NA>, :consumed false}
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/sep-end-by (tok :A) (tok :S))
          [:B])
       {:value :<NA>, :consumed false}
 
-      (p (p/sep-by+ (tok :A) (tok :S))
+      (p (p/sep-end-by (tok :A) (tok :S))
          [:S])
       {:value :<NA>, :consumed false}
+
+      ))
+
+  (testing "Zero or more occurrences."
+    (test/are [expr result] (= result expr)
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :A])
+      {:value :<NA>, :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :B])
+      {:value :<NA>, :consumed true}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:B])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-end-by (tok :A) (tok :S)))
+         [:S])
+      {:value nil, :consumed false}
+
+      )))
+
+(deftest sep-opt-end-by-t
+
+  (testing "One or more occurrences."
+    (test/are [expr result] (= result expr)
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S :A])
+      '{:value (:A :A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :S :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :A])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:A :S :A :S :A :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [])
+      {:value :<NA>, :consumed false}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:B])
+      {:value :<NA>, :consumed false}
+
+      (p (p/sep-opt-end-by (tok :A) (tok :S))
+         [:S])
+      {:value :<NA>, :consumed false}
+
+      ))
+
+  (testing "Zero or more occurrences."
+    (test/are [expr result] (= result expr)
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S :A])
+      '{:value (:A :A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :S :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :A])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:A :S :A :S :A :B])
+      '{:value (:A :A :A), :consumed true}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:B])
+      {:value nil, :consumed false}
+
+      (p (p/opt (p/sep-opt-end-by (tok :A) (tok :S)))
+         [:S])
+      {:value nil, :consumed false}
 
       )))
 
