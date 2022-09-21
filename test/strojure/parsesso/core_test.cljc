@@ -237,6 +237,31 @@
 
     ))
 
+(deftest sequence-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/sequence [(tok :A) (tok :B) (tok :C)])
+       [:A :B :C])
+    '{:value (:A :B :C), :consumed true}
+
+    (p (p/sequence [(tok :A) (tok :B) (tok :C)])
+       [:B :C])
+    {:value :<NA>, :consumed false}
+
+    (p (p/sequence [(fail-consumed (tok :A)) (tok :B) (tok :C)])
+       [:A :B :C])
+    {:value :<NA>, :consumed true}
+
+    (p (p/sequence [])
+       [:A :B :C])
+    {:value nil, :consumed false}
+
+    (p (p/sequence nil)
+       [:A :B :C])
+    {:value nil, :consumed false}
+
+    ))
+
 (deftest ack-t
   (test/are [expr result] (= result expr)
 

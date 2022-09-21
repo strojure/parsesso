@@ -1,5 +1,5 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [and or])
+  (:refer-clojure :exclude [and or sequence])
   (:require [clojure.core :as c]
             [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
             [strojure.parsesso.impl.error :as e]
@@ -237,6 +237,15 @@
   "This parser applies function `f` to result of the parser `p`."
   [f p]
   (bind [x p] (return (f x))))
+
+(defn sequence
+  "This parser applies all parsers in `ps` sequentially and returns a sequence
+  of results if all parsers succeed."
+  [ps]
+  (if-let [p (first ps)]
+    (bind [x p, xs (sequence (rest ps))]
+      (return (cons x xs)))
+    (return nil)))
 
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
