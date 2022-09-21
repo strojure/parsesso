@@ -772,6 +772,19 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest eof-t
+  (test/are [expr result] (= result expr)
+
+    (p p/eof [])
+    {:value nil, :consumed false}
+
+    (p p/eof [:A])
+    {:value :<NA>, :consumed false}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (deftest many-till-t
   (test/are [expr result] (= result expr)
 
