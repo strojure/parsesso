@@ -24,7 +24,7 @@
   [parser input]
   (let [result (p/parse parser input)]
     (when (p/error? result)
-      (str (:error result)))))
+      (-> (:error result) (str) (string/split-lines)))))
 
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
@@ -53,10 +53,14 @@
   (test/are [expr result] (= result expr)
 
     (p-err (p/label (p/fail "Fail") "Message") [])
-    "message: Fail\nexpect: Message"
+    ["1:"
+     "expecting Message"
+     "Fail"]
 
     (p-err (p/label (p/fail "Fail") (delay "Message")) [])
-    "message: Fail\nexpect: Message"
+    ["1:"
+     "expecting Message"
+     "Fail"]
 
     )
   )
