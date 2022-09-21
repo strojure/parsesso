@@ -194,14 +194,22 @@
                               (continue (f x) s)))))
           (continue p state)))))
 
+#_(defmacro bind
+    [[& bindings] & body]
+    ;; TODO: validate macro arguments
+    (let [[sym p] (take 2 bindings)]
+      (if (= 2 (count bindings))
+        `(bind-fn ~p (fn [~sym] (let [p# ~@body]
+                                  ;; Allow return value directly in body
+                                  (cond-> p# (not (parser? p#)) (return)))))
+        `(bind-fn ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
+
 (defmacro bind
   [[& bindings] & body]
   ;; TODO: validate macro arguments
   (let [[sym p] (take 2 bindings)]
     (if (= 2 (count bindings))
-      `(bind-fn ~p (fn [~sym] (let [p# ~@body]
-                                ;; Allow return value directly in body
-                                (cond-> p# (not (parser? p#)) (return)))))
+      `(bind-fn ~p (fn [~sym] ~@body))
       `(bind-fn ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 (defn and

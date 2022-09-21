@@ -648,7 +648,7 @@
 
     (-> (p (p/bind [_ (p/debug-state "a") a (tok :A)
                     _ (p/debug-state "b") b (tok :B)]
-             [a b])
+             (p/return [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -657,7 +657,7 @@
 
     (-> (p (p/bind [_ (p/debug-state "a") a (tok :A)
                     _ (p/debug-state "b") b (tok :B)]
-             [a b])
+             (p/return [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -666,7 +666,7 @@
 
     (-> (p (p/bind [a (tok :A) _ (p/debug-state "a")
                     b (tok :B) _ (p/debug-state "b")]
-             [a b])
+             (p/return [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -679,7 +679,7 @@
 
     (-> (p (p/bind [a (p/debug-parser "a" (tok :A))
                     b (p/debug-parser "b" (tok :B))]
-             [a b])
+             (p/return [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -690,7 +690,7 @@
 
     (-> (p (p/bind [a (p/debug-parser "a" (tok :A))
                     b (p/debug-parser "b" (tok :B))]
-             [a b])
+             (p/return [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
