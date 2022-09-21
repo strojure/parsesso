@@ -772,6 +772,34 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest any-token-t
+  (test/are [expr result] (= result expr)
+
+    (p p/any-token [:A])
+    {:value :A, :consumed true}
+
+    (p p/any-token [])
+    {:value :<NA>, :consumed false}
+
+    ))
+
+(deftest not-followed-by-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/not-followed-by (tok :A))
+       [:A])
+    {:value :<NA>, :consumed false}
+
+    (p (p/not-followed-by (tok :A))
+       [:B])
+    {:value nil, :consumed false}
+
+    (p (p/not-followed-by (tok :A))
+       [])
+    {:value nil, :consumed false}
+
+    ))
+
 (deftest eof-t
   (test/are [expr result] (= result expr)
 
