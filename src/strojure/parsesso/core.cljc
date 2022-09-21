@@ -165,7 +165,7 @@
 
 ;;; combinators
 
-(defn bind*
+(defn bind-fn
   "m - parser, f - (fn [x] parser), returns parser"
   [p f]
   (parser
@@ -199,17 +199,17 @@
   ;; TODO: validate macro arguments
   (let [[sym p] (take 2 bindings)]
     (if (= 2 (count bindings))
-      `(bind* ~p (fn [~sym] (let [p# ~@body]
-                              ;; Allow return value directly in body
-                              (cond-> p# (not (parser? p#)) (return)))))
-      `(bind* ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
+      `(bind-fn ~p (fn [~sym] (let [p# ~@body]
+                                ;; Allow return value directly in body
+                                (cond-> p# (not (parser? p#)) (return)))))
+      `(bind-fn ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 (defn and
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
   ([p1 p2]
-   (bind* p1 (fn [_] p2)))
+   (bind-fn p1 (fn [_] p2)))
   ([p1 p2 & more]
    (reduce and (list* p1 p2 more))))
 
@@ -232,6 +232,11 @@
    (-> (or p1 p2) (or p3)))
   ([p1 p2 p3 & more]
    (reduce or (list* p1 p2 p3 more))))
+
+(defn fmap
+  "This parser applies function `f` to result of the parser `p`."
+  [f p]
+  (bind [x p] (return (f x))))
 
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,

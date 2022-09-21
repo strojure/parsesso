@@ -84,31 +84,31 @@
 (deftest bind-t
   (test/are [expr result] (= result expr)
 
-    (p (p/bind* (tok :A) p/return)
+    (p (p/bind-fn (tok :A) p/return)
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/bind* (tok :A) (fn [_] (p/fail "Oops")))
+    (p (p/bind-fn (tok :A) (fn [_] (p/fail "Oops")))
        [:A])
     {:value :<NA>, :consumed true}
 
-    (p (p/bind* (tok :A) p/return)
+    (p (p/bind-fn (tok :A) p/return)
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/bind* (tok :A) (fn [_] (p/fail "Oops")))
+    (p (p/bind-fn (tok :A) (fn [_] (p/fail "Oops")))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/bind* (tok :A) (fn [_] (tok :B)))
+    (p (p/bind-fn (tok :A) (fn [_] (tok :B)))
        [:A :B])
     {:value :B, :consumed true}
 
-    (p (p/bind* (tok :A) (fn [_] (tok :B)))
+    (p (p/bind-fn (tok :A) (fn [_] (tok :B)))
        [:B :A])
     {:value :<NA>, :consumed false}
 
-    (p (p/bind* (tok :A) (fn [_] (tok :B)))
+    (p (p/bind-fn (tok :A) (fn [_] (tok :B)))
        [:A :A])
     {:value :<NA>, :consumed true}
 
@@ -203,6 +203,35 @@
 
     (p (p/or (tok :A)
              (fail-consumed (tok :B)))
+       [])
+    {:value :<NA>, :consumed false}
+
+    ))
+
+(deftest fmap-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/fmap name (tok :A))
+       [:A])
+    {:value "A", :consumed true}
+
+    (p (p/fmap name (tok :A))
+       [:B])
+    {:value :<NA>, :consumed false}
+
+    (p (p/fmap name (tok :A))
+       [])
+    {:value :<NA>, :consumed false}
+
+    (p (p/fmap name (fail-consumed (tok :A)))
+       [:A])
+    {:value :<NA>, :consumed true}
+
+    (p (p/fmap name (fail-consumed (tok :A)))
+       [:B])
+    {:value :<NA>, :consumed false}
+
+    (p (p/fmap name (fail-consumed (tok :A)))
        [])
     {:value :<NA>, :consumed false}
 
