@@ -6,7 +6,7 @@
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
   #?(:clj  (:import (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
-     :cljs (:require-macros [strojure.parsesso.core :refer [when-let]])))
+     :cljs (:require-macros [strojure.parsesso.core :refer [defer when-let]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
