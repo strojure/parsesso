@@ -1,10 +1,10 @@
 (ns strojure.parsesso.core
   (:refer-clojure :exclude [sequence when-let])
-  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
+  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
-  #?(:clj  (:import (strojure.parsesso.impl.core Continue Parser)
+  #?(:clj  (:import (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
      :cljs (:require-macros [strojure.parsesso.core :refer [when-let]])))
 
