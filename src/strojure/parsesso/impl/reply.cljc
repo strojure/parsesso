@@ -29,7 +29,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord Success [value consumed state error])
+(defrecord Result [value consumed state error])
 
 (defrecord Failure [consumed error])
 
@@ -37,9 +37,9 @@
 
 (defn new-context
   []
-  (Context. (fn consumed-ok, [x s e] (Success. x true s e))
+  (Context. (fn consumed-ok, [x s e] (Result. x true s e))
             (fn consumed-err [e],,,, (Failure. true e))
-            (fn empty-ok,,,, [x s e] (Success. x false s e))
+            (fn empty-ok,,,, [x s e] (Result. x false s e))
             (fn empty-err,,, [e],,,, (Failure. false e))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
