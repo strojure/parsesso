@@ -43,6 +43,16 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(defn run
+  "Executes continuation loop starting from parser `p`."
+  [p state]
+  (loop [reply (p state)]
+    (if (instance? Continue reply)
+      (recur (run-cont reply))
+      reply)))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (defn throw-empty-input
   [sym]
   (fn [_ _ _]

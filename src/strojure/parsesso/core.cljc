@@ -447,10 +447,7 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (loop [reply (p (impl/->State (seq input) 1 nil))]
-    (if (instance? Continue reply)
-      (recur (impl/run-cont reply))
-      reply)))
+  (impl/run p (impl/->State (seq input) 1 nil)))
 
 (defn error? [reply] (instance? Failure reply))
 
