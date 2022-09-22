@@ -36,9 +36,9 @@
 
 (deftest return-t
   (test/are [expr result] (= result expr)
-    (p (p/return :A) []) #_=> {:value :A, :consumed false}
-    (p (p/return :A) [:B]) #_=> {:value :A, :consumed false}
-    (p (fail-consumed (p/return :A)) []) #_=> {:value :A, :consumed false}
+    (p (p/result :A) []) #_=> {:value :A, :consumed false}
+    (p (p/result :A) [:B]) #_=> {:value :A, :consumed false}
+    (p (fail-consumed (p/result :A)) []) #_=> {:value :A, :consumed false}
     ))
 
 (deftest fail-t
@@ -84,7 +84,7 @@
 (deftest bind-t
   (test/are [expr result] (= result expr)
 
-    (p (p/bind (tok :A) p/return)
+    (p (p/bind (tok :A) p/result)
        [:A])
     {:value :A, :consumed true}
 
@@ -92,7 +92,7 @@
        [:A])
     {:value :<NA>, :consumed true}
 
-    (p (p/bind (tok :A) p/return)
+    (p (p/bind (tok :A) p/result)
        [:B])
     {:value :<NA>, :consumed false}
 
@@ -1013,7 +1013,7 @@
 
     (-> (p (p/when-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
-             (p/return [a b]))
+             (p/result [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -1022,7 +1022,7 @@
 
     (-> (p (p/when-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
-             (p/return [a b]))
+             (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -1031,7 +1031,7 @@
 
     (-> (p (p/when-let [a (tok :A) _ (p/debug-state "a")
                         b (tok :B) _ (p/debug-state "b")]
-             (p/return [a b]))
+             (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -1044,7 +1044,7 @@
 
     (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
                         b (p/debug-parser "b" (tok :B))]
-             (p/return [a b]))
+             (p/result [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -1055,7 +1055,7 @@
 
     (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
                         b (p/debug-parser "b" (tok :B))]
-             (p/return [a b]))
+             (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))

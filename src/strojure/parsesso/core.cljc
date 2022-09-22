@@ -27,7 +27,7 @@
 
 ;;; parsers
 
-(defn return
+(defn result
   "This parser always succeeds with value `x` without consuming any input."
   [x]
   (parser
@@ -235,7 +235,7 @@
   "This parser applies function `f` to result of the parser `p`."
   [f p]
   (when-let [x p]
-    (return (f x))))
+    (result (f x))))
 
 (defn sequence
   "This parser tries to apply parsers in order until all of them succeeds.
@@ -243,8 +243,8 @@
   [ps]
   (if-let [p (first ps)]
     (when-let [x p, xs (sequence (rest ps))]
-      (return (cons x xs)))
-    (return nil)))
+      (result (cons x xs)))
+    (result nil)))
 
 ;; TODO: Consider removing optional from API
 (defn optional
@@ -254,7 +254,7 @@
   and behaves like `option` combinator."
   ([p] (optional p nil))
   ([p x]
-   (or p (return x))))
+   (or p (result x))))
 
 (defn between
   "This parser parses `open`, followed by `p` and `close`. Returns the value
@@ -262,7 +262,7 @@
   ([p around] (between p around around))
   ([p open close]
    (when-let [_ open, x p, _ close]
-     (return x))))
+     (result x))))
 
 (defn skip+
   "This parser applies the parser `p` /one/ or more times, skipping its result."
@@ -274,7 +274,7 @@
   the returned values of `p`."
   [p]
   (when-let [x p, xs (many* p)]
-    (return (cons x xs))))
+    (result (cons x xs))))
 
 ;; TODO: argument order
 ;; TODO: Check if it should be consumed or not if n > length.
@@ -285,35 +285,35 @@
   returned by `p`."
   [n p]
   (if (pos? n) (when-let [x p, xs (many-count (dec n) p)]
-                 (return (cons x xs)))
-               (return nil)))
+                 (result (cons x xs)))
+               (result nil)))
 
 (defn sep-by+
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p, xs (many* (and sep p))]
-    (return (cons x xs))))
+    (result (cons x xs))))
 
 (defn sep-by*
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
   (or (sep-by+ p sep)
-      (return nil)))
+      (result nil)))
 
 (defn sep-by-end+
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (many+ (when-let [x p, _ sep] (return x))))
+  (many+ (when-let [x p, _ sep] (result x))))
 
 (defn sep-by-end*
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (or (sep-by-end+ p sep)
-      (return nil)))
+      (result nil)))
 
 (declare sep-by-end-opt*)
 
@@ -323,15 +323,15 @@
   [p sep]
   (when-let [x p]
     (or (when-let [_ sep, xs (sep-by-end-opt* p sep)]
-          (return (cons x xs)))
-        (return [x]))))
+          (result (cons x xs)))
+        (result [x]))))
 
 (defn sep-by-end-opt*
   "This parser parses /zero/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (or (sep-by-end-opt+ p sep)
-      (return nil)))
+      (result nil)))
 
 ;; TODO: Consider moving chains to separate namespace like kern
 
@@ -344,7 +344,7 @@
   [p op]
   (letfn [(more [x] (or (when-let [f op, y p]
                           (more (f x y)))
-                        (return x)))]
+                        (result x)))]
     (when-let [x p]
       (more x))))
 
@@ -355,7 +355,7 @@
   of `p`, the value `x` is returned."
   [p op x]
   (or (chain-left+ p op)
-      (return x)))
+      (result x)))
 
 (defn chain-right+
   "This parser parses /one/ or more occurrences of `p`, separated by `op`.
@@ -365,8 +365,8 @@
   (letfn [(scan [] (when-let [x p]
                      (more x)))
           (more [x] (or (when-let [f op, y (scan)]
-                          (return (f x y)))
-                        (return x)))]
+                          (result (f x y)))
+                        (result x)))]
     (scan)))
 
 (defn chain-right*
@@ -376,7 +376,7 @@
   value `x` is returned."
   [p op x]
   (or (chain-right+ p op)
-      (return x)))
+      (result x)))
 
 ;;; Tricky combinators
 
@@ -394,7 +394,7 @@
   [p]
   (escape (or (when-let [c (escape p)]
                 (unexpected (delay (str c))))
-              (return nil))))
+              (result nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -407,9 +407,9 @@
   "This parser applies parser `p` /zero/ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
-  (letfn [(scan [] (or (and end (return nil))
+  (letfn [(scan [] (or (and end (result nil))
                        (when-let [x p, xs (scan)]
-                         (return (cons x xs)))))]
+                         (result (cons x xs)))))]
     (scan)))
 
 (defn debug-state
@@ -421,7 +421,7 @@
                          _ (do (println (str label ": " x))
                                (escape eof))]
                 (fail x)))
-      (return nil)))
+      (result nil)))
 
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
