@@ -772,6 +772,162 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest chain-left-t
+  (testing 'p/chain-left+
+    (test/are [expr result] (= result expr)
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [8 - 2 / 2])
+      {:value 3, :consumed true}
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [8 - 2 2])
+      {:value 6, :consumed true}
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [1])
+      {:value 1, :consumed true}
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [+])
+      {:value :<NA>, :consumed false}
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [0])
+      {:value :<NA>, :consumed false}
+
+      (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /))
+         [])
+      {:value :<NA>, :consumed false}
+
+      ))
+
+  (testing 'p/chain-left*
+    (test/are [expr result] (= result expr)
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [8 - 2 / 2])
+      {:value 3, :consumed true}
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [8 - 2 2])
+      {:value 6, :consumed true}
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [1])
+      {:value 1, :consumed true}
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [+])
+      {:value 0, :consumed false}
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [0])
+      {:value 0, :consumed false}
+
+      (p (p/chain-left* (tok 1 2 3 3 4 5 6 7 8 9)
+                        (tok + - * /)
+                        0)
+         [])
+      {:value 0, :consumed false}
+
+      )))
+
+(deftest chain-right-t
+  (testing 'p/chain-right+
+    (test/are [expr result] (= result expr)
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [8 - 2 / 2])
+      {:value 7, :consumed true}
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [8 - 2 2])
+      {:value 6, :consumed true}
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [1])
+      {:value 1, :consumed true}
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [+])
+      {:value :<NA>, :consumed false}
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [0])
+      {:value :<NA>, :consumed false}
+
+      (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
+         [])
+      {:value :<NA>, :consumed false}
+
+      ))
+
+  (testing 'p/chain-right*
+    (test/are [expr result] (= result expr)
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [8 - 2 / 2])
+      {:value 7, :consumed true}
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [8 - 2 2])
+      {:value 6, :consumed true}
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [1])
+      {:value 1, :consumed true}
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [+])
+      {:value 0, :consumed false}
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [0])
+      {:value 0, :consumed false}
+
+      (p (p/chain-right* (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
+         [])
+      {:value 0, :consumed false}
+
+      )))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (deftest any-token-t
   (test/are [expr result] (= result expr)
 

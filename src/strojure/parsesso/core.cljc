@@ -321,15 +321,27 @@
           (return (cons x xs)))
         (return [x]))))
 
-(declare chain-right+)
+;; TODO: Consider moving chains to separate namespace like kern
 
-(defn chain-right*
-  "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
-  obtained by a /right/ associative application of all functions returned by
-  `op` to the values returned by `p`. If there are no occurrences of `p`, the
-  value `x` is returned."
+(defn chain-left+
+  "This parser parses /one/ or more occurrences of `p`, separated by `op`
+  Returns a value obtained by a /left/ associative application of all functions
+  returned by `op` to the values returned by `p`. This parser can for example be
+  used to eliminate left recursion which typically occurs in expression
+  grammars."
+  [p op]
+  (letfn [(more [x] (or (bind [f op, y p] (more (f x y)))
+                        (return x)))]
+    (bind [x p]
+      (more x))))
+
+(defn chain-left*
+  "This parser parses /zero/ or more occurrences of `p`, separated by `op`.
+  Returns a value obtained by a /left/ associative application of all functions
+  returned by `op` to the values returned by `p`. If there are zero occurrences
+  of `p`, the value `x` is returned."
   [p op x]
-  (or (chain-right+ p op)
+  (or (chain-left+ p op)
       (return x)))
 
 (defn chain-right+
@@ -342,28 +354,14 @@
                         (return x)))]
     (scan)))
 
-(declare chain-left+)
-
-(defn chain-left*
-  "This parser parses /zero/ or more occurrences of `p`, separated by `op`.
-  Returns a value obtained by a /left/ associative application of all functions
-  returned by `op` to the values returned by `p`. If there are zero occurrences
-  of `p`, the value `x` is returned."
+(defn chain-right*
+  "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
+  obtained by a /right/ associative application of all functions returned by
+  `op` to the values returned by `p`. If there are no occurrences of `p`, the
+  value `x` is returned."
   [p op x]
-  (or (chain-left+ p op)
+  (or (chain-right+ p op)
       (return x)))
-
-(defn chain-left+
-  "This parser parses /one/ or more occurrences of `p`, separated by `op`
-  Returns a value obtained by a /left/ associative application of all functions
-  returned by `op` to the values returned by `p`. This parser can for example be
-  used to eliminate left recursion which typically occurs in expression
-  grammars."
-  [p op]
-  (letfn [(more [x] (or (bind [f op, y p] (more (f x y)))
-                        (return x)))]
-    (bind [x p]
-      (return (more x)))))
 
 ;;; Tricky combinators
 
