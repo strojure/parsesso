@@ -262,30 +262,30 @@
 
     ))
 
-(deftest ack-t
+(deftest escape-t
   (test/are [expr result] (= result expr)
 
-    (p (p/ack (tok :A))
+    (p (p/escape (tok :A))
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/ack (tok :A))
+    (p (p/escape (tok :A))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/ack (tok :A))
+    (p (p/escape (tok :A))
        [])
     {:value :<NA>, :consumed false}
 
-    (p (p/ack (fail-consumed (tok :A)))
+    (p (p/escape (fail-consumed (tok :A)))
        [:A])
     {:value :<NA>, :consumed false}
 
-    (p (p/ack (fail-consumed (tok :A)))
+    (p (p/escape (fail-consumed (tok :A)))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/ack (fail-consumed (tok :A)))
+    (p (p/escape (fail-consumed (tok :A)))
        [])
     {:value :<NA>, :consumed false}
 
