@@ -193,16 +193,12 @@
                               (continue (f x) s)))))
           (continue p state)))))
 
-(defn >>
-  "This parser tries to apply the parsers in order, until last of them succeeds.
-  Returns the value of the last parser, discards result of all preceding
-  parsers."
-  ([p1 p2]
-   (bind p1 (fn [_] p2)))
-  ([p1 p2 p3]
-   (-> (>> p1 p2) (>> p3)))
-  ([p1 p2 p3 & more]
-   (reduce >> (list* p1 p2 p3 more))))
+(defmacro defer
+  [& body]
+  (let [state (gensym) context (gensym)]
+    `(parser
+       (fn [~state ~context]
+         (continue (do ~@body) ~state ~context)))))
 
 (defmacro when-let
   [[& bindings] & body]
@@ -212,12 +208,16 @@
       `(bind ~p (fn [~sym] ~@body))
       `(bind ~p (fn [~sym] (when-let ~(drop 2 bindings) ~@body))))))
 
-(defmacro defer
-  [p]
-  (let [state (gensym) context (gensym)]
-    `(parser
-       (fn [~state ~context]
-         (continue ~p ~state ~context)))))
+(defn >>
+  "This parser tries to apply the parsers in order, until last of them succeeds.
+  Returns the value of the last parser, discards result of all preceding
+  parsers."
+  ([p1 p2]
+   (bind p1 (fn [_] p2)))
+  ([p1 p2 p3]
+   (-> p1 (>> p2) (>> p3)))
+  ([p1 p2 p3 & more]
+   (reduce >> (list* p1 p2 p3 more))))
 
 (defn alt
   "This parser tries to apply the parsers in order, until one of them succeeds.
@@ -314,7 +314,8 @@
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (many+ (when-let [x p, _ sep] (result x))))
+  (many+ (when-let [x p, _ sep]
+           (result x))))
 
 (defn sep-by-end*
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
@@ -426,8 +427,8 @@
   states."
   [label]
   (alt (escape (when-let [x (escape (many+ any-token))
-                          _ (do (println (str label ": " x))
-                                (escape eof))]
+                          _ (defer (println (str label ": " x))
+                                   (escape eof))]
                  (fail x)))
        (result nil)))
 
@@ -437,10 +438,9 @@
   indicate that the label has been backtracked. It is intended to be used for
   debugging parsers by inspecting their intermediate states."
   [label p]
-  (when-let [_ (debug-state label)]
-    (alt p
-         (do (println (str label "  backtracked"))
-             (fail label)))))
+  (>> (debug-state label)
+      (alt p, (defer (println (str label "  backtracked"))
+                     (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

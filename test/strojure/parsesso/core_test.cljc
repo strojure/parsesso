@@ -1049,9 +1049,7 @@
         (with-out-str)
         (string/split-lines))
     ["a: (:A :B :C)"
-     "a  backtracked"
-     "b: (:B :C)"
-     "b  backtracked"]
+     "b: (:B :C)"]
 
     (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
                         b (p/debug-parser "b" (tok :B))]
@@ -1060,8 +1058,25 @@
         (with-out-str)
         (string/split-lines))
     ["a: (:A :B)"
-     "a  backtracked"
-     "b: (:B)"
+     "b: (:B)"]
+
+    (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
+                        b (p/debug-parser "b" (tok :B))]
+             (p/result [a b]))
+           [:B :C])
+        (with-out-str)
+        (string/split-lines))
+    ["a: (:B :C)"
+     "a  backtracked"]
+
+    (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
+                        b (p/debug-parser "b" (tok :B))]
+             (p/result [a b]))
+           [:A :C])
+        (with-out-str)
+        (string/split-lines))
+    ["a: (:A :C)"
+     "b: (:C)"
      "b  backtracked"]
 
     ))
