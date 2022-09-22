@@ -145,12 +145,12 @@
             (r/set-e-err (partial r/e-ok context nil state))
             (continue p state))))))
 
-(defn skip-many*
+(defn skip*
   "This parser applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip-many*)))
+      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip*)))
             walk (fn walk [_x s _e]
                    (-> my-context
                        (r/set-c-ok walk)
@@ -193,16 +193,6 @@
                                              (r/e-err context (e/merge-error e ee))))
                               (continue (f x) s)))))
           (continue p state)))))
-
-#_(defmacro bind
-    [[& bindings] & body]
-    ;; TODO: validate macro arguments
-    (let [[sym p] (take 2 bindings)]
-      (if (= 2 (count bindings))
-        `(bind-fn ~p (fn [~sym] (let [p# ~@body]
-                                  ;; Allow return value directly in body
-                                  (cond-> p# (not (parser? p#)) (return)))))
-        `(bind-fn ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
 
 (defmacro bind
   [[& bindings] & body]
@@ -255,12 +245,13 @@
       (return (cons x xs)))
     (return nil)))
 
-(defn opt
+;; TODO: Consider removing optional from API
+(defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
   Unlike Haskell's `optional` combinator it does not discard the result of `p`
   and behaves like `option` combinator."
-  ([p] (opt p nil))
+  ([p] (optional p nil))
   ([p x]
    (or p (return x))))
 
@@ -272,12 +263,12 @@
    (bind [_ open, x p, _ close]
      (return x))))
 
-(defn skip-many
+(defn skip+
   "This parser applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (and p (skip-many* p)))
+  (and p (skip* p)))
 
-(defn many
+(defn many+
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
   the returned values of `p`."
   [p]
@@ -296,30 +287,50 @@
                  (return (cons x xs)))
                (return nil)))
 
-(defn sep-by
+(defn sep-by+
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`. Wrap to `opt` for zero
-  occurrences."
+  Returns a sequence of values returned by `p`."
   [p sep]
   (bind [x p, xs (many* (and sep p))]
     (return (cons x xs))))
 
-(defn sep-end-by
-  "This parser parses /one/ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a sequence of values returned by `p`. Wrap to `opt` for zero
-  occurrences."
+(defn sep-by*
+  "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
+  Returns a sequence of values returned by `p`."
   [p sep]
-  (many (bind [x p, _ sep] (return x))))
+  (or (sep-by+ p sep)
+      (return nil)))
 
-(defn sep-opt-end-by
+(defn sep-by-end+
+  "This parser parses /one/ or more occurrences of `p`, separated and ended by
+  `sep`. Returns a sequence of values returned by `p`."
+  [p sep]
+  (many+ (bind [x p, _ sep] (return x))))
+
+(defn sep-by-end*
+  "This parser parses /zero/ or more occurrences of `p`, separated and ended by
+  `sep`. Returns a sequence of values returned by `p`."
+  [p sep]
+  (or (sep-by-end+ p sep)
+      (return nil)))
+
+(declare sep-by-end-opt*)
+
+(defn sep-by-end-opt+
   "This parser parses /one/ or more occurrences of `p`, separated and optionally
-  ended by `sep`. Returns a sequence of values returned by `p`. Wrap to `opt`
-  for zero occurrences."
+  ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (bind [x p]
-    (or (bind [_ sep, xs (opt (sep-opt-end-by p sep))]
+    (or (bind [_ sep, xs (sep-by-end-opt* p sep)]
           (return (cons x xs)))
         (return [x]))))
+
+(defn sep-by-end-opt*
+  "This parser parses /zero/ or more occurrences of `p`, separated and optionally
+  ended by `sep`. Returns a sequence of values returned by `p`."
+  [p sep]
+  (or (sep-by-end-opt+ p sep)
+      (return nil)))
 
 ;; TODO: Consider moving chains to separate namespace like kern
 
@@ -401,7 +412,7 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (or (escape (bind [x (escape (many any-token))
+  (or (escape (bind [x (escape (many+ any-token))
                      _ (do (println (str label ": " x))
                            (escape eof))]
                 (fail x)))
