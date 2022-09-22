@@ -4,7 +4,8 @@
                           :exclude []
                           :suggest {}}
            :unsorted-required-namespaces {:level :warning}}
- :lint-as {strojure.parsesso.core/bind clojure.core/let}
+ :lint-as {cljs.core/defrecord clojure.core/defrecord
+           strojure.parsesso.core/when-let clojure.core/let}
  :config-in-comment {:linters {:redundant-expression {:level :off}
                                :unresolved-namespace {:level :off}
                                :unresolved-symbol {:level :off}

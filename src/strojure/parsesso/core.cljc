@@ -1,5 +1,5 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [and or sequence])
+  (:refer-clojure :exclude [and or sequence when-let])
   (:require [clojure.core :as c]
             [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
             [strojure.parsesso.impl.error :as e]
@@ -7,7 +7,7 @@
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
   #?(:clj  (:import (strojure.parsesso.impl.core Continue Parser)
                     (strojure.parsesso.impl.reply Failure))
-     :cljs (:require-macros [strojure.parsesso.core :refer [bind]])))
+     :cljs (:require-macros [strojure.parsesso.core :refer [when-let]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -165,7 +165,7 @@
 
 ;;; combinators
 
-(defn bind-fn
+(defn bind
   "m - parser, f - (fn [x] parser), returns parser"
   [p f]
   (parser
@@ -194,20 +194,20 @@
                               (continue (f x) s)))))
           (continue p state)))))
 
-(defmacro bind
+(defmacro when-let
   [[& bindings] & body]
   ;; TODO: validate macro arguments
   (let [[sym p] (take 2 bindings)]
     (if (= 2 (count bindings))
-      `(bind-fn ~p (fn [~sym] ~@body))
-      `(bind-fn ~p (fn [~sym] (bind ~(drop 2 bindings) ~@body))))))
+      `(bind ~p (fn [~sym] ~@body))
+      `(bind ~p (fn [~sym] (when-let ~(drop 2 bindings) ~@body))))))
 
 (defn and
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
   ([p1 p2]
-   (bind-fn p1 (fn [_] p2)))
+   (bind p1 (fn [_] p2)))
   ([p1 p2 & more]
    (reduce and (list* p1 p2 more))))
 
@@ -234,14 +234,15 @@
 (defn fmap
   "This parser applies function `f` to result of the parser `p`."
   [f p]
-  (bind [x p] (return (f x))))
+  (when-let [x p]
+    (return (f x))))
 
 (defn sequence
-  "This parser applies all parsers in `ps` sequentially and returns a sequence
-  of values returned by every parser if all parsers succeed."
+  "This parser tries to apply parsers in order until all of them succeeds.
+  Returns a sequence of values returned by every parser."
   [ps]
   (if-let [p (first ps)]
-    (bind [x p, xs (sequence (rest ps))]
+    (when-let [x p, xs (sequence (rest ps))]
       (return (cons x xs)))
     (return nil)))
 
@@ -260,7 +261,7 @@
   returned by `p`."
   ([p around] (between p around around))
   ([p open close]
-   (bind [_ open, x p, _ close]
+   (when-let [_ open, x p, _ close]
      (return x))))
 
 (defn skip+
@@ -272,7 +273,7 @@
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
   the returned values of `p`."
   [p]
-  (bind [x p, xs (many* p)]
+  (when-let [x p, xs (many* p)]
     (return (cons x xs))))
 
 ;; TODO: argument order
@@ -283,7 +284,7 @@
   zero, the parser equals to `(return nil)`. Returns a sequence of `n` values
   returned by `p`."
   [n p]
-  (if (pos? n) (bind [x p, xs (many-count (dec n) p)]
+  (if (pos? n) (when-let [x p, xs (many-count (dec n) p)]
                  (return (cons x xs)))
                (return nil)))
 
@@ -291,7 +292,7 @@
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (bind [x p, xs (many* (and sep p))]
+  (when-let [x p, xs (many* (and sep p))]
     (return (cons x xs))))
 
 (defn sep-by*
@@ -305,7 +306,7 @@
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (many+ (bind [x p, _ sep] (return x))))
+  (many+ (when-let [x p, _ sep] (return x))))
 
 (defn sep-by-end*
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
@@ -320,8 +321,8 @@
   "This parser parses /one/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (bind [x p]
-    (or (bind [_ sep, xs (sep-by-end-opt* p sep)]
+  (when-let [x p]
+    (or (when-let [_ sep, xs (sep-by-end-opt* p sep)]
           (return (cons x xs)))
         (return [x]))))
 
@@ -341,9 +342,10 @@
   used to eliminate left recursion which typically occurs in expression
   grammars."
   [p op]
-  (letfn [(more [x] (or (bind [f op, y p] (more (f x y)))
+  (letfn [(more [x] (or (when-let [f op, y p]
+                          (more (f x y)))
                         (return x)))]
-    (bind [x p]
+    (when-let [x p]
       (more x))))
 
 (defn chain-left*
@@ -360,8 +362,10 @@
   Returns a value obtained by a /right/ associative application of all functions
   returned by `op` to the values returned by `p`."
   [p op]
-  (letfn [(scan [] (bind [x p] (more x)))
-          (more [x] (or (bind [f op, y (scan)] (return (f x y)))
+  (letfn [(scan [] (when-let [x p]
+                     (more x)))
+          (more [x] (or (when-let [f op, y (scan)]
+                          (return (f x y)))
                         (return x)))]
     (scan)))
 
@@ -388,7 +392,8 @@
   that a keyword is not followed by a legal identifier character, in which case
   the keyword is actually an identifier (for example `lets`)."
   [p]
-  (escape (or (bind [c (escape p)] (unexpected (delay (str c))))
+  (escape (or (when-let [c (escape p)]
+                (unexpected (delay (str c))))
               (return nil))))
 
 (def eof
@@ -403,7 +408,7 @@
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
   (letfn [(scan [] (or (and end (return nil))
-                       (bind [x p, xs (scan)]
+                       (when-let [x p, xs (scan)]
                          (return (cons x xs)))))]
     (scan)))
 
@@ -412,9 +417,9 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (or (escape (bind [x (escape (many+ any-token))
-                     _ (do (println (str label ": " x))
-                           (escape eof))]
+  (or (escape (when-let [x (escape (many+ any-token))
+                         _ (do (println (str label ": " x))
+                               (escape eof))]
                 (fail x)))
       (return nil)))
 
@@ -424,7 +429,7 @@
   indicate that the label has been backtracked. It is intended to be used for
   debugging parsers by inspecting their intermediate states."
   [label p]
-  (bind [_ (debug-state label)]
+  (when-let [_ (debug-state label)]
     (or p
         (do (println (str label "  backtracked"))
             (fail label)))))
