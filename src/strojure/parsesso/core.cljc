@@ -1,7 +1,6 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [and sequence when-let])
-  (:require [clojure.core :as c]
-            [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
+  (:refer-clojure :exclude [sequence when-let])
+  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
@@ -194,6 +193,17 @@
                               (continue (f x) s)))))
           (continue p state)))))
 
+(defn >>
+  "This parser tries to apply the parsers in order, until last of them succeeds.
+  Returns the value of the last parser, discards result of all preceding
+  parsers."
+  ([p1 p2]
+   (bind p1 (fn [_] p2)))
+  ([p1 p2 p3]
+   (-> (>> p1 p2) (>> p3)))
+  ([p1 p2 p3 & more]
+   (reduce >> (list* p1 p2 p3 more))))
+
 (defmacro when-let
   [[& bindings] & body]
   ;; TODO: validate macro arguments
@@ -202,14 +212,12 @@
       `(bind ~p (fn [~sym] ~@body))
       `(bind ~p (fn [~sym] (when-let ~(drop 2 bindings) ~@body))))))
 
-(defn and
-  "This parser tries to apply the parsers in order, until last of them succeeds.
-  Returns the value of the last parser, discards result of all preceding
-  parsers."
-  ([p1 p2]
-   (bind p1 (fn [_] p2)))
-  ([p1 p2 & more]
-   (reduce and (list* p1 p2 more))))
+(defmacro defer
+  [p]
+  (let [state (gensym) context (gensym)]
+    `(parser
+       (fn [~state ~context]
+         (continue ~p ~state ~context)))))
 
 (defn alt
   "This parser tries to apply the parsers in order, until one of them succeeds.
@@ -227,7 +235,7 @@
                               (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
-   (-> (alt p1 p2) (alt p3)))
+   (-> p1 (alt p2) (alt p3)))
   ([p1 p2 p3 & more]
    (reduce alt (list* p1 p2 p3 more))))
 
@@ -267,7 +275,7 @@
 (defn skip+
   "This parser applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (and p (skip* p)))
+  (>> p (skip* p)))
 
 (defn many+
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
@@ -292,7 +300,7 @@
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (when-let [x p, xs (many* (and sep p))]
+  (when-let [x p, xs (many* (>> sep p))]
     (result (cons x xs))))
 
 (defn sep-by*
@@ -407,7 +415,7 @@
   "This parser applies parser `p` /zero/ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
-  (letfn [(scan [] (alt (and end (result nil))
+  (letfn [(scan [] (alt (>> end (result nil))
                         (when-let [x p, xs (scan)]
                           (result (cons x xs)))))]
     (scan)))

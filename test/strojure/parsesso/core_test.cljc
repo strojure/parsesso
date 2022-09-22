@@ -29,7 +29,7 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/alt (p/and parser (p/fail "Oops"))
+  (p/alt (p/>> parser (p/fail "Oops"))
          parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -117,27 +117,27 @@
 (deftest and-t
   (test/are [expr result] (= result expr)
 
-    (p (p/and (tok :A) (tok :B))
+    (p (p/>> (tok :A) (tok :B))
        [:A :B])
     {:value :B, :consumed true}
 
-    (p (p/and (tok :A) (tok :B))
+    (p (p/>> (tok :A) (tok :B))
        [:A :A])
     {:value :<NA>, :consumed true}
 
-    (p (p/and (tok :A) (tok :B))
+    (p (p/>> (tok :A) (tok :B))
        [:A])
     {:value :<NA>, :consumed true}
 
-    (p (p/and (fail-consumed (tok :A)) (tok :B))
+    (p (p/>> (fail-consumed (tok :A)) (tok :B))
        [:A :B])
     {:value :<NA>, :consumed true}
 
-    (p (p/and (tok :A) (fail-consumed (tok :B)))
+    (p (p/>> (tok :A) (fail-consumed (tok :B)))
        [:A :B])
     {:value :<NA>, :consumed true}
 
-    (p (p/and (tok :A) (tok :B) (tok :C))
+    (p (p/>> (tok :A) (tok :B) (tok :C))
        [:A :B :C])
     {:value :C, :consumed true}
 
