@@ -1,5 +1,5 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [and or sequence when-let])
+  (:refer-clojure :exclude [and sequence when-let])
   (:require [clojure.core :as c]
             [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Continue Parser]))]
             [strojure.parsesso.impl.error :as e]
@@ -55,7 +55,7 @@
   [p msg]
   (parser
     (fn [state context]
-      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (c/or msg "")))]
+      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (or msg "")))]
         (-> context
             (r/set-e-ok (fn [x s e]
                           (r/e-ok context x s (cond-> e (not (e/empty? e))
@@ -211,7 +211,7 @@
   ([p1 p2 & more]
    (reduce and (list* p1 p2 more))))
 
-(defn or
+(defn alt
   "This parser tries to apply the parsers in order, until one of them succeeds.
   Returns the value of the succeeding parser."
   ([p1 p2]
@@ -227,9 +227,9 @@
                               (continue p2 state))))
            (continue p1 state)))))
   ([p1 p2 p3]
-   (-> (or p1 p2) (or p3)))
+   (-> (alt p1 p2) (alt p3)))
   ([p1 p2 p3 & more]
-   (reduce or (list* p1 p2 p3 more))))
+   (reduce alt (list* p1 p2 p3 more))))
 
 (defn fmap
   "This parser applies function `f` to result of the parser `p`."
@@ -254,7 +254,7 @@
   and behaves like `option` combinator."
   ([p] (optional p nil))
   ([p x]
-   (or p (result x))))
+   (alt p (result x))))
 
 (defn between
   "This parser parses `open`, followed by `p` and `close`. Returns the value
@@ -299,8 +299,8 @@
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (or (sep-by+ p sep)
-      (result nil)))
+  (alt (sep-by+ p sep)
+       (result nil)))
 
 (defn sep-by-end+
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
@@ -312,8 +312,8 @@
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (or (sep-by-end+ p sep)
-      (result nil)))
+  (alt (sep-by-end+ p sep)
+       (result nil)))
 
 (declare sep-by-end-opt*)
 
@@ -322,16 +322,16 @@
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p]
-    (or (when-let [_ sep, xs (sep-by-end-opt* p sep)]
-          (result (cons x xs)))
-        (result [x]))))
+    (alt (when-let [_ sep, xs (sep-by-end-opt* p sep)]
+           (result (cons x xs)))
+         (result [x]))))
 
 (defn sep-by-end-opt*
   "This parser parses /zero/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (or (sep-by-end-opt+ p sep)
-      (result nil)))
+  (alt (sep-by-end-opt+ p sep)
+       (result nil)))
 
 ;; TODO: Consider moving chains to separate namespace like kern
 
@@ -342,9 +342,9 @@
   used to eliminate left recursion which typically occurs in expression
   grammars."
   [p op]
-  (letfn [(more [x] (or (when-let [f op, y p]
-                          (more (f x y)))
-                        (result x)))]
+  (letfn [(more [x] (alt (when-let [f op, y p]
+                           (more (f x y)))
+                         (result x)))]
     (when-let [x p]
       (more x))))
 
@@ -354,8 +354,8 @@
   returned by `op` to the values returned by `p`. If there are zero occurrences
   of `p`, the value `x` is returned."
   [p op x]
-  (or (chain-left+ p op)
-      (result x)))
+  (alt (chain-left+ p op)
+       (result x)))
 
 (defn chain-right+
   "This parser parses /one/ or more occurrences of `p`, separated by `op`.
@@ -364,9 +364,9 @@
   [p op]
   (letfn [(scan [] (when-let [x p]
                      (more x)))
-          (more [x] (or (when-let [f op, y (scan)]
-                          (result (f x y)))
-                        (result x)))]
+          (more [x] (alt (when-let [f op, y (scan)]
+                           (result (f x y)))
+                         (result x)))]
     (scan)))
 
 (defn chain-right*
@@ -375,8 +375,8 @@
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (or (chain-right+ p op)
-      (result x)))
+  (alt (chain-right+ p op)
+       (result x)))
 
 ;;; Tricky combinators
 
@@ -392,9 +392,9 @@
   that a keyword is not followed by a legal identifier character, in which case
   the keyword is actually an identifier (for example `lets`)."
   [p]
-  (escape (or (when-let [c (escape p)]
-                (unexpected (delay (str c))))
-              (result nil))))
+  (escape (alt (when-let [c (escape p)]
+                 (unexpected (delay (str c))))
+               (result nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -407,9 +407,9 @@
   "This parser applies parser `p` /zero/ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
-  (letfn [(scan [] (or (and end (result nil))
-                       (when-let [x p, xs (scan)]
-                         (result (cons x xs)))))]
+  (letfn [(scan [] (alt (and end (result nil))
+                        (when-let [x p, xs (scan)]
+                          (result (cons x xs)))))]
     (scan)))
 
 (defn debug-state
@@ -417,11 +417,11 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (or (escape (when-let [x (escape (many+ any-token))
-                         _ (do (println (str label ": " x))
-                               (escape eof))]
-                (fail x)))
-      (result nil)))
+  (alt (escape (when-let [x (escape (many+ any-token))
+                          _ (do (println (str label ": " x))
+                                (escape eof))]
+                 (fail x)))
+       (result nil)))
 
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
@@ -430,9 +430,9 @@
   debugging parsers by inspecting their intermediate states."
   [label p]
   (when-let [_ (debug-state label)]
-    (or p
-        (do (println (str label "  backtracked"))
-            (fail label)))))
+    (alt p
+         (do (println (str label "  backtracked"))
+             (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

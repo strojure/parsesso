@@ -29,8 +29,8 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/or (p/and parser (p/fail "Oops"))
-        parser))
+  (p/alt (p/and parser (p/fail "Oops"))
+         parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -143,66 +143,66 @@
 
     ))
 
-(deftest or-t
+(deftest alt-t
   (test/are [expr result] (= result expr)
 
-    (p (p/or (tok :A)
-             (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/or (tok :A)
-             (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:B])
     {:value :B, :consumed true}
 
-    (p (p/or (tok :A)
-             (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:C])
     {:value :<NA>, :consumed false}
 
-    (p (p/or (tok :A)
-             (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [])
     {:value :<NA>, :consumed false}
 
-    (p (p/or (fail-consumed (tok :A))
-             (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:A])
     {:value :<NA>, :consumed true}
 
-    (p (p/or (fail-consumed (tok :A))
-             (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:B])
     {:value :B, :consumed true}
 
-    (p (p/or (fail-consumed (tok :A))
-             (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:C])
     {:value :<NA>, :consumed false}
 
-    (p (p/or (fail-consumed (tok :A))
-             (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [])
     {:value :<NA>, :consumed false}
 
-    (p (p/or (tok :A)
-             (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/or (tok :A)
-             (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:B])
     {:value :<NA>, :consumed true}
 
-    (p (p/or (tok :A)
-             (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:C])
     {:value :<NA>, :consumed false}
 
-    (p (p/or (tok :A)
-             (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [])
     {:value :<NA>, :consumed false}
 
@@ -992,9 +992,9 @@
        [:END])
     {:value nil, :consumed true}
 
-    (p (p/many-till (p/or (tok :A1 :A2 :A3)
-                          (p/many-till (tok :B1 :B2 :B3)
-                                       (tok :END)))
+    (p (p/many-till (p/alt (tok :A1 :A2 :A3)
+                           (p/many-till (tok :B1 :B2 :B3)
+                                        (tok :END)))
                     (tok :END))
        [:A1 :A2 :A3 :B1 :B2 :B3 :END :A1 :A2 :A3 :END])
     {:value [:A1 :A2 :A3 [:B1 :B2 :B3] :A1 :A2 :A3], :consumed true}
