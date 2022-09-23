@@ -467,7 +467,7 @@
 
       )))
 
-(deftest many-count-t
+(deftest many-n-t
   (test/are [expr result] (= result expr)
 
     (p (p/many-n 3 (tok :A1 :A2 :A3))
