@@ -262,30 +262,30 @@
 
     ))
 
-(deftest escape-t
+(deftest maybe-t
   (test/are [expr result] (= result expr)
 
-    (p (p/escape (tok :A))
+    (p (p/maybe (tok :A))
        [:A])
     {:value :A, :consumed true}
 
-    (p (p/escape (tok :A))
+    (p (p/maybe (tok :A))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/escape (tok :A))
+    (p (p/maybe (tok :A))
        [])
     {:value :<NA>, :consumed false}
 
-    (p (p/escape (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [:A])
     {:value :<NA>, :consumed false}
 
-    (p (p/escape (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [:B])
     {:value :<NA>, :consumed false}
 
-    (p (p/escape (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [])
     {:value :<NA>, :consumed false}
 

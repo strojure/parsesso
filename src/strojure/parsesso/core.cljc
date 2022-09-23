@@ -72,7 +72,7 @@
     (fn [state context]
       (r/e-err context (e/new-message ::e/un-expect msg (:pos state))))))
 
-(defn escape
+(defn maybe
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -388,9 +388,9 @@
   that a keyword is not followed by a legal identifier character, in which case
   the keyword is actually an identifier (for example `lets`)."
   [p]
-  (escape (alt (when-let [c (escape p)]
-                 (unexpected (delay (str c))))
-               (result nil))))
+  (maybe (alt (when-let [c (maybe p)]
+                (unexpected (delay (str c))))
+              (result nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -413,10 +413,10 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (alt (escape (when-let [x (escape (many+ any-token))
-                          _ (defer (println (str label ": " x))
-                                   (escape eof))]
-                 (fail x)))
+  (alt (maybe (when-let [x (maybe (many+ any-token))
+                         _ (defer (println (str label ": " x))
+                                  (maybe eof))]
+                (fail x)))
        (result nil)))
 
 (defn debug-parser
