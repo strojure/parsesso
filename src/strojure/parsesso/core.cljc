@@ -6,7 +6,7 @@
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
   #?(:clj  (:import (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
-     :cljs (:require-macros [strojure.parsesso.core :refer [defer when-let]])))
+     :cljs (:require-macros [strojure.parsesso.core :refer [do-parser when-let]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -181,7 +181,7 @@
                      (r/set-c-ok c-ok-p)
                      (r/set-e-ok e-ok-p)))))))
 
-(defmacro defer
+(defmacro do-parser
   [& body]
   (let [state (gensym) context (gensym)]
     `(parser
@@ -413,8 +413,8 @@
   states."
   [label]
   (alt (maybe (when-let [x (maybe (many+ any-token))
-                         _ (defer (println (str label ": " x))
-                                  (maybe eof))]
+                         _ (do-parser (println (str label ": " x))
+                                      (maybe eof))]
                 (fail x)))
        (result nil)))
 
@@ -425,8 +425,8 @@
   debugging parsers by inspecting their intermediate states."
   [label p]
   (>> (debug-state label)
-      (alt p, (defer (println (str label "  backtracked"))
-                     (fail label)))))
+      (alt p, (do-parser (println (str label "  backtracked"))
+                         (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
