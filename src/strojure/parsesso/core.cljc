@@ -20,8 +20,6 @@
 
 (defn parser? [p] (instance? Parser p))
 
-(def continue impl/continue)
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; parsers
@@ -54,14 +52,13 @@
   [p msg]
   (parser
     (fn [state context]
-      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (or msg "")))]
-        (-> context
-            (r/set-e-ok (fn [x s e]
-                          (r/e-ok context x s (cond-> e (not (e/empty? e))
-                                                        (set-expect-message msg)))))
-            (r/set-e-err (fn [e]
-                           (r/e-err context (set-expect-message e msg))))
-            (continue p state))))))
+      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (or msg "")))
+              (e-ok [x s e] (r/e-ok context x s (cond-> e (not (e/empty? e))
+                                                          (set-expect-message msg))))
+              (e-err [e] (r/e-err context (set-expect-message e msg)))]
+        (p state (-> context
+                     (r/set-e-ok e-ok)
+                     (r/set-e-err e-err)))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
@@ -86,9 +83,7 @@
   [p]
   (parser
     (fn [state context]
-      (-> context
-          (r/set-c-err (partial r/e-err context))
-          (continue p state)))))
+      (p state (-> context (r/set-c-err (partial r/e-err context)))))))
 
 (defn look-ahead
   "This parser parses `p` without consuming any input. If `p` fails and consumes
@@ -97,11 +92,10 @@
   [p]
   (parser
     (fn [state context]
-      (let [e-ok (fn [x _ _] (r/e-ok context x state (e/new-empty (:pos state))))]
-        (-> context
-            (r/set-c-ok e-ok)
-            (r/set-e-ok e-ok)
-            (continue p state))))))
+      (letfn [(e-ok [x _ _] (r/e-ok context x state (e/new-empty (:pos state))))]
+        (p state (-> context
+                     (r/set-c-ok e-ok)
+                     (r/set-e-ok e-ok)))))))
 
 (defn token
   "This parser accepts a token when `(pred token)` returns logical true. The
@@ -131,34 +125,29 @@
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'many*)))
+      (let [my-context (-> context (r/set-e-ok (impl/e-ok-throw-empty 'many*)))
             walk (fn walk [xs x s _e]
                    (let [xs (conj! xs x)]
-                     (-> my-context
-                         (r/set-c-ok (partial walk xs))
-                         (r/set-e-err (fn [e]
-                                        (r/c-ok context (seq (persistent! xs)) s e)))
-                         (continue p s))))]
-        (-> my-context
-            (r/set-c-ok (partial walk (transient [])))
-            (r/set-e-err (partial r/e-ok context nil state))
-            (continue p state))))))
+                     (p s (-> my-context
+                              (r/set-c-ok (partial walk xs))
+                              (r/set-e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e)))))))]
+        (p state (-> my-context
+                     (r/set-c-ok (partial walk (transient [])))
+                     (r/set-e-err (partial r/e-ok context nil state))))))))
 
 (defn skip*
   "This parser applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/throw-empty-input 'skip*)))
+      (let [my-context (-> context (r/set-e-ok (impl/e-ok-throw-empty 'skip*)))
             walk (fn walk [_x s _e]
-                   (-> my-context
-                       (r/set-c-ok walk)
-                       (r/set-e-err (partial r/c-ok context nil s))
-                       (continue p s)))]
-        (-> my-context
-            (r/set-c-ok walk)
-            (r/set-e-err (partial r/e-ok context nil state))
-            (continue p state))))))
+                   (p s (-> my-context
+                            (r/set-c-ok walk)
+                            (r/set-e-err (partial r/c-ok context nil s)))))]
+        (p state (-> my-context
+                     (r/set-c-ok walk)
+                     (r/set-e-err (partial r/e-ok context nil state))))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -169,36 +158,35 @@
   [p f]
   (parser
     (fn [state context]
-      (-> context
-          (r/set-c-ok (fn [x s e]
-                        (-> context
-                            ;; - if (f x) doesn't consume input, but is okay, we still return in the
-                            ;; consumed continuation
-                            (r/set-e-ok (fn [x s ee]
-                                          (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee)))))
-                            ;; - if (f x) doesn't consume input, but errors, we return the error in
-                            ;; the 'consumed-err' continuation
-                            (r/set-e-err (fn [ee]
-                                           (r/c-err context (if (e/empty? e) ee (e/merge-error e ee)))))
-                            (continue (f x) s))))
-          (r/set-e-ok (fn [x s e]
-                        (if (e/empty? e)
-                          (continue context (f x) s)
-                          ;; - in these cases, (f x) can return as empty
-                          (-> context
-                              (r/set-e-ok (fn [x s ee]
-                                            (r/e-ok context x s (e/merge-error e ee))))
-                              (r/set-e-err (fn [ee]
-                                             (r/e-err context (e/merge-error e ee))))
-                              (continue (f x) s)))))
-          (continue p state)))))
+      (letfn [(c-ok-p [x s e]
+                ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
+                ;; continuation
+                ;; - if (f x) doesn't consume input, but errors, we return the error in the
+                ;; 'consumed-err' continuation
+                (letfn [(c-ok-fx [x s ee] (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee))))
+                        (c-err-fx [ee] (r/c-err context (if (e/empty? e) ee (e/merge-error e ee))))]
+                  ((f x) s (-> context
+                               (r/set-e-ok c-ok-fx)
+                               (r/set-e-err c-err-fx)))))
+              (e-ok-p [x s e]
+                (if (e/empty? e)
+                  ((f x) s context)
+                  ;; - in these cases, (f x) can return as empty
+                  (letfn [(e-ok-fx [x s ee] (r/e-ok context x s (e/merge-error e ee)))
+                          (e-err-fx [ee] (r/e-err context (e/merge-error e ee)))]
+                    ((f x) s (-> context
+                                 (r/set-e-ok e-ok-fx)
+                                 (r/set-e-err e-err-fx))))))]
+        (p state (-> context
+                     (r/set-c-ok c-ok-p)
+                     (r/set-e-ok e-ok-p)))))))
 
 (defmacro defer
   [& body]
   (let [state (gensym) context (gensym)]
     `(parser
        (fn [~state ~context]
-         (continue (do ~@body) ~state ~context)))))
+         ((do ~@body) ~state ~context)))))
 
 (defmacro when-let
   [[& bindings] & body]
@@ -212,32 +200,31 @@
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
-  ([p1 p2]
-   (bind p1 (fn [_] p2)))
-  ([p1 p2 p3]
-   (-> p1 (>> p2) (>> p3)))
-  ([p1 p2 p3 & more]
-   (reduce >> (list* p1 p2 p3 more))))
+  ([p pp]
+   (bind p (fn [_] pp)))
+  ([p pp ppp]
+   (-> p (>> pp) (>> ppp)))
+  ([p pp ppp & more]
+   (reduce >> (list* p pp ppp more))))
 
 (defn alt
   "This parser tries to apply the parsers in order, until one of them succeeds.
   Returns the value of the succeeding parser."
-  ([p1 p2]
+  ([p pp]
    (parser
      (fn [state context]
-       (-> context
-           (r/set-e-err (fn [e]
-                          (-> context
-                              (r/set-e-ok (fn [x s ee]
-                                            (r/e-ok context x s (e/merge-error e ee))))
-                              (r/set-e-err (fn [ee]
-                                             (r/e-err context (e/merge-error e ee))))
-                              (continue p2 state))))
-           (continue p1 state)))))
-  ([p1 p2 p3]
-   (-> p1 (alt p2) (alt p3)))
-  ([p1 p2 p3 & more]
-   (reduce alt (list* p1 p2 p3 more))))
+       (letfn [(e-err-p [e]
+                 (letfn [(e-ok-pp [x s ee] (r/e-ok context x s (e/merge-error e ee)))
+                         (e-err-pp [ee] (r/e-err context (e/merge-error e ee)))]
+                   (pp state (-> context
+                                 (r/set-e-ok e-ok-pp)
+                                 (r/set-e-err e-err-pp)))))]
+         (p state (-> context
+                      (r/set-e-err e-err-p)))))))
+  ([p pp ppp]
+   (-> p (alt pp) (alt ppp)))
+  ([p pp ppp & more]
+   (reduce alt (list* p pp ppp more))))
 
 (defn fmap
   "This parser applies function `f` to result of the parser `p`."
@@ -447,7 +434,7 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (impl/run p (impl/->State (seq input) 1 nil)))
+  (p (impl/->State (seq input) 1 nil)))
 
 (defn error? [reply] (instance? Failure reply))
 
