@@ -26,3 +26,17 @@
      (next-pos [pos _ _] (inc pos))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defrecord IndexPos [i]
+  ISourcePos
+  (next-pos [_ _ _] (inc i))
+  #?@(:clj  (Comparable (compareTo [_ pos] (compare i (:i pos))))
+      :cljs (IComparable (-compare [_ pos] (compare i (:i pos)))))
+  Object
+  (toString [_] (str "(index " i ")")))
+
+(comment
+  (compare (IndexPos. 1) (IndexPos. 2))
+  )
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

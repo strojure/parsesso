@@ -53,12 +53,12 @@
   (test/are [expr result] (= result expr)
 
     (p-err (p/label (p/fail "Fail") "Message") [])
-    ["1:"
+    ["(index 0):"
      "expecting Message"
      "Fail"]
 
     (p-err (p/label (p/fail "Fail") (delay "Message")) [])
-    ["1:"
+    ["(index 0):"
      "expecting Message"
      "Fail"]
 

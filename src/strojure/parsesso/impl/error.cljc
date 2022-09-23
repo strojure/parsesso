@@ -77,7 +77,8 @@
                      (group-by first))]
          (->> [(when-let [[[_ msg]] (and (not (xs ::un-expect))
                                          (xs ::sys-unexpect))]
-                 (str (dict :unexpected) " " (force (or msg (dict :end-of-input)))))
+                 (str (dict :unexpected) " " (or (not-empty (force msg))
+                                                 (dict :end-of-input))))
                (show-many (xs ::un-expect) (dict :or) (dict :unexpected))
                (show-many (xs ::expect) (dict :or) (dict :expecting))
                (show-many (xs ::message) (dict :or) nil)]

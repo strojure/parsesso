@@ -97,14 +97,16 @@
                      (r/set-c-ok e-ok)
                      (r/set-e-ok e-ok)))))))
 
+(def ^:private token-str (partial str "token: "))
+
 (defn token
   "This parser accepts a token when `(pred token)` returns logical true. The
   token can be shown in error message using `(msg-fn token)`."
-  ([pred],,,,,,,,,,,,,,,, (token pred pos/next-pos (partial str "token: ") nil))
-  ([pred, msg-fn],,,,,,,, (token pred pos/next-pos msg-fn nil))
+  ([pred],,,,,,,,,,,,,,,, (token pred token-str pos/next-pos nil))
+  ([pred, msg-fn],,,,,,,, (token pred msg-fn pos/next-pos nil))
   ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  ([pred, pos-fn, msg-fn] (token pred pos-fn msg-fn nil))
-  ([pred, pos-fn, msg-fn, user-fn]
+  ([pred, msg-fn, pos-fn] (token pred msg-fn pos-fn nil))
+  ([pred, msg-fn, pos-fn, user-fn]
    (parser
      (fn [state context]
        (if-let [input (seq (:input state))]
@@ -378,7 +380,8 @@
 (def any-token
   "This parser accepts any kind of token. It is for example used to implement
   'eof'. Returns the accepted token."
-  (token any? (fn [pos _ _] pos)))
+  ;; TODO: Why same pos here?
+  (token any? token-str (fn [pos _ _] pos)))
 
 (defn not-followed-by
   "This parser only succeeds when parser `p` fails. This parser does not consume
@@ -433,7 +436,9 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (p (impl/->State (seq input) 1 nil)))
+  (p (impl/->State (seq input)
+                   (pos/->IndexPos 0)
+                   nil)))
 
 (defn error? [reply] (instance? Failure reply))
 
