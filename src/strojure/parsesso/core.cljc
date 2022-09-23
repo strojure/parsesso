@@ -38,7 +38,7 @@
     (fn [state context]
       (r/e-err context (e/new-message ::e/message msg (:pos state))))))
 
-(defn label
+(defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails /without
   consuming any input/, it replaces expect error messages with the expect error
   message `msg`.
@@ -399,7 +399,7 @@
   parser but it is defined using 'not-followed-by'."
   ;; TODO: Implement using direct access to input for performance?
   (-> (not-followed-by any-token)
-      (label "end of input")))
+      (expecting "end of input")))
 
 (defn many-till
   "This parser applies parser `p` /zero/ or more times until parser `end`

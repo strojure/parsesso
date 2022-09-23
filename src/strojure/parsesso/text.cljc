@@ -24,7 +24,7 @@
   "This parser parses a single character `c`. Returns the parsed character."
   [c]
   (-> (satisfy (partial = c))
-      (p/label (delay (char-str c)))))
+      (p/expecting (delay (char-str c)))))
 
 (def any-char
   "This parser succeeds for any character. Returns the parsed character."

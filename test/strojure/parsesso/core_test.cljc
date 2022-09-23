@@ -48,22 +48,25 @@
     (p (p/fail "Oops") [:A]) #_=> {:value :<NA>, :consumed false}
     ))
 
-(deftest label-t
+(deftest expecting-t
   ;; TODO: Test error messages
   (test/are [expr result] (= result expr)
 
-    (p-err (p/label (p/fail "Fail") "Message") [])
+    (p-err (-> (p/fail "Fail")
+               (p/expecting "description"))
+           [])
     ["(index 0):"
-     "expecting Message"
+     "expecting description"
      "Fail"]
 
-    (p-err (p/label (p/fail "Fail") (delay "Message")) [])
+    (p-err (-> (p/fail "Fail")
+               (p/expecting (delay "description")))
+           [])
     ["(index 0):"
-     "expecting Message"
+     "expecting description"
      "Fail"]
 
-    )
-  )
+    ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
