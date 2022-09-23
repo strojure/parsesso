@@ -272,14 +272,13 @@
     (result (cons x xs))))
 
 ;; TODO: argument order
-;; TODO: Check if it should be consumed or not if n > length.
 ;; TODO: Rewrite similar to haskell?
-(defn many-count
+(defn many-n
   "This parser parses `n` occurrences of `p`. If `n` is smaller or equal to
   zero, the parser equals to `(return nil)`. Returns a sequence of `n` values
   returned by `p`."
   [n p]
-  (if (pos? n) (when-let [x p, xs (many-count (dec n) p)]
+  (if (pos? n) (when-let [x p, xs (many-n (dec n) p)]
                  (result (cons x xs)))
                (result nil)))
 

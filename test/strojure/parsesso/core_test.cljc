@@ -470,35 +470,35 @@
 (deftest many-count-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3])
     {:value [:A1 :A2 :A3], :consumed true}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3 :A4])
     {:value [:A1 :A2 :A3], :consumed true}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3 :B])
     {:value [:A1 :A2 :A3], :consumed true}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2])
     {:value :<NA>, :consumed true}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :B])
     {:value :<NA>, :consumed true}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:B :A1 :A2 :A3])
     {:value :<NA>, :consumed false}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:B :A1])
     {:value :<NA>, :consumed false}
 
-    (p (p/many-count 3 (tok :A1 :A2 :A3))
+    (p (p/many-n 3 (tok :A1 :A2 :A3))
        [])
     {:value :<NA>, :consumed false}
 
