@@ -28,27 +28,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest char-t
-  (test/are [expr result] (= result expr)
-
-    (p (t/char \a)
-       "a")
-    {:consumed true, :value (c "a")}
-
-    (p (t/char \a)
-       "b")
-    {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected \"b\""
-                              "expecting \"a\""]}
-
-    (p (t/char \a)
-       "")
-    {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting \"a\""]}
-
-    ))
-
 (deftest any-char-t
   (test/are [expr result] (= result expr)
 
@@ -65,49 +44,53 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest one-of-t
+(deftest char-of-t
   (test/are [expr result] (= result expr)
 
-    (p (t/one-of "abc")
+    (p (t/char-of "abc")
        "a")
     {:consumed true, :value (c "a")}
 
-    (p (t/one-of "abc")
+    (p (t/char-of "abc")
        "b")
     {:consumed true, :value (c "b")}
 
-    (p (t/one-of "abc")
+    (p (t/char-of "abc")
        "c")
     {:consumed true, :value (c "c")}
 
-    (p (t/one-of "abc")
+    (p (t/char-of "abc")
        "d")
     {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected \"d\""]}
+                              "unexpected \"d\""
+                              "expecting (char-of \"abc\")"]}
 
-    (p (t/one-of "abc")
+    (p (t/char-of "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected end of input"]}
+                              "unexpected end of input"
+                              "expecting (char-of \"abc\")"]}
 
     ))
 
-(deftest none-of-t
+(deftest not-char-of-t
   (test/are [expr result] (= result expr)
 
-    (p (t/none-of "abc")
+    (p (t/not-char-of "abc")
        "x")
     {:consumed true, :value (c "x")}
 
-    (p (t/none-of "abc")
+    (p (t/not-char-of "abc")
        "a")
     {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected \"a\""]}
+                              "unexpected \"a\""
+                              "expecting (not-char-of \"abc\")"]}
 
-    (p (t/none-of "abc")
+    (p (t/not-char-of "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
-                              "unexpected end of input"]}
+                              "unexpected end of input"
+                              "expecting (not-char-of \"abc\")"]}
 
     ))
 

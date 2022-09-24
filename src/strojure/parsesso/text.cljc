@@ -12,36 +12,45 @@
 
 (defn- char-str [c] (pr-str (str c)))
 
+(defmacro delayed-expecting
+  [sym args]
+  `(delay (str "(" ~sym " " (pr-str ~args) ")")))
+
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn satisfy
   "This parser succeeds for any character for which the supplied predicate
   function returns `true`. Returns the character that is actually parsed."
-  [pred]
-  (p/token pred char-str))
-
-(defn char
-  "This parser parses a single character `c`. Returns the parsed character."
-  [c]
-  (-> (satisfy (partial = c))
-      (p/expecting (delay (char-str c)))))
+  ([pred]
+   (p/token pred char-str))
+  ([pred msg]
+   (-> (p/token pred char-str)
+       (p/expecting msg))))
 
 (def any-char
   "This parser succeeds for any character. Returns the parsed character."
   (satisfy any?))
 
-;; TODO: Consider adding label to one-of
-(defn one-of
+(defn char-of
   "This parser succeeds if the current character is in the supplied list of
   characters. Returns the parsed character. See also `satisfy`."
   [cs]
-  (satisfy (partial string/index-of cs)))
+  (satisfy (partial string/index-of cs)
+           (delayed-expecting 'char-of cs)))
 
-(defn none-of
+(comment
+  (parse (char \a) "a")
+  (def -p (char-of "a"))
+  (parse (p/many+ (char-of "a")) "aaa")
+  (parse -p "a")
+  )
+
+(defn not-char-of
   "This parser succeeds if the current character /not/ in the supplied list of
   characters. Returns the parsed character."
   [cs]
-  (satisfy (complement (partial string/index-of cs))))
+  (satisfy (complement (partial string/index-of cs))
+           (delayed-expecting 'not-char-of cs)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
