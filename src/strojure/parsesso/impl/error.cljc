@@ -12,7 +12,7 @@
 (defrecord ParseError [pos messages]
   Object
   (toString [_]
-    (str pos ":\n" (explain-str messages))))
+    (str "at " pos ":\n" (explain-str messages))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

@@ -16,9 +16,10 @@
   "Parses test input using given parser. Returns custom map with test result."
   [parser input]
   (let [result (t/parse parser input)]
-    (cond-> result
-      (p/error? result) (assoc :value :<NA> :message (string/split-lines (str (:error result))))
-      :then,,,,,,,,,,,, (select-keys [:value :consumed :message]))))
+    (if (p/error? result)
+      (-> (select-keys result [:consumed])
+          (assoc :error (-> (:error result) (str) (string/split-lines))))
+      (select-keys result [:consumed :value]))))
 
 (defn- c
   "Cross-platform char."
@@ -32,19 +33,19 @@
 
     (p (t/char \a)
        "a")
-    {:value (c "a"), :consumed true}
+    {:consumed true, :value (c "a")}
 
     (p (t/char \a)
        "b")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected \"b\""
-                                              "expecting \"a\""]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"b\""
+                              "expecting \"a\""]}
 
     (p (t/char \a)
        "")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected end of input"
-                                              "expecting \"a\""]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting \"a\""]}
 
     ))
 
@@ -53,12 +54,12 @@
 
     (p t/any-char
        "a")
-    {:value (c "a"), :consumed true}
+    {:consumed true, :value (c "a")}
 
     (p t/any-char
        "")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected end of input"]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"]}
 
     ))
 
@@ -69,25 +70,25 @@
 
     (p (t/one-of "abc")
        "a")
-    {:value (c "a"), :consumed true}
+    {:consumed true, :value (c "a")}
 
     (p (t/one-of "abc")
        "b")
-    {:value (c "b"), :consumed true}
+    {:consumed true, :value (c "b")}
 
     (p (t/one-of "abc")
        "c")
-    {:value (c "c"), :consumed true}
+    {:consumed true, :value (c "c")}
 
     (p (t/one-of "abc")
        "d")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected \"d\""]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"d\""]}
 
     (p (t/one-of "abc")
        "")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected end of input"]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"]}
 
     ))
 
@@ -96,17 +97,17 @@
 
     (p (t/none-of "abc")
        "x")
-    {:value (c "x"), :consumed true}
+    {:consumed true, :value (c "x")}
 
     (p (t/none-of "abc")
        "a")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected \"a\""]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"a\""]}
 
     (p (t/none-of "abc")
        "")
-    {:value :<NA>, :consumed false, :message ["(line 1, column 1):"
-                                              "unexpected end of input"]}
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"]}
 
     ))
 

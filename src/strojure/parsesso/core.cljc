@@ -391,7 +391,7 @@
   the keyword is actually an identifier (for example `lets`)."
   [p]
   (maybe (alt (when-let [c (maybe p)]
-                (unexpected (delay (str c))))
+                (unexpected (delay (token-str c))))
               (result nil))))
 
 (def eof

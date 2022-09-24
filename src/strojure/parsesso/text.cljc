@@ -65,7 +65,7 @@
                                                (compare* col (:col pos))
                                                0))))
   Object
-  (toString [_] (str "(line " line ", column " col ")")))
+  (toString [_] (str "line " line ", column " col)))
 
 (defn parse
   [p input]
