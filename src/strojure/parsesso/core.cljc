@@ -104,8 +104,19 @@
   "This parser accepts a token when `(pred token)` returns logical true. The
   token can be shown in error message using `(msg-fn token)`."
   [{:keys [msg-fn, pos-fn, user-fn] :or {msg-fn token-str, pos-fn pos/next-pos}}]
-  ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  (if user-fn
+  (if-not user-fn
+    (fn [pred]
+      (parser
+        (fn [state context]
+          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
+            (let [tok (#?(:clj .first :cljs -first) input)]
+              (if (pred tok)
+                (let [pos (:pos state)
+                      new-input (#?(:clj .more :cljs -rest) input)
+                      new-pos (pos-fn pos tok new-input)]
+                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/new-empty new-pos)))
+                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
+            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))
     (fn [pred]
       (parser
         (fn [state context]
@@ -118,19 +129,6 @@
                       new-state (impl/->State new-input new-pos (cond->> (:user state)
                                                                   user-fn (user-fn pos tok new-input)))]
                   (r/c-ok context tok new-state (e/new-empty new-pos)))
-                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
-            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))
-    ;; if no user-fn
-    (fn [pred]
-      (parser
-        (fn [state context]
-          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
-            (let [tok (#?(:clj .first :cljs -first) input)]
-              (if (pred tok)
-                (let [pos (:pos state)
-                      new-input (#?(:clj .more :cljs -rest) input)
-                      new-pos (pos-fn pos tok new-input)]
-                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/new-empty new-pos)))
                 (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
             (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))))
 
