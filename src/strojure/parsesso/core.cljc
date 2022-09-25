@@ -227,7 +227,7 @@
   ([p pp ppp & more]
    (reduce >> (list* p pp ppp more))))
 
-(defn alt
+(defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
   Returns the value of the succeeding parser."
   ([p pp]
@@ -242,9 +242,9 @@
          (p state (-> context
                       (r/set-e-err e-err-p)))))))
   ([p pp ppp]
-   (-> p (alt pp) (alt ppp)))
+   (-> p (choice pp) (choice ppp)))
   ([p pp ppp & more]
-   (reduce alt (list* p pp ppp more))))
+   (reduce choice (list* p pp ppp more))))
 
 (defn fmap
   "This parser applies function `f` to result of the parser `p`."
@@ -269,7 +269,7 @@
   and behaves like `option` combinator."
   ([p] (optional p nil))
   ([p x]
-   (alt p (result x))))
+   (choice p (result x))))
 
 (defn between
   "This parser parses `open`, followed by `p` and `close`. Returns the value
@@ -313,8 +313,8 @@
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (alt (sep-by+ p sep)
-       (result nil)))
+  (choice (sep-by+ p sep)
+          (result nil)))
 
 (defn sep-by-end+
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
@@ -327,8 +327,8 @@
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (alt (sep-by-end+ p sep)
-       (result nil)))
+  (choice (sep-by-end+ p sep)
+          (result nil)))
 
 (declare sep-by-end-opt*)
 
@@ -337,16 +337,16 @@
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p]
-    (alt (when-let [_ sep, xs (sep-by-end-opt* p sep)]
-           (result (cons x xs)))
-         (result [x]))))
+    (choice (when-let [_ sep, xs (sep-by-end-opt* p sep)]
+              (result (cons x xs)))
+            (result [x]))))
 
 (defn sep-by-end-opt*
   "This parser parses /zero/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (alt (sep-by-end-opt+ p sep)
-       (result nil)))
+  (choice (sep-by-end-opt+ p sep)
+          (result nil)))
 
 ;; TODO: Consider moving chains to separate namespace like kern
 
@@ -357,9 +357,9 @@
   used to eliminate left recursion which typically occurs in expression
   grammars."
   [p op]
-  (letfn [(more [x] (alt (when-let [f op, y p]
-                           (more (f x y)))
-                         (result x)))]
+  (letfn [(more [x] (choice (when-let [f op, y p]
+                              (more (f x y)))
+                            (result x)))]
     (when-let [x p]
       (more x))))
 
@@ -369,8 +369,8 @@
   returned by `op` to the values returned by `p`. If there are zero occurrences
   of `p`, the value `x` is returned."
   [p op x]
-  (alt (chain-left+ p op)
-       (result x)))
+  (choice (chain-left+ p op)
+          (result x)))
 
 (defn chain-right+
   "This parser parses /one/ or more occurrences of `p`, separated by `op`.
@@ -379,9 +379,9 @@
   [p op]
   (letfn [(scan [] (when-let [x p]
                      (more x)))
-          (more [x] (alt (when-let [f op, y (scan)]
-                           (result (f x y)))
-                         (result x)))]
+          (more [x] (choice (when-let [f op, y (scan)]
+                              (result (f x y)))
+                            (result x)))]
     (scan)))
 
 (defn chain-right*
@@ -390,8 +390,8 @@
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (alt (chain-right+ p op)
-       (result x)))
+  (choice (chain-right+ p op)
+          (result x)))
 
 ;;; Tricky combinators
 
@@ -408,9 +408,9 @@
   that a keyword is not followed by a legal identifier character, in which case
   the keyword is actually an identifier (for example `lets`)."
   [p]
-  (maybe (alt (when-let [c (maybe p)]
-                (unexpected (delay (token-str c))))
-              (result nil))))
+  (maybe (choice (when-let [c (maybe p)]
+                   (unexpected (delay (token-str c))))
+                 (result nil))))
 
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
@@ -423,9 +423,9 @@
   "This parser applies parser `p` /zero/ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
-  (letfn [(scan [] (alt (>> end (result nil))
-                        (when-let [x p, xs (scan)]
-                          (result (cons x xs)))))]
+  (letfn [(scan [] (choice (>> end (result nil))
+                           (when-let [x p, xs (scan)]
+                             (result (cons x xs)))))]
     (scan)))
 
 (defn debug-state
@@ -433,11 +433,11 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (alt (maybe (when-let [x (maybe (many+ any-token))
-                         _ (do-parser (println (str label ": " x))
-                                      (maybe eof))]
-                (fail x)))
-       (result nil)))
+  (choice (maybe (when-let [x (maybe (many+ any-token))
+                            _ (do-parser (println (str label ": " x))
+                                         (maybe eof))]
+                   (fail x)))
+          (result nil)))
 
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
@@ -446,8 +446,8 @@
   debugging parsers by inspecting their intermediate states."
   [label p]
   (>> (debug-state label)
-      (alt p, (do-parser (println (str label "  backtracked"))
-                         (fail label)))))
+      (choice p, (do-parser (println (str label "  backtracked"))
+                            (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
