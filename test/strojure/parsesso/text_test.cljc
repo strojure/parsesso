@@ -73,24 +73,24 @@
 
     ))
 
-(deftest not-char-of-t
+(deftest char-of-not-t
   (test/are [expr result] (= result expr)
 
-    (p (t/not-char-of "abc")
+    (p (t/char-of-not "abc")
        "x")
     {:consumed true, :value (c "x")}
 
-    (p (t/not-char-of "abc")
+    (p (t/char-of-not "abc")
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting (not-char-of \"abc\")"]}
+                              "expecting (char-of-not \"abc\")"]}
 
-    (p (t/not-char-of "abc")
+    (p (t/char-of-not "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (not-char-of \"abc\")"]}
+                              "expecting (char-of-not \"abc\")"]}
 
     ))
 

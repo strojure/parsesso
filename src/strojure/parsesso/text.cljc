@@ -12,20 +12,19 @@
 
 (defn- char-str [c] (pr-str (str c)))
 
-(defmacro delayed-expecting
+(defmacro delayed-message
   [sym args]
   `(delay (str "(" ~sym " " (pr-str ~args) ")")))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn satisfy
-  "This parser succeeds for any character for which the supplied predicate
-  function returns `true`. Returns the character that is actually parsed."
-  ([pred]
-   (p/token pred char-str))
-  ([pred msg]
-   (-> (p/token pred char-str)
-       (p/expecting msg))))
+(let [char-token (p/token-fn {:msg-fn char-str})]
+
+  (defn satisfy
+    "This parser succeeds for any character for which the supplied predicate
+    function returns `true`. Returns the character that is actually parsed."
+    [pred]
+    (char-token pred)))
 
 (def any-char
   "This parser succeeds for any character. Returns the parsed character."
@@ -35,22 +34,15 @@
   "This parser succeeds if the current character is in the supplied list of
   characters. Returns the parsed character. See also `satisfy`."
   [cs]
-  (satisfy (partial string/index-of cs)
-           (delayed-expecting 'char-of cs)))
+  (-> (satisfy (partial string/index-of cs))
+      (p/expecting (delayed-message 'char-of cs))))
 
-(comment
-  (parse (char \a) "a")
-  (def -p (char-of "a"))
-  (parse (p/many+ (char-of "a")) "aaa")
-  (parse -p "a")
-  )
-
-(defn not-char-of
+(defn char-of-not
   "This parser succeeds if the current character /not/ in the supplied list of
   characters. Returns the parsed character."
   [cs]
-  (satisfy (complement (partial string/index-of cs))
-           (delayed-expecting 'not-char-of cs)))
+  (-> (satisfy (complement (partial string/index-of cs)))
+      (p/expecting (delayed-message 'char-of-not cs))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -79,6 +71,8 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos and input seq
-  (p (impl/->State (seq input) (TextPos. 8 1 1) nil)))
+  (p (impl/->State (or (seq input) ())
+                   (TextPos. 8 1 1)
+                   nil)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

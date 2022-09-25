@@ -4,7 +4,8 @@
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
-  #?(:clj  (:import (strojure.parsesso.impl.core Parser)
+  #?(:clj  (:import (clojure.lang ISeq)
+                    (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
      :cljs (:require-macros [strojure.parsesso.core :refer [do-parser when-let]])))
 
@@ -99,27 +100,44 @@
 
 (def ^:private token-str (partial str "token: "))
 
-(defn token
+(defn token-fn
   "This parser accepts a token when `(pred token)` returns logical true. The
   token can be shown in error message using `(msg-fn token)`."
-  ([pred],,,,,,,,,,,,,,,, (token pred token-str pos/next-pos nil))
-  ([pred, msg-fn],,,,,,,, (token pred msg-fn pos/next-pos nil))
+  [{:keys [msg-fn, pos-fn, user-fn] :or {msg-fn token-str, pos-fn pos/next-pos}}]
   ;; TODO: split to two versions for get-next-user like in haskell (for performance?)
-  ([pred, msg-fn, pos-fn] (token pred msg-fn pos-fn nil))
-  ([pred, msg-fn, pos-fn, user-fn]
-   (parser
-     (fn [state context]
-       (if-let [input (seq (:input state))]
-         (let [tok (first input)]
-           (if (pred tok)
-             (let [pos (:pos state)
-                   new-input (rest input)
-                   new-pos (pos-fn pos tok new-input)
-                   new-state (impl/->State new-input new-pos (cond->> (:user state)
-                                                               user-fn (user-fn pos tok new-input)))]
-               (r/c-ok context tok new-state (e/new-empty new-pos)))
-             (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
-         (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state))))))))
+  (if user-fn
+    (fn [pred]
+      (parser
+        (fn [state context]
+          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
+            (let [tok (#?(:clj .first :cljs -first) input)]
+              (if (pred tok)
+                (let [pos (:pos state)
+                      new-input (#?(:clj .more :cljs -rest) input)
+                      new-pos (pos-fn pos tok new-input)
+                      new-state (impl/->State new-input new-pos (cond->> (:user state)
+                                                                  user-fn (user-fn pos tok new-input)))]
+                  (r/c-ok context tok new-state (e/new-empty new-pos)))
+                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
+            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))
+    ;; if no user-fn
+    (fn [pred]
+      (parser
+        (fn [state context]
+          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
+            (let [tok (#?(:clj .first :cljs -first) input)]
+              (if (pred tok)
+                (let [pos (:pos state)
+                      new-input (#?(:clj .more :cljs -rest) input)
+                      new-pos (pos-fn pos tok new-input)]
+                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/new-empty new-pos)))
+                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
+            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))))
+
+(def token
+  "This parser accepts a token when `(pred token)` returns logical true. See
+  `token-fn` for customized version of the parser."
+  (token-fn {}))
 
 (defn many*
   "This parser applies the parser `p` zero or more times. Returns a sequence of
@@ -381,7 +399,7 @@
   "This parser accepts any kind of token. It is for example used to implement
   'eof'. Returns the accepted token."
   ;; TODO: Why same pos here?
-  (token any? token-str (fn [pos _ _] pos)))
+  ((token-fn {:msg-fn token-str :pos-fn (fn [pos _ _] pos)}) any?))
 
 (defn not-followed-by
   "This parser only succeeds when parser `p` fails. This parser does not consume
@@ -436,7 +454,7 @@
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (p (impl/->State (seq input)
+  (p (impl/->State (or (seq input) ())
                    (pos/->IndexPos 0)
                    nil)))
 
