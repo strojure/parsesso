@@ -46,10 +46,10 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'try'
+  all possible characters. For example, if the `expr` parser from the 'maybe'
   example would fail, the error message is: '...: expecting expression'. Without
-  the `label` combinator, the message would be like '...: expecting \"let\" or
-  letter', which is less friendly."
+  the `expecting` combinator, the message would be like '...: expecting \"let\"
+  or letter', which is less friendly."
   [p msg]
   (parser
     (fn [state context]
@@ -65,8 +65,8 @@
   "This parser always fails with an unexpected error message `msg` without
   consuming any input.
 
-  The parsers 'fail', 'label' and `unexpected` are the three parsers used to
-  generate error messages. Of these, only `label` is commonly used. For an
+  The parsers 'fail', 'expecting' and `unexpected` are the three parsers used to
+  generate error messages. Of these, only `expecting` is commonly used. For an
   example of the use of `unexpected`, see the definition of `not-followed-by`."
   [msg]
   (parser
@@ -218,6 +218,7 @@
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
+  ([p] p)
   ([p pp]
    (bind p (fn [_] pp)))
   ([p pp ppp]
@@ -244,20 +245,31 @@
   ([p pp ppp & more]
    (reduce choice (list* p pp ppp more))))
 
-(defn fmap
+(defn map-result
   "This parser applies function `f` to result of the parser `p`."
-  [f p]
+  [p f]
   (when-let [x p]
     (result (f x))))
 
 (defn sequence
   "This parser tries to apply parsers in order until all of them succeeds.
   Returns a sequence of values returned by every parser."
-  [ps]
-  (if-let [p (first ps)]
-    (when-let [x p, xs (sequence (rest ps))]
-      (result (cons x xs)))
-    (result nil)))
+  ([ps]
+   (if-let [p (first ps)]
+     (when-let [x p, xs (sequence (rest ps))]
+       (result (cons x xs)))
+     (result nil)))
+  ([ps rf]
+   (if-let [p (first ps)]
+     (when-let [x p, xs (sequence (rest ps) rf)]
+       (result (rf x xs)))
+     (result (rf)))))
+
+(comment
+  (-> (sequence [(token #(= :A %)) (token #(= :B %)) (token #(= :C %))]
+                conj)
+      (parse [:A :B :C]))
+  )
 
 ;; TODO: Consider removing optional from API
 (defn optional

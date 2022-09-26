@@ -95,3 +95,38 @@
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(deftest string-t
+  (test/are [expr result] (= result expr)
+
+    (p (t/string "abc")
+       "abc")
+    {:consumed true, :value "abc"}
+
+    (p (t/string "abc")
+       "ab")
+    {:consumed true, :error ["at line 1, column 3:"
+                             "unexpected end of input"
+                             "expecting \"c\" in (string \"abc\")"]}
+
+    (p (t/string "abc")
+       "")
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting \"a\" in (string \"abc\")"]}
+
+    (p (t/string "abc")
+       "abx")
+    {:consumed true, :error ["at line 1, column 3:"
+                             "unexpected \"x\""
+                             "expecting \"c\" in (string \"abc\")"]}
+
+    (p (t/string "abc")
+       "xyz")
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"x\""
+                              "expecting \"a\" in (string \"abc\")"]}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

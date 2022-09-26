@@ -263,34 +263,34 @@
 
     ))
 
-(deftest fmap-t
+(deftest map-result-t
   (test/are [expr result] (= result expr)
 
-    (p (p/fmap name (tok :A))
+    (p (p/map-result (tok :A) name)
        [:A])
     {:consumed true, :value "A"}
 
-    (p (p/fmap name (tok :A))
+    (p (p/map-result (tok :A) name)
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected token: :B"]}
 
-    (p (p/fmap name (tok :A))
+    (p (p/map-result (tok :A) name)
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/map-result (fail-consumed (tok :A)) name)
        [:A])
     {:consumed true, :error ["at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/map-result (fail-consumed (tok :A)) name)
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected token: :B"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/map-result (fail-consumed (tok :A)) name)
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}

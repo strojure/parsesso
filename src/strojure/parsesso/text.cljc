@@ -1,5 +1,4 @@
 (ns strojure.parsesso.text
-  (:refer-clojure :exclude [char])
   (:require [clojure.string :as string]
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.core :as impl]
@@ -12,9 +11,9 @@
 
 (defn- char-str [c] (pr-str (str c)))
 
-(defmacro delayed-message
+(defn- describe
   [sym args]
-  `(delay (str "(" ~sym " " (pr-str ~args) ")")))
+  (str "(" sym " " (pr-str args) ")"))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -35,14 +34,33 @@
   characters. Returns the parsed character. See also `satisfy`."
   [cs]
   (-> (satisfy (partial string/index-of cs))
-      (p/expecting (delayed-message 'char-of cs))))
+      (p/expecting (delay (describe 'char-of cs)))))
 
 (defn char-of-not
   "This parser succeeds if the current character /not/ in the supplied list of
   characters. Returns the parsed character."
   [cs]
   (-> (satisfy (complement (partial string/index-of cs)))
-      (p/expecting (delayed-message 'char-of-not cs))))
+      (p/expecting (delay (describe 'char-of-not cs)))))
+
+#_#?(:clj (defn cons-str
+            ([] (StringBuffer.))
+            ([sb] (str sb))
+            ([x sb] (-> ^StringBuffer sb (.insert 0 x)))))
+
+;; TODO: Better name for `string`?
+(defn string
+  "This parser parses a sequence of characters given by `s`. Returns the parsed
+  string."
+  [s]
+  (if-let [cs (seq s)]
+    (p/>> (->> cs (map (fn [c]
+                         (-> (satisfy (partial = c))
+                             (p/expecting (delay (str (char-str c) " in "
+                                                      (describe 'string s)))))))
+               (reduce p/>>))
+          (p/result s))
+    (p/result s)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
