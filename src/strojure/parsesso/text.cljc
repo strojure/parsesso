@@ -1,5 +1,6 @@
 (ns strojure.parsesso.text
   (:require [clojure.string :as string]
+            #?(:cljs [goog.string :as gstring])
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.core :as impl]
             [strojure.parsesso.impl.pos :as pos]))
@@ -17,13 +18,11 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(let [char-token (p/token-fn {:msg-fn char-str})]
-
-  (defn satisfy
-    "This parser succeeds for any character for which the supplied predicate
-    function returns `true`. Returns the character that is actually parsed."
-    [pred]
-    (char-token pred)))
+(def ^{:doc "This parser succeeds for any character for which the supplied predicate
+            function returns `true`. Returns the character that is actually parsed."
+       :arglists '([pred])}
+  satisfy
+  (p/token-fn {:msg-fn char-str}))
 
 (def any-char
   "This parser succeeds for any character. Returns the parsed character."
@@ -42,6 +41,14 @@
   [cs]
   (-> (satisfy (complement (partial string/index-of cs)))
       (p/expecting (delay (describe 'char-of-not cs)))))
+
+(def ^{:arglists '([c])}
+  letter?
+  #?(:clj #(Character/isLetter ^char %) :cljs gstring/isAlpha))
+
+(def letter
+  (-> (satisfy letter?)
+      (p/expecting 'letter)))
 
 #_#?(:clj (defn cons-str
             ([] (StringBuffer.))

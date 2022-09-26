@@ -41,7 +41,7 @@
 
 (defn- comma-sep
   [-or xs]
-  (let [xs (filter seq xs)]
+  (let [xs (->> xs (map str) (filter seq))]
     (case (count xs)
       0 ""
       1 (str (first xs))

@@ -96,6 +96,29 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest letter-t
+  (test/are [expr result] (= result expr)
+
+    (p t/letter
+       "a")
+    {:consumed true, :value (c "a")}
+
+    (p t/letter
+       "1")
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"1\""
+                              "expecting letter"]}
+
+    (p t/letter
+       "")
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting letter"]}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (deftest string-t
   (test/are [expr result] (= result expr)
 
