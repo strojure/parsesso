@@ -3,7 +3,7 @@
   (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure]))])
+            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure update]))])
   #?(:clj  (:import (clojure.lang ISeq)
                     (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
@@ -53,13 +53,14 @@
   [p msg]
   (parser
     (fn [state context]
-      (letfn [(set-expect-message [e msg] (e/set-message e ::e/expect (or msg "")))
-              (e-ok [x s e] (r/e-ok context x s (cond-> e (not (e/empty? e))
-                                                          (set-expect-message msg))))
-              (e-err [e] (r/e-err context (set-expect-message e msg)))]
-        (p state (-> context
-                     (r/set-e-ok e-ok)
-                     (r/set-e-err e-err)))))))
+      (letfn [(set-expect-message [e msg]
+                (e/set-message e ::e/expect (or msg "")))
+              (e-ok [x s e]
+                (r/e-ok context x s (cond-> e (not (e/empty? e)) (set-expect-message msg))))
+              (e-err [e]
+                (r/e-err context (set-expect-message e msg)))]
+        (p state (r/update context {::r/e-ok e-ok
+                                    ::r/e-err e-err}))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
@@ -84,7 +85,7 @@
   [p]
   (parser
     (fn [state context]
-      (p state (-> context (r/set-c-err (partial r/e-err context)))))))
+      (p state (r/update context {::r/c-err (partial r/e-err context)})))))
 
 (defn look-ahead
   "This parser parses `p` without consuming any input. If `p` fails and consumes
@@ -93,10 +94,9 @@
   [p]
   (parser
     (fn [state context]
-      (letfn [(e-ok [x _ _] (r/e-ok context x state (e/new-empty (:pos state))))]
-        (p state (-> context
-                     (r/set-c-ok e-ok)
-                     (r/set-e-ok e-ok)))))))
+      (letfn [(e-ok [x _ _]
+                (r/e-ok context x state (e/new-empty (:pos state))))]
+        (p state (r/update context {::r/c-ok e-ok ::r/e-ok e-ok}))))))
 
 (def ^:private token-str (partial str "token: "))
 
@@ -143,29 +143,29 @@
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/e-ok-throw-empty 'many*)))
-            walk (fn walk [xs x s _e]
-                   (let [xs (conj! xs x)]
-                     (p s (-> my-context
-                              (r/set-c-ok (partial walk xs))
-                              (r/set-e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e)))))))]
-        (p state (-> my-context
-                     (r/set-c-ok (partial walk (transient [])))
-                     (r/set-e-err (partial r/e-ok context nil state))))))))
+      (letfn [(walk [xs x s _e]
+                (let [xs (conj! xs x)]
+                  (p s (r/update context {::r/c-ok (partial walk xs)
+                                          ::r/e-ok impl/e-ok-throw-empty-input
+                                          ::r/e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e))}))))]
+        (p state (r/update context
+                           {::r/c-ok (partial walk (transient []))
+                            ::r/e-ok impl/e-ok-throw-empty-input
+                            ::r/e-err (partial r/e-ok context nil state)}))))))
 
 (defn skip*
   "This parser applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
     (fn [state context]
-      (let [my-context (-> context (r/set-e-ok (impl/e-ok-throw-empty 'skip*)))
-            walk (fn walk [_x s _e]
-                   (p s (-> my-context
-                            (r/set-c-ok walk)
-                            (r/set-e-err (partial r/c-ok context nil s)))))]
-        (p state (-> my-context
-                     (r/set-c-ok walk)
-                     (r/set-e-err (partial r/e-ok context nil state))))))))
+      (letfn [(walk [_x s _e]
+                (p s (r/update context {::r/c-ok walk
+                                        ::r/e-ok impl/e-ok-throw-empty-input
+                                        ::r/e-err (partial r/c-ok context nil s)})))]
+        (p state (r/update context
+                           {::r/c-ok walk
+                            ::r/e-ok impl/e-ok-throw-empty-input
+                            ::r/e-err (partial r/e-ok context nil state)}))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -181,23 +181,24 @@
                 ;; continuation
                 ;; - if (f x) doesn't consume input, but errors, we return the error in the
                 ;; 'consumed-err' continuation
-                (letfn [(c-ok-fx [x s ee] (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee))))
-                        (c-err-fx [ee] (r/c-err context (if (e/empty? e) ee (e/merge-error e ee))))]
-                  ((f x) s (-> context
-                               (r/set-e-ok c-ok-fx)
-                               (r/set-e-err c-err-fx)))))
+                (letfn [(c-ok-fx [x s ee]
+                          (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee))))
+                        (c-err-fx [ee]
+                          (r/c-err context (if (e/empty? e) ee (e/merge-error e ee))))]
+                  ((f x) s (r/update context {::r/e-ok c-ok-fx
+                                              ::r/e-err c-err-fx}))))
               (e-ok-p [x s e]
                 (if (e/empty? e)
                   ((f x) s context)
                   ;; - in these cases, (f x) can return as empty
-                  (letfn [(e-ok-fx [x s ee] (r/e-ok context x s (e/merge-error e ee)))
-                          (e-err-fx [ee] (r/e-err context (e/merge-error e ee)))]
-                    ((f x) s (-> context
-                                 (r/set-e-ok e-ok-fx)
-                                 (r/set-e-err e-err-fx))))))]
-        (p state (-> context
-                     (r/set-c-ok c-ok-p)
-                     (r/set-e-ok e-ok-p)))))))
+                  (letfn [(e-ok-fx [x s ee]
+                            (r/e-ok context x s (e/merge-error e ee)))
+                          (e-err-fx [ee]
+                            (r/e-err context (e/merge-error e ee)))]
+                    ((f x) s (r/update context {::r/e-ok e-ok-fx
+                                                ::r/e-err e-err-fx})))))]
+        (p state (r/update context {::r/c-ok c-ok-p
+                                    ::r/e-ok e-ok-p}))))))
 
 (defmacro do-parser
   [& body]
@@ -233,13 +234,13 @@
    (parser
      (fn [state context]
        (letfn [(e-err-p [e]
-                 (letfn [(e-ok-pp [x s ee] (r/e-ok context x s (e/merge-error e ee)))
-                         (e-err-pp [ee] (r/e-err context (e/merge-error e ee)))]
-                   (pp state (-> context
-                                 (r/set-e-ok e-ok-pp)
-                                 (r/set-e-err e-err-pp)))))]
-         (p state (-> context
-                      (r/set-e-err e-err-p)))))))
+                 (letfn [(e-ok-pp [x s ee]
+                           (r/e-ok context x s (e/merge-error e ee)))
+                         (e-err-pp [ee]
+                           (r/e-err context (e/merge-error e ee)))]
+                   (pp state (r/update context {::r/e-ok e-ok-pp
+                                                ::r/e-err e-err-pp}))))]
+         (p state (r/update context {::r/e-err e-err-p}))))))
   ([p pp ppp]
    (-> p (choice pp) (choice ppp)))
   ([p pp ppp & more]
@@ -367,9 +368,10 @@
   used to eliminate left recursion which typically occurs in expression
   grammars."
   [p op]
-  (letfn [(more [x] (choice (when-let [f op, y p]
-                              (more (f x y)))
-                            (result x)))]
+  (letfn [(more [x]
+            (choice (when-let [f op, y p]
+                      (more (f x y)))
+                    (result x)))]
     (when-let [x p]
       (more x))))
 
@@ -387,11 +389,13 @@
   Returns a value obtained by a /right/ associative application of all functions
   returned by `op` to the values returned by `p`."
   [p op]
-  (letfn [(scan [] (when-let [x p]
-                     (more x)))
-          (more [x] (choice (when-let [f op, y (scan)]
-                              (result (f x y)))
-                            (result x)))]
+  (letfn [(scan []
+            (when-let [x p]
+              (more x)))
+          (more [x]
+            (choice (when-let [f op, y (scan)]
+                      (result (f x y)))
+                    (result x)))]
     (scan)))
 
 (defn chain-right*
@@ -433,9 +437,10 @@
   "This parser applies parser `p` /zero/ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
-  (letfn [(scan [] (choice (>> end (result nil))
-                           (when-let [x p, xs (scan)]
-                             (result (cons x xs)))))]
+  (letfn [(scan []
+            (choice (>> end (result nil))
+                    (when-let [x p, xs (scan)]
+                      (result (cons x xs)))))]
     (scan)))
 
 (defn debug-state

@@ -40,9 +40,8 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn e-ok-throw-empty
-  [sym]
-  (fn [_ _ _]
-    (throw (ex-info (str "Combinator '" sym "' is applied to a parser that accepts an empty input.") {}))))
+(defn e-ok-throw-empty-input
+  [_ _ _]
+  (throw (ex-info (str "Combinator is applied to a parser that accepts an empty input.") {})))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

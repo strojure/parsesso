@@ -77,19 +77,25 @@
     (when-not (zero? c)
       c)))
 
-(defrecord TextPos [tab line col]
+(defrecord TextPos [tab, ^long line, ^long col]
   pos/ISourcePos
   (next-pos [pos c _input]
-    (case c
-      \newline (update pos :line inc)
-      \tab (update pos :col #(-> % (+ tab) (- (mod (dec %) tab))))
-      (update pos :col inc)))
-  #?@(:clj  (Comparable (compareTo [_ pos] (or (compare* line (:line pos))
-                                               (compare* col (:col pos))
-                                               0)))
-      :cljs (IComparable (-compare [_ pos] (or (compare* line (:line pos))
-                                               (compare* col (:col pos))
-                                               0))))
+    (case c \tab
+            (update pos :col #(-> % (+ tab) (- (mod (dec %) tab))))
+            \newline
+            (TextPos. tab (unchecked-inc line) 1)
+            ;; default
+            (TextPos. tab line (unchecked-inc col))))
+  #?@(:clj
+      [Comparable
+       (compareTo [_ pos] (or (compare* line (:line pos))
+                              (compare* col (:col pos))
+                              0))]
+      :cljs
+      [IComparable
+       (-compare [_ pos] (or (compare* line (:line pos))
+                             (compare* col (:col pos))
+                             0))])
   Object
   (toString [_] (str "line " line ", column " col)))
 

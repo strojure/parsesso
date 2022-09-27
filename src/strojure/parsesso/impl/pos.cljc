@@ -27,9 +27,9 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord IndexPos [i]
+(defrecord IndexPos [^long i]
   ISourcePos
-  (next-pos [_ _ _] (IndexPos. (inc i)))
+  (next-pos [_ _ _] (IndexPos. (unchecked-inc i)))
   #?@(:clj  (Comparable (compareTo [_ pos] (compare i (:i pos))))
       :cljs (IComparable (-compare [_ pos] (compare i (:i pos)))))
   Object
