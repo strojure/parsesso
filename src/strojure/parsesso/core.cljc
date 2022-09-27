@@ -260,17 +260,12 @@
      (when-let [x p, xs (sequence (rest ps))]
        (result (cons x xs)))
      (result nil)))
+  ;; TODO: sequence with reducing function?
   ([ps rf]
    (if-let [p (first ps)]
      (when-let [x p, xs (sequence (rest ps) rf)]
        (result (rf x xs)))
      (result (rf)))))
-
-(comment
-  (-> (sequence [(token #(= :A %)) (token #(= :B %)) (token #(= :C %))]
-                conj)
-      (parse [:A :B :C]))
-  )
 
 ;; TODO: Consider removing optional from API
 (defn optional

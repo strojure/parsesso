@@ -1,9 +1,11 @@
 (ns strojure.parsesso.text
+  (:refer-clojure :exclude [newline])
   (:require [clojure.string :as string]
             #?(:cljs [goog.string :as gstring])
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.core :as impl]
-            [strojure.parsesso.impl.pos :as pos]))
+            [strojure.parsesso.impl.pos :as pos])
+  #?(:clj (:import (org.apache.commons.lang3 CharUtils))))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -32,8 +34,10 @@
   "This parser succeeds if the current character is in the supplied list of
   characters. Returns the parsed character. See also `satisfy`."
   [cs]
+  ;; TODO: Use #(StringUtils/contains "abc" (int %)) ?
   (-> (satisfy (partial string/index-of cs))
-      (p/expecting (delay (describe 'char-of cs)))))
+      (p/expecting (delay (if (second cs) (describe 'char-of cs)
+                                          (char-str cs))))))
 
 (defn char-of-not
   "This parser succeeds if the current character /not/ in the supplied list of
@@ -42,23 +46,72 @@
   (-> (satisfy (complement (partial string/index-of cs)))
       (p/expecting (delay (describe 'char-of-not cs)))))
 
-(def ^{:arglists '([c])}
-  letter?
-  #?(:clj #(Character/isLetter ^char %) :cljs gstring/isAlpha))
+(defn matches
+  "Parses a character matching regex pattern `re`. Returns the parsed character."
+  ([re] (matches re (delay (describe 'matches re))))
+  ([re expecting]
+   (-> (satisfy #(re-matches re (str %)))
+       (p/expecting expecting))))
 
-(def letter
-  (-> (satisfy letter?)
-      (p/expecting 'letter)))
+;; TODO: Move predicate to separate namespace?
+(def whitespace?
+  #?(:clj  #(Character/isWhitespace ^char %)
+     :cljs gstring/isBreakingWhitespace))
 
-#_#?(:clj (defn cons-str
-            ([] (StringBuffer.))
-            ([sb] (str sb))
-            ([x sb] (-> ^StringBuffer sb (.insert 0 x)))))
+(def whitespace
+  "Parses a whitespace character. Returns the parsed character."
+  (-> (satisfy whitespace?)
+      (p/expecting "whitespace character")))
+
+(def skip-space*
+  "This parser skips /zero/ or more white space characters."
+  (p/skip* (satisfy whitespace?)))
+
+(def skip-space+
+  "This parser skips /one/ or more white space characters."
+  (p/>> whitespace skip-space*))
+
+(def newline
+  "Parses a CRLF or LF end of line. Returns a `\newline` character."
+  (p/choice (char-of "\n")
+            (p/>> (char-of "\r") (char-of "\n"))))
+
+(def alpha
+  "Parses ASCII 7 bit alphabetic characters. Returns the parsed character."
+  (-> (satisfy #?(:clj  #(CharUtils/isAsciiAlpha ^char %)
+                  :cljs gstring/isAlpha))
+      (p/expecting "alphabetic character")))
+
+(def upper
+  "Parses ASCII 7 bit alphabetic upper case character. Returns the parsed
+  character."
+  (-> (satisfy #?(:clj  #(CharUtils/isAsciiAlphaUpper ^char %)
+                  :cljs (partial re-matches #"[A-Z]")))
+      (p/expecting "upper case character")))
+
+(def lower
+  "Parses ASCII 7 bit alphabetic lower case character. Returns the parsed
+  character."
+  (-> (satisfy #?(:clj  #(CharUtils/isAsciiAlphaLower ^char %)
+                  :cljs (partial re-matches #"[a-z]")))
+      (p/expecting "lower case character")))
+
+(def numeric
+  "Parses ASCII 7 bit numeric character. Returns the parsed character."
+  (-> (satisfy #?(:clj  #(CharUtils/isAsciiNumeric ^char %)
+                  :cljs gstring/isNumeric))
+      (p/expecting "numeric character")))
+
+(def alpha-num
+  "Parses ASCII 7 bit alphabetic or numeric characters. Returns the parsed
+  character."
+  (-> (satisfy #?(:clj  #(CharUtils/isAsciiAlphanumeric ^char %)
+                  :cljs gstring/isAlphaNumeric))
+      (p/expecting "alphanumeric character")))
 
 ;; TODO: Better name for `string`?
 (defn string
-  "This parser parses a sequence of characters given by `s`. Returns the parsed
-  string."
+  "This parser parses a sequence of characters given by `s`. Returns `s`."
   [s]
   (if-let [cs (seq s)]
     (p/>> (->> cs (map (fn [c]
