@@ -367,3 +367,29 @@
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(deftest to-str-t
+  (test/are [expr result] (= result expr)
+
+    (p (t/to-str (t/char-of "abc"))
+       "abc")
+    {:consumed true, :value "a"}
+
+    (p (t/to-str (p/sequence [(p/many+ (t/char-of "abc"))
+                              (p/many+ (t/char-of "123"))]))
+       "abc123")
+    {:consumed true, :value "abc123"}
+
+    (p (t/to-str (p/many* (t/char-of "abc")))
+       "123")
+    {:consumed false, :value ""}
+
+    (p (t/to-str (t/char-of "abc"))
+       "123")
+    {:consumed false, :error ["at line 1, column 1:"
+                              "unexpected \"1\""
+                              "expecting (char-of \"abc\")"]}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

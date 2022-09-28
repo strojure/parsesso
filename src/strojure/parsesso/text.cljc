@@ -5,7 +5,8 @@
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.core :as impl]
             [strojure.parsesso.impl.pos :as pos])
-  #?(:clj (:import (org.apache.commons.lang3 CharUtils))))
+  #?(:clj  (:import (org.apache.commons.lang3 CharUtils))
+     :cljs (:import [goog.string StringBuffer])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -121,6 +122,24 @@
                   (reduce p/after))
              (p/result s))
     (p/result s)))
+
+;; TODO: Move build-string to impl namespace?
+(defn build-string
+  "Builds string from (possibly nested) collections of parsed characters and
+  strings."
+  ([x] (-> #?(:clj (StringBuilder.) :cljs (StringBuffer.))
+           (build-string x)
+           (str)))
+  ([sb x]
+   (if (sequential? x)
+     (reduce build-string sb x)
+     #?(:clj  (.append ^StringBuilder sb (str x))
+        :cljs (.append ^StringBuffer sb (str x))))))
+
+(defn to-str
+  "Converts parser result to string."
+  [p]
+  (p/map-result p build-string))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
