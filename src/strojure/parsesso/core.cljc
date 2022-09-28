@@ -98,7 +98,8 @@
                 (r/e-ok context x state (e/new-empty (:pos state))))]
         (p state (r/update context {::r/c-ok e-ok ::r/e-ok e-ok}))))))
 
-(def ^:private token-str (partial str "token: "))
+(defn- token-str [tok]
+  (str "token: " (pr-str tok)))
 
 (defn token-fn
   "This parser accepts a token when `(pred token)` returns logical true. The
