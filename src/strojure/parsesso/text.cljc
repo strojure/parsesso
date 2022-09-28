@@ -3,19 +3,17 @@
   (:require [clojure.string :as string]
             #?(:cljs [goog.string :as gstring])
             [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.core :as impl]
-            [strojure.parsesso.impl.pos :as pos])
-  #?(:clj  (:import (org.apache.commons.lang3 CharUtils))
-     :cljs (:import [goog.string StringBuffer])))
+            [strojure.parsesso.impl.text :as impl])
+  #?(:clj (:import (org.apache.commons.lang3 CharUtils))))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn- char-str [c] (pr-str (str c)))
+(defn char-str [c] (pr-str (str c)))
 
-(defn- describe
+(defn describe
   [sym args]
   (str "(" sym " " (pr-str args) ")"))
 
@@ -54,19 +52,14 @@
    (-> (satisfy #(re-matches re (str %)))
        (p/expecting expecting))))
 
-;; TODO: Move predicate to separate namespace?
-(def whitespace?
-  #?(:clj  #(Character/isWhitespace ^char %)
-     :cljs gstring/isBreakingWhitespace))
-
 (def whitespace
   "Parses a whitespace character. Returns the parsed character."
-  (-> (satisfy whitespace?)
+  (-> (satisfy impl/whitespace?)
       (p/expecting "whitespace character")))
 
 (def skip-space*
   "This parser skips /zero/ or more white space characters."
-  (p/skip* (satisfy whitespace?)))
+  (p/skip* (satisfy impl/whitespace?)))
 
 (def skip-space+
   "This parser skips /one/ or more white space characters."
@@ -122,59 +115,16 @@
              (p/result s))
     (p/result s)))
 
-;; TODO: Move build-string to impl namespace?
-(defn build-string
-  "Builds string from (possibly nested) collections of parsed characters and
-  strings."
-  ([x] (-> #?(:clj (StringBuilder.) :cljs (StringBuffer.))
-           (build-string x)
-           (str)))
-  ([sb x]
-   (if (sequential? x)
-     (reduce build-string sb x)
-     #?(:clj  (.append ^StringBuilder sb (str x))
-        :cljs (.append ^StringBuffer sb (str x))))))
-
 (defn to-str
   "Converts parser result to string."
   [p]
-  (p/map-result p build-string))
+  (p/map-result p impl/build-string))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-(defn- compare*
-  [x y]
-  (let [c (compare x y)]
-    (when-not (zero? c)
-      c)))
-
-(defrecord TextPos [tab, ^long line, ^long col]
-  pos/ISourcePos
-  (next-pos [pos c _input]
-    (case c \tab
-            (update pos :col #(-> % (+ tab) (- (mod (dec %) tab))))
-            \newline
-            (TextPos. tab (unchecked-inc line) 1)
-            ;; default
-            (TextPos. tab line (unchecked-inc col))))
-  #?@(:clj
-      [Comparable
-       (compareTo [_ pos] (or (compare* line (:line pos))
-                              (compare* col (:col pos))
-                              0))]
-      :cljs
-      [IComparable
-       (-compare [_ pos] (or (compare* line (:line pos))
-                             (compare* col (:col pos))
-                             0))])
-  Object
-  (toString [_] (str "line " line ", column " col)))
 
 (defn parse
   [p input]
   ;; TODO: Initialize source pos and input seq
-  (p (impl/->State (or (seq input) ())
-                   (TextPos. 8 1 1)
-                   nil)))
+  (p (p/new-state input (impl/->TextPos 8 1 1) nil)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

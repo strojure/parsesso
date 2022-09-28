@@ -461,12 +461,16 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(defn new-state
+  [input pos user]
+  (impl/->State (or (seq input) ())
+                pos
+                user))
+
 (defn parse
   [p input]
   ;; TODO: Initialize source pos
-  (p (impl/->State (or (seq input) ())
-                   (pos/->IndexPos 0)
-                   nil)))
+  (p (new-state input (pos/->IndexPos 0) nil)))
 
 (defn error? [reply] (instance? Failure reply))
 
