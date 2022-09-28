@@ -333,36 +333,36 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest string-t
+(deftest substr-t
   (test/are [expr result] (= result expr)
 
-    (p (t/string "abc")
+    (p (t/substr "abc")
        "abc")
     {:consumed true, :value "abc"}
 
-    (p (t/string "abc")
+    (p (t/substr "abc")
        "ab")
     {:consumed true, :error ["at line 1, column 3:"
                              "unexpected end of input"
-                             "expecting \"c\" in (string \"abc\")"]}
+                             "expecting \"c\" in (substr \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/substr "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting \"a\" in (string \"abc\")"]}
+                              "expecting \"a\" in (substr \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/substr "abc")
        "abx")
     {:consumed true, :error ["at line 1, column 3:"
                              "unexpected \"x\""
-                             "expecting \"c\" in (string \"abc\")"]}
+                             "expecting \"c\" in (substr \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/substr "abc")
        "xyz")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"x\""
-                              "expecting \"a\" in (string \"abc\")"]}
+                              "expecting \"a\" in (substr \"abc\")"]}
 
     ))
 

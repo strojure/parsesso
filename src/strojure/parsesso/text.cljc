@@ -110,15 +110,14 @@
                   :cljs gstring/isAlphaNumeric))
       (p/expecting "alphanumeric character")))
 
-;; TODO: Better name for `string`?
-(defn string
-  "This parser parses a sequence of characters given by `s`. Returns `s`."
+(defn substr
+  "Parses a sequence of characters given by `s`. Returns `s`."
   [s]
   (if-let [cs (seq s)]
     (p/after (->> cs (map (fn [c]
                             (-> (satisfy (partial = c))
                                 (p/expecting (delay (str (char-str c) " in "
-                                                         (describe 'string s)))))))
+                                                         (describe 'substr s)))))))
                   (reduce p/after))
              (p/result s))
     (p/result s)))
