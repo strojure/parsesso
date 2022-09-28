@@ -216,17 +216,16 @@
       `(bind ~p (fn [~sym] ~@body))
       `(bind ~p (fn [~sym] (when-let ~(drop 2 bindings) ~@body))))))
 
-(defn >>
+(defn after
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
-  ([p] p)
   ([p pp]
    (bind p (fn [_] pp)))
   ([p pp ppp]
-   (-> p (>> pp) (>> ppp)))
+   (-> p (after pp) (after ppp)))
   ([p pp ppp & more]
-   (reduce >> (list* p pp ppp more))))
+   (reduce after (list* p pp ppp more))))
 
 (defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
@@ -289,7 +288,7 @@
 (defn skip+
   "This parser applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (>> p (skip* p)))
+  (after p (skip* p)))
 
 (defn many+
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
@@ -313,7 +312,7 @@
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (when-let [x p, xs (many* (>> sep p))]
+  (when-let [x p, xs (many* (after sep p))]
     (result (cons x xs))))
 
 (defn sep-by*
@@ -434,7 +433,7 @@
   succeeds. Returns a sequence of values returned by `p`."
   [p end]
   (letfn [(scan []
-            (choice (>> end (result nil))
+            (choice (after end (result nil))
                     (when-let [x p, xs (scan)]
                       (result (cons x xs)))))]
     (scan)))
@@ -456,9 +455,9 @@
   indicate that the label has been backtracked. It is intended to be used for
   debugging parsers by inspecting their intermediate states."
   [label p]
-  (>> (debug-state label)
-      (choice p, (do-parser (println (str label "  backtracked"))
-                            (fail label)))))
+  (after (debug-state label)
+         (choice p, (do-parser (println (str label "  backtracked"))
+                               (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

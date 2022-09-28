@@ -160,31 +160,31 @@
 (deftest >>-t
   (test/are [expr result] (= result expr)
 
-    (p (p/>> (tok :A) (tok :B))
+    (p (p/after (tok :A) (tok :B))
        [:A :B])
     {:consumed true, :value :B}
 
-    (p (p/>> (tok :A) (tok :B))
+    (p (p/after (tok :A) (tok :B))
        [:A :A])
     {:consumed true, :error ["at index 1:"
                              "unexpected token: :A"]}
 
-    (p (p/>> (tok :A) (tok :B))
+    (p (p/after (tok :A) (tok :B))
        [:A])
     {:consumed true, :error ["at index 1:"
                              "unexpected end of input"]}
 
-    (p (p/>> (fail-consumed (tok :A)) (tok :B))
+    (p (p/after (fail-consumed (tok :A)) (tok :B))
        [:A :B])
     {:consumed true, :error ["at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/>> (tok :A) (fail-consumed (tok :B)))
+    (p (p/after (tok :A) (fail-consumed (tok :B)))
        [:A :B])
     {:consumed true, :error ["at index 2:"
                              "Test failure after parsing :B"]}
 
-    (p (p/>> (tok :A) (tok :B) (tok :C))
+    (p (p/after (tok :A) (tok :B) (tok :C))
        [:A :B :C])
     {:consumed true, :value :C}
 

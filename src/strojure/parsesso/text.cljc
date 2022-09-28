@@ -69,12 +69,12 @@
 
 (def skip-space+
   "This parser skips /one/ or more white space characters."
-  (p/>> whitespace skip-space*))
+  (p/after whitespace skip-space*))
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
   (p/choice (char-of "\n")
-            (p/>> (char-of "\r") (char-of "\n"))))
+            (p/after (char-of "\r") (char-of "\n"))))
 
 (def alpha
   "Parses ASCII 7 bit alphabetic characters. Returns the parsed character."
@@ -114,12 +114,12 @@
   "This parser parses a sequence of characters given by `s`. Returns `s`."
   [s]
   (if-let [cs (seq s)]
-    (p/>> (->> cs (map (fn [c]
-                         (-> (satisfy (partial = c))
-                             (p/expecting (delay (str (char-str c) " in "
-                                                      (describe 'string s)))))))
-               (reduce p/>>))
-          (p/result s))
+    (p/after (->> cs (map (fn [c]
+                            (-> (satisfy (partial = c))
+                                (p/expecting (delay (str (char-str c) " in "
+                                                         (describe 'string s)))))))
+                  (reduce p/after))
+             (p/result s))
     (p/result s)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
