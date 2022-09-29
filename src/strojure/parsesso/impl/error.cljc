@@ -7,18 +7,18 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(declare explain-str)
-
 (defprotocol IParseError
   (set-message [err typ msg])
   (empty? [err]))
+
+(declare explain-str)
 
 (defrecord ParseError [pos messages]
   IParseError
   (set-message
     [_ typ msg]
-    ;; TODO: filter duplicates
-    (ParseError. pos (conj (or messages []) [typ msg])))
+    ;; There is no reason to filter duplicates here, they are filtered when shown.
+    (ParseError. pos (cons [typ msg] messages)))
   (empty? [_]
     (nil? messages))
   Object
@@ -29,7 +29,7 @@
 
 (defn new-empty [pos] (ParseError. pos nil))
 
-(defn new-message [typ msg pos] (ParseError. pos [[typ msg]]))
+(defn new-message [typ msg pos] (ParseError. pos (list [typ msg])))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -78,6 +78,7 @@
        (let [xs (->> messages
                      (map #(update % 1 force))
                      (distinct)
+                     (reverse)
                      (group-by first))]
          (->> [(when-let [[[_ msg]] (and (not (xs ::un-expect))
                                          (xs ::sys-unexpect))]
