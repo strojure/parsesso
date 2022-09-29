@@ -40,8 +40,9 @@
 (defmacro update
   [context m]
   (assert (map? m))
-  (assert (every? #{::c-ok ::e-ok ::c-err ::e-err} (keys m)))
-  `(update-context ~context ~(::c-ok m) ~(::e-ok m) ~(::c-err m) ~(::e-err m)))
+  (let [m (update-keys m (comp eval eval))]
+    (assert (every? #{c-ok e-ok c-err e-err} (keys m)))
+    `(update-context ~context ~(m c-ok) ~(m e-ok) ~(m c-err) ~(m e-err))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
