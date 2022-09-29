@@ -291,7 +291,6 @@
   [p pp & ps]
   (sequence (cons p (cons pp ps))))
 
-;; TODO: Consider removing optional from API
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
