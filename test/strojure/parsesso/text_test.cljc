@@ -78,35 +78,35 @@
 (deftest one-of-not-t
   (test/are [expr result] (= result expr)
 
-    (p (t/one-of-not "abc")
+    (p (t/none-of "abc")
        "x")
     {:consumed true, :value (c "x")}
 
-    (p (t/one-of-not "abc")
+    (p (t/none-of "abc")
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting (one-of-not \"abc\")"]}
+                              "expecting (none-of \"abc\")"]}
 
-    (p (t/one-of-not "abc")
+    (p (t/none-of "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (one-of-not \"abc\")"]}
+                              "expecting (none-of \"abc\")"]}
 
-    (p (t/one-of-not "abc" "one of not a, b or c")
+    (p (t/none-of "abc" "one of not a, b or c")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
                               "expecting one of not a, b or c"]}
 
-    (p (t/one-of-not "a")
+    (p (t/none-of "a")
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting not \"a\""]}
 
-    (p (t/one-of-not "a")
+    (p (t/none-of "a")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
@@ -368,17 +368,17 @@
 (deftest alpha-num-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many* t/alphanumeric)
+    (p (p/many* t/alpha-numeric)
        "12345abcABC")
     {:consumed true, :value (seq "12345abcABC")}
 
-    (p t/alphanumeric
+    (p t/alpha-numeric
        "-")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"-\""
                               "expecting alphanumeric character"]}
 
-    (p t/alphanumeric
+    (p t/alpha-numeric
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"

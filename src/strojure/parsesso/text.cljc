@@ -47,13 +47,13 @@
    ;; TODO: Use #(StringUtils/contains "abc" (int %)) ?
    (char (partial string/index-of cs) message)))
 
-(defn one-of-not
+(defn none-of
   "This parser succeeds if the current character /not/ in the supplied list of
   characters. Returns the parsed character. Accepts optional second argument for
   expecting error message."
   ([cs]
-   (one-of-not cs (delay (if (second cs) (describe 'one-of-not cs)
-                                         (str "not " (char-str cs))))))
+   (none-of cs (delay (if (second cs) (describe 'none-of cs)
+                                      (str "not " (char-str cs))))))
   ([cs, message]
    (char (complement (partial string/index-of cs)) message)))
 
@@ -126,7 +126,7 @@
            :cljs gstring/isNumeric)
         "numeric character"))
 
-(def alphanumeric
+(def alpha-numeric
   "Parses ASCII 7 bit alphabetic or numeric characters. Returns the parsed
   character."
   (char #?(:clj  #(CharUtils/isAsciiAlphanumeric ^char %)
