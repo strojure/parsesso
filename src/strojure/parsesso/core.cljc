@@ -320,16 +320,12 @@
   (when-let [x p, xs (many* p)]
     (result (cons x xs))))
 
-;; TODO: argument order
-;; TODO: Rewrite similar to haskell?
-(defn many-n
+(defn times
   "This parser parses `n` occurrences of `p`. If `n` is smaller or equal to
   zero, the parser equals to `(return nil)`. Returns a sequence of `n` values
   returned by `p`."
   [n p]
-  (if (pos? n) (when-let [x p, xs (many-n (dec n) p)]
-                 (result (cons x xs)))
-               (result nil)))
+  (sequence (repeat n p)))
 
 (defn sep-by+
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.

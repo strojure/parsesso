@@ -603,45 +603,53 @@
 
       )))
 
-(deftest many-n-t
+(deftest times-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3])
     {:consumed true, :value '(:A1 :A2 :A3)}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3 :A4])
     {:consumed true, :value '(:A1 :A2 :A3)}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :A3 :B])
     {:consumed true, :value '(:A1 :A2 :A3)}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:A1 :A2])
     {:consumed true, :error ["at index 2:"
                              "unexpected end of input"]}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :B])
     {:consumed true, :error ["at index 2:"
                              "unexpected :B"]}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:B :A1 :A2 :A3])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [:B :A1])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/many-n 3 (tok :A1 :A2 :A3))
+    (p (p/times 3 (tok :A1 :A2 :A3))
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}
+
+    (p (p/times 0 (tok :A1 :A2 :A3))
+       [:A1 :A2 :A3])
+    {:consumed false, :value nil}
+
+    (p (p/times -3 (tok :A1 :A2 :A3))
+       [:A1 :A2 :A3])
+    {:consumed false, :value nil}
 
     ))
 
