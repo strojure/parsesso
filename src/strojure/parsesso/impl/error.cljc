@@ -9,7 +9,18 @@
 
 (declare explain-str)
 
+(defprotocol IParseError
+  (set-message [err typ msg])
+  (empty? [err]))
+
 (defrecord ParseError [pos messages]
+  IParseError
+  (set-message
+    [_ typ msg]
+    ;; TODO: filter duplicates
+    (ParseError. pos (conj (or messages []) [typ msg])))
+  (empty? [_]
+    (nil? messages))
   Object
   (toString [_]
     (str "at " pos ":\n" (explain-str messages))))
@@ -18,16 +29,9 @@
 
 (defn new-empty [pos] (ParseError. pos nil))
 
-(defn empty? [error] (nil? (:messages error)))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
 (defn new-message [typ msg pos] (ParseError. pos [[typ msg]]))
 
-(defn set-message
-  [err typ msg]
-  ;; TODO: filter duplicates
-  (update err :messages (fnil conj []) [typ msg]))
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn merge-error [e1 e2]
   (let [m1 (:messages e1), m2 (:messages e2)]

@@ -99,13 +99,10 @@
         (p state (r/update context {r/c-ok e-ok
                                     r/e-ok e-ok}))))))
 
-(defn- token-str [tok]
-  (str "token: " (pr-str tok)))
-
 (defn token-fn
   "This parser accepts a token when `(pred token)` returns logical true. The
   token can be shown in error message using `(msg-fn token)`."
-  [{:keys [msg-fn, pos-fn, user-fn] :or {msg-fn token-str, pos-fn pos/next-pos}}]
+  [{:keys [msg-fn, user-fn] :or {msg-fn pr-str}}]
   (if-not user-fn
     (fn [pred]
       (parser
@@ -115,7 +112,7 @@
               (if (pred tok)
                 (let [pos (:pos state)
                       new-input (#?(:clj .more :cljs -rest) input)
-                      new-pos (pos-fn pos tok new-input)]
+                      new-pos (pos/next-pos pos tok new-input)]
                   (r/c-ok context tok (impl/new-state state new-input new-pos) (e/new-empty new-pos)))
                 (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
             (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))
@@ -127,7 +124,7 @@
               (if (pred tok)
                 (let [pos (:pos state)
                       new-input (#?(:clj .more :cljs -rest) input)
-                      new-pos (pos-fn pos tok new-input)
+                      new-pos (pos/next-pos pos tok new-input)
                       new-state (impl/->State new-input new-pos (cond->> (:user state)
                                                                   user-fn (user-fn pos tok new-input)))]
                   (r/c-ok context tok new-state (e/new-empty new-pos)))
@@ -138,6 +135,29 @@
   "This parser accepts a token when `(pred token)` returns logical true. See
   `token-fn` for customized version of the parser."
   (token-fn {}))
+
+(def any-token
+  "This parser accepts any kind of token. Returns the accepted token."
+  (token any?))
+
+(defn not-followed-by
+  "This parser only succeeds when parser `p` fails. This parser does not consume
+  any input. This parser can be used to implement the 'longest match' rule. For
+  example, when recognizing keywords (for example `let`), we want to make sure
+  that a keyword is not followed by a legal identifier character, in which case
+  the keyword is actually an identifier (for example `lets`)."
+  [p]
+  (parser
+    (fn [state context]
+      (letfn [(e-ok [x _s _e]
+                (r/e-err context (e/new-message ::e/un-expect (delay (pr-str x))
+                                                (:pos state))))
+              (e-err [_e]
+                (r/e-ok context nil state (e/new-empty (:pos state))))]
+        (p state (r/update context {r/c-ok e-ok
+                                    r/e-ok e-ok
+                                    r/c-err e-err
+                                    r/e-err e-err}))))))
 
 (defn many*
   "This parser applies the parser `p` zero or more times. Returns a sequence of
@@ -405,27 +425,9 @@
 
 ;;; Tricky combinators
 
-(def any-token
-  "This parser accepts any kind of token. It is for example used to implement
-  'eof'. Returns the accepted token."
-  ;; TODO: Why same pos here?
-  ((token-fn {:msg-fn token-str :pos-fn (fn [pos _ _] pos)}) any?))
-
-(defn not-followed-by
-  "This parser only succeeds when parser `p` fails. This parser does not consume
-  any input. This parser can be used to implement the 'longest match' rule. For
-  example, when recognizing keywords (for example `let`), we want to make sure
-  that a keyword is not followed by a legal identifier character, in which case
-  the keyword is actually an identifier (for example `lets`)."
-  [p]
-  (maybe (choice (when-let [c (maybe p)]
-                   (unexpected (delay (token-str c))))
-                 (result nil))))
-
 (def eof
   "This parser only succeeds at the end of the input. This is not a primitive
   parser but it is defined using 'not-followed-by'."
-  ;; TODO: Implement using direct access to input for performance?
   (-> (not-followed-by any-token)
       (expecting "end of input")))
 

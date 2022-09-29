@@ -5,8 +5,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(comment
-  (test/run-tests))
+#_(test/run-tests)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -19,6 +18,10 @@
       (-> (select-keys result [:consumed])
           (assoc :error (-> (:error result) (str) (string/split-lines))))
       (select-keys result [:consumed :value]))))
+
+(defn- tok
+  [& cs]
+  (p/token (set cs)))
 
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
@@ -91,7 +94,7 @@
     (p (p/token #{:A})
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/token #{:A})
        [])
@@ -106,7 +109,7 @@
     (p (fail-consumed (p/token #{:A}))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (fail-consumed (p/token #{:A}))
        [])
@@ -115,9 +118,57 @@
 
     ))
 
-(defn- tok
-  [& cs]
-  (p/token (set cs)))
+(deftest any-token-t
+  (test/are [expr result] (= result expr)
+
+    (p p/any-token
+       [:A])
+    {:consumed true, :value :A}
+
+    (p p/any-token
+       [])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected end of input"]}
+
+    ))
+
+(deftest not-followed-by-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/not-followed-by (tok :A))
+       [:A])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected :A"]}
+
+    (p (p/not-followed-by (p/sequence [(tok :A) (tok :B)]))
+       [:A :B])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected (:A :B)"]}
+
+    (p (p/not-followed-by p/eof)
+       [])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected nil"]}
+
+    (p (p/not-followed-by (tok :A))
+       [:B])
+    {:consumed false, :value nil}
+
+    (p (p/not-followed-by (p/sequence [(tok :A) (tok :B)]))
+       [:A :A])
+    {:consumed false, :value nil}
+
+    (p (p/not-followed-by (tok :A))
+       [])
+    {:consumed false, :value nil}
+
+    (p (p/not-followed-by p/any-token)
+       [])
+    {:consumed false, :value nil}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest bind-t
   (test/are [expr result] (= result expr)
@@ -134,12 +185,12 @@
     (p (p/bind (tok :A) p/result)
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/bind (tok :A) (fn [_] (p/fail "Oops")))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/bind (tok :A) (fn [_] (tok :B)))
        [:A :B])
@@ -148,12 +199,12 @@
     (p (p/bind (tok :A) (fn [_] (tok :B)))
        [:B :A])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/bind (tok :A) (fn [_] (tok :B)))
        [:A :A])
     {:consumed true, :error ["at index 1:"
-                             "unexpected token: :A"]}
+                             "unexpected :A"]}
 
     ))
 
@@ -167,7 +218,7 @@
     (p (p/after (tok :A) (tok :B))
        [:A :A])
     {:consumed true, :error ["at index 1:"
-                             "unexpected token: :A"]}
+                             "unexpected :A"]}
 
     (p (p/after (tok :A) (tok :B))
        [:A])
@@ -207,7 +258,7 @@
                  (tok :B))
        [:C])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :C"]}
+                              "unexpected :C"]}
 
     (p (p/choice (tok :A)
                  (tok :B))
@@ -230,7 +281,7 @@
                  (tok :B))
        [:C])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :C"]}
+                              "unexpected :C"]}
 
     (p (p/choice (fail-consumed (tok :A))
                  (tok :B))
@@ -253,7 +304,7 @@
                  (fail-consumed (tok :B)))
        [:C])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :C"]}
+                              "unexpected :C"]}
 
     (p (p/choice (tok :A)
                  (fail-consumed (tok :B)))
@@ -273,7 +324,7 @@
     (p (p/map-result (tok :A) name)
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/map-result (tok :A) name)
        [])
@@ -288,7 +339,7 @@
     (p (p/map-result (fail-consumed (tok :A)) name)
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/map-result (fail-consumed (tok :A)) name)
        [])
@@ -307,7 +358,7 @@
     (p (p/sequence [(tok :A) (tok :B) (tok :C)])
        [:B :C])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/sequence [(fail-consumed (tok :A)) (tok :B) (tok :C)])
        [:A :B :C])
@@ -334,7 +385,7 @@
     (p (p/maybe (tok :A))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/maybe (tok :A))
        [])
@@ -349,7 +400,7 @@
     (p (p/maybe (fail-consumed (tok :A)))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/maybe (fail-consumed (tok :A)))
        [])
@@ -368,7 +419,7 @@
     (p (p/look-ahead (tok :A))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/look-ahead (tok :A))
        [])
@@ -383,7 +434,7 @@
     (p (p/look-ahead (fail-consumed (tok :A)))
        [:B])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/look-ahead (fail-consumed (tok :A)))
        [])
@@ -463,7 +514,7 @@
     (p (p/between (tok :A) (tok :L) (tok :R))
        [:R :A :L])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :R"]}
+                              "unexpected :R"]}
 
     (p (p/between (tok :A) (tok :L) (tok :R))
        [:L :A])
@@ -473,12 +524,12 @@
     (p (p/between (tok :A) (tok :L) (tok :R))
        [:A :R])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :A"]}
+                              "unexpected :A"]}
 
     (p (p/between (tok :A) (tok :L) (tok :R))
        [:A])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :A"]}
+                              "unexpected :A"]}
 
     (p (p/between (tok :A) (tok :L) (tok :R))
        [])
@@ -497,12 +548,12 @@
     (p (p/between (tok :A) (tok :I))
        [:A :I])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :A"]}
+                              "unexpected :A"]}
 
     (p (p/between (tok :A) (tok :I))
        [:A])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :A"]}
+                              "unexpected :A"]}
 
     (p (p/between (tok :A) (tok :I))
        [])
@@ -543,7 +594,7 @@
       (p (p/many+ (tok :D :E :F))
          [:A :B :C :D :E :F])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :A"]}
+                                "unexpected :A"]}
 
       (p (p/many+ (tok :A :B :C))
          [])
@@ -575,17 +626,17 @@
     (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:A1 :A2 :B])
     {:consumed true, :error ["at index 2:"
-                             "unexpected token: :B"]}
+                             "unexpected :B"]}
 
     (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:B :A1 :A2 :A3])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/many-n 3 (tok :A1 :A2 :A3))
        [:B :A1])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/many-n 3 (tok :A1 :A2 :A3))
        [])
@@ -623,7 +674,7 @@
       (p (p/skip+ (tok :A))
          [:B :B :B])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :B"]}
+                                "unexpected :B"]}
 
       (p (p/skip+ (tok :A))
          [])
@@ -660,12 +711,12 @@
       (p (p/sep-by+ (tok :A) (tok :S))
          [:B])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :B"]}
+                                "unexpected :B"]}
 
       (p (p/sep-by+ (tok :A) (tok :S))
          [:S])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :S"]}
+                                "unexpected :S"]}
 
       ))
 
@@ -725,12 +776,12 @@
       (p (p/sep-by-end+ (tok :A) (tok :S))
          [:A :S :A :S :A :A])
       {:consumed true, :error ["at index 5:"
-                               "unexpected token: :A"]}
+                               "unexpected :A"]}
 
       (p (p/sep-by-end+ (tok :A) (tok :S))
          [:A :S :A :S :A :B])
       {:consumed true, :error ["at index 5:"
-                               "unexpected token: :B"]}
+                               "unexpected :B"]}
 
       (p (p/sep-by-end+ (tok :A) (tok :S))
          [])
@@ -740,12 +791,12 @@
       (p (p/sep-by-end+ (tok :A) (tok :S))
          [:B])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :B"]}
+                                "unexpected :B"]}
 
       (p (p/sep-by-end+ (tok :A) (tok :S))
          [:S])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :S"]}
+                                "unexpected :S"]}
 
       ))
 
@@ -773,12 +824,12 @@
       (p (p/sep-by-end* (tok :A) (tok :S))
          [:A :S :A :S :A :A])
       {:consumed true, :error ["at index 5:"
-                               "unexpected token: :A"]}
+                               "unexpected :A"]}
 
       (p (p/sep-by-end* (tok :A) (tok :S))
          [:A :S :A :S :A :B])
       {:consumed true, :error ["at index 5:"
-                               "unexpected token: :B"]}
+                               "unexpected :B"]}
 
       (p (p/sep-by-end* (tok :A) (tok :S))
          [])
@@ -831,12 +882,12 @@
       (p (p/sep-by-end-opt+ (tok :A) (tok :S))
          [:B])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :B"]}
+                                "unexpected :B"]}
 
       (p (p/sep-by-end-opt+ (tok :A) (tok :S))
          [:S])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: :S"]}
+                                "unexpected :S"]}
 
       ))
 
@@ -906,13 +957,13 @@
                         (tok + - * /))
          [+])
       {:consumed false, :error ["at index 0:"
-                                (str "unexpected " (#'p/token-str +))]}
+                                (str "unexpected " (pr-str +))]}
 
       (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
                         (tok + - * /))
          [0])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: 0"]}
+                                "unexpected 0"]}
 
       (p (p/chain-left+ (tok 1 2 3 3 4 5 6 7 8 9)
                         (tok + - * /))
@@ -986,13 +1037,13 @@
                          (tok + - * /))
          [+])
       {:consumed false, :error ["at index 0:"
-                                (str "unexpected " (#'p/token-str +))]}
+                                (str "unexpected " (pr-str +))]}
 
       (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
                          (tok + - * /))
          [0])
       {:consumed false, :error ["at index 0:"
-                                "unexpected token: 0"]}
+                                "unexpected 0"]}
 
       (p (p/chain-right+ (tok 1 2 3 3 4 5 6 7 8 9)
                          (tok + - * /))
@@ -1045,39 +1096,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest any-token-t
-  (test/are [expr result] (= result expr)
-
-    (p p/any-token
-       [:A])
-    {:consumed true, :value :A}
-
-    (p p/any-token
-       [])
-    {:consumed false, :error ["at index 0:"
-                              "unexpected end of input"]}
-
-    ))
-
-(deftest not-followed-by-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/not-followed-by (tok :A))
-       [:A])
-    ;; TODO: Correct pos in error?
-    {:consumed false, :error ["at index 0:"
-                              "unexpected :A"]}
-
-    (p (p/not-followed-by (tok :A))
-       [:B])
-    {:consumed false, :value nil}
-
-    (p (p/not-followed-by (tok :A))
-       [])
-    {:consumed false, :value nil}
-
-    ))
-
 (deftest eof-t
   (test/are [expr result] (= result expr)
 
@@ -1088,12 +1106,10 @@
     (p p/eof
        [:A])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :A"
+                              "unexpected :A"
                               "expecting end of input"]}
 
     ))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest many-till-t
   (test/are [expr result] (= result expr)
@@ -1107,13 +1123,13 @@
                     (tok :END))
        [:A1 :A2 :A3 :B :END])
     {:consumed true, :error ["at index 3:"
-                             "unexpected token: :B"]}
+                             "unexpected :B"]}
 
     (p (p/many-till (tok :A1 :A2 :A3)
                     (tok :END))
        [:B :END])
     {:consumed false, :error ["at index 0:"
-                              "unexpected token: :B"]}
+                              "unexpected :B"]}
 
     (p (p/many-till (tok :A1 :A2 :A3)
                     (tok :END))
