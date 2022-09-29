@@ -394,34 +394,34 @@
 
     ))
 
-(deftest maybe-t
+(deftest silent-t
   (test/are [expr result] (= result expr)
 
-    (p (p/maybe (tok :A))
+    (p (p/silent (tok :A))
        [:A])
     {:consumed true, :value :A}
 
-    (p (p/maybe (tok :A))
+    (p (p/silent (tok :A))
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/maybe (tok :A))
+    (p (p/silent (tok :A))
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/maybe (fail-consumed (tok :A)))
+    (p (p/silent (fail-consumed (tok :A)))
        [:A])
     {:consumed false, :error ["at index 1:"
                               "Test failure after parsing :A"]}
 
-    (p (p/maybe (fail-consumed (tok :A)))
+    (p (p/silent (fail-consumed (tok :A)))
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/maybe (fail-consumed (tok :A)))
+    (p (p/silent (fail-consumed (tok :A)))
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}

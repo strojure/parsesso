@@ -46,7 +46,7 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'maybe'
+  all possible characters. For example, if the `expr` parser from the 'silent'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
   or letter', which is less friendly."
@@ -74,7 +74,7 @@
     (fn [state context]
       (r/e-err context (e/new-message ::e/un-expect msg (:pos state))))))
 
-(defn maybe
+(defn silent
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -444,10 +444,10 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (choice (maybe (when-let [x (maybe (many+ any-token))
-                            _ (do-parser (println (str label ": " x))
-                                         (maybe eof))]
-                   (fail x)))
+  (choice (silent (when-let [x (silent (many+ any-token))
+                             _ (do-parser (println (str label ": " x))
+                                          (silent eof))]
+                    (fail x)))
           (result nil)))
 
 (defn debug-parser
