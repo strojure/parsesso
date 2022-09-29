@@ -208,7 +208,7 @@
 
     ))
 
-(deftest >>-t
+(deftest after-t
   (test/are [expr result] (= result expr)
 
     (p (p/after (tok :A) (tok :B))
@@ -241,7 +241,7 @@
 
     ))
 
-(deftest alt-t
+(deftest choice-t
   (test/are [expr result] (= result expr)
 
     (p (p/choice (tok :A)
