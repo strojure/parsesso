@@ -375,6 +375,25 @@
 
     ))
 
+(deftest tuple-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/tuple (tok :A) (tok :B) (tok :C))
+       [:A :B :C])
+    '{:consumed true, :value (:A :B :C)}
+
+    (p (p/tuple (tok :A) (tok :B) (tok :C))
+       [:B :C])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected :B"]}
+
+    (p (p/tuple (fail-consumed (tok :A)) (tok :B) (tok :C))
+       [:A :B :C])
+    {:consumed true, :error ["at index 1:"
+                             "Test failure after parsing :A"]}
+
+    ))
+
 (deftest maybe-t
   (test/are [expr result] (= result expr)
 

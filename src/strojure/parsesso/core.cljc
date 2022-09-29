@@ -278,17 +278,18 @@
 (defn sequence
   "This parser tries to apply parsers in order until all of them succeeds.
   Returns a sequence of values returned by every parser."
-  ([ps]
-   (if-let [p (first ps)]
-     (when-let [x p, xs (sequence (rest ps))]
-       (result (cons x xs)))
-     (result nil)))
-  ;; TODO: sequence with reducing function?
-  ([ps rf]
-   (if-let [p (first ps)]
-     (when-let [x p, xs (sequence (rest ps) rf)]
-       (result (rf x xs)))
-     (result (rf)))))
+  [ps]
+  (if-let [p (first ps)]
+    (when-let [x p, xs (sequence (rest ps))]
+      (result (cons x xs)))
+    (result nil)))
+
+(defn tuple
+  "This parser tries to apply argument parsers in order until all of them
+  succeeds. Returns a sequence of values returned by every parser. It is a 2+
+  arity version of the `sequence` parser."
+  [p pp & ps]
+  (sequence (cons p (cons pp ps))))
 
 ;; TODO: Consider removing optional from API
 (defn optional
