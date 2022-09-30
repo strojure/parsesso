@@ -1,5 +1,5 @@
 (ns strojure.parsesso.impl.reply
-  (:refer-clojure :exclude [update]))
+  (:refer-clojure :exclude [replace]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -28,21 +28,21 @@
   [^Context c e]
   ((.-eerr c) e))
 
-(defn update-context
+(defn replace*
   "Returns new instance of context with replaced functions, nil arg keep
   functions untouched. To be used with macro."
-  [^Context context -c-ok, -e-ok, -c-err, -e-err]
+  [^Context context, -c-ok, -e-ok, -c-err, -e-err]
   (Context. (or -c-ok (.-cok context))
             (or -e-ok (.-eok context))
             (or -c-err (.-cerr context))
             (or -e-err (.-eerr context))))
 
-(defmacro update
+(defmacro replace
   [context m]
   (assert (map? m))
   (let [m (update-keys m (comp eval eval))]
     (assert (every? #{c-ok e-ok c-err e-err} (keys m)))
-    `(update-context ~context ~(m c-ok) ~(m e-ok) ~(m c-err) ~(m e-err))))
+    `(replace* ~context ~(m c-ok) ~(m e-ok) ~(m c-err) ~(m e-err))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

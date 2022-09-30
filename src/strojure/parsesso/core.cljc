@@ -3,7 +3,7 @@
   (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.error :as e]
             [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure update]))])
+            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure replace]))])
   #?(:clj  (:import (clojure.lang ISeq)
                     (strojure.parsesso.impl.core Parser)
                     (strojure.parsesso.impl.reply Failure))
@@ -59,8 +59,8 @@
                 (r/e-ok context x s (cond-> e (not (e/empty? e)) (set-expect-message msg))))
               (e-err [e]
                 (r/e-err context (set-expect-message e msg)))]
-        (p state (r/update context {r/e-ok e-ok
-                                    r/e-err e-err}))))))
+        (p state (r/replace context {r/e-ok e-ok
+                                     r/e-err e-err}))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
@@ -85,7 +85,7 @@
   [p]
   (parser
     (fn [state context]
-      (p state (r/update context {r/c-err (partial r/e-err context)})))))
+      (p state (r/replace context {r/c-err (partial r/e-err context)})))))
 
 (defn look-ahead
   "This parser parses `p` without consuming any input. If `p` fails and consumes
@@ -96,8 +96,8 @@
     (fn [state context]
       (letfn [(e-ok [x _ _]
                 (r/e-ok context x state (e/new-empty (:pos state))))]
-        (p state (r/update context {r/c-ok e-ok
-                                    r/e-ok e-ok}))))))
+        (p state (r/replace context {r/c-ok e-ok
+                                     r/e-ok e-ok}))))))
 
 (defn token-fn
   "This parser accepts a token when `(pred token)` returns logical true. The
@@ -154,10 +154,10 @@
                                                 (:pos state))))
               (e-err [_e]
                 (r/e-ok context nil state (e/new-empty (:pos state))))]
-        (p state (r/update context {r/c-ok e-ok
-                                    r/e-ok e-ok
-                                    r/c-err e-err
-                                    r/e-err e-err}))))))
+        (p state (r/replace context {r/c-ok e-ok
+                                     r/e-ok e-ok
+                                     r/c-err e-err
+                                     r/e-err e-err}))))))
 
 (defn many*
   "This parser applies the parser `p` zero or more times. Returns a sequence of
@@ -167,13 +167,13 @@
     (fn [state context]
       (letfn [(walk [xs x s _e]
                 (let [xs (conj! xs x)]
-                  (p s (r/update context {r/c-ok (partial walk xs)
-                                          r/e-ok impl/e-ok-throw-empty-input
-                                          r/e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e))}))))]
-        (p state (r/update context
-                           {r/c-ok (partial walk (transient []))
-                            r/e-ok impl/e-ok-throw-empty-input
-                            r/e-err (partial r/e-ok context nil state)}))))))
+                  (p s (r/replace context {r/c-ok (partial walk xs)
+                                           r/e-ok impl/e-ok-throw-empty-input
+                                           r/e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e))}))))]
+        (p state (r/replace context
+                            {r/c-ok (partial walk (transient []))
+                             r/e-ok impl/e-ok-throw-empty-input
+                             r/e-err (partial r/e-ok context nil state)}))))))
 
 (defn skip*
   "This parser applies the parser `p` zero or more times, skipping its result."
@@ -181,13 +181,13 @@
   (parser
     (fn [state context]
       (letfn [(walk [_x s _e]
-                (p s (r/update context {r/c-ok walk
-                                        r/e-ok impl/e-ok-throw-empty-input
-                                        r/e-err (partial r/c-ok context nil s)})))]
-        (p state (r/update context
-                           {r/c-ok walk
-                            r/e-ok impl/e-ok-throw-empty-input
-                            r/e-err (partial r/e-ok context nil state)}))))))
+                (p s (r/replace context {r/c-ok walk
+                                         r/e-ok impl/e-ok-throw-empty-input
+                                         r/e-err (partial r/c-ok context nil s)})))]
+        (p state (r/replace context
+                            {r/c-ok walk
+                             r/e-ok impl/e-ok-throw-empty-input
+                             r/e-err (partial r/e-ok context nil state)}))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -207,8 +207,8 @@
                           (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee))))
                         (c-err-fx [ee]
                           (r/c-err context (if (e/empty? e) ee (e/merge-error e ee))))]
-                  ((f x) s (r/update context {r/e-ok c-ok-fx
-                                              r/e-err c-err-fx}))))
+                  ((f x) s (r/replace context {r/e-ok c-ok-fx
+                                               r/e-err c-err-fx}))))
               (e-ok-p [x s e]
                 (if (e/empty? e)
                   ((f x) s context)
@@ -217,10 +217,10 @@
                             (r/e-ok context x s (e/merge-error e ee)))
                           (e-err-fx [ee]
                             (r/e-err context (e/merge-error e ee)))]
-                    ((f x) s (r/update context {r/e-ok e-ok-fx
-                                                r/e-err e-err-fx})))))]
-        (p state (r/update context {r/c-ok c-ok-p
-                                    r/e-ok e-ok-p}))))))
+                    ((f x) s (r/replace context {r/e-ok e-ok-fx
+                                                 r/e-err e-err-fx})))))]
+        (p state (r/replace context {r/c-ok c-ok-p
+                                     r/e-ok e-ok-p}))))))
 
 (defmacro do-parser
   [& body]
@@ -261,9 +261,9 @@
                            (r/e-ok context x s (e/merge-error e ee)))
                          (e-err-pp [ee]
                            (r/e-err context (e/merge-error e ee)))]
-                   (pp state (r/update context {r/e-ok e-ok-pp
-                                                r/e-err e-err-pp}))))]
-         (p state (r/update context {r/e-err e-err-p}))))))
+                   (pp state (r/replace context {r/e-ok e-ok-pp
+                                                 r/e-err e-err-pp}))))]
+         (p state (r/replace context {r/e-err e-err-p}))))))
   ([p pp ppp]
    (-> p (choice pp) (choice ppp)))
   ([p pp ppp & more]
