@@ -1,10 +1,7 @@
 (ns strojure.parsesso.text
   (:refer-clojure :exclude [char newline])
-  (:require [clojure.string :as string]
-            #?(:cljs [goog.string :as gstring])
-            [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.text :as impl])
-  #?(:clj (:import (org.apache.commons.lang3 CharUtils))))
+  (:require [strojure.parsesso.core :as p]
+            [strojure.parsesso.impl.text :as impl]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -37,15 +34,14 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn one-of
-  "This parser succeeds if the current character is in the supplied list of
+  "This parser succeeds if the current character is in the supplied string of
   characters. Returns the parsed character. Accepts optional second argument for
   expecting error message."
   ([cs]
    (one-of cs (delay (if (second cs) (describe 'one-of cs)
                                      (char-str cs)))))
   ([cs, message]
-   ;; TODO: Use #(StringUtils/contains "abc" (int %)) ?
-   (char (partial string/index-of cs) message)))
+   (char (impl/one-of? cs) message)))
 
 (defn none-of
   "This parser succeeds if the current character /not/ in the supplied list of
@@ -55,7 +51,7 @@
    (none-of cs (delay (if (second cs) (describe 'none-of cs)
                                       (str "not " (char-str cs))))))
   ([cs, message]
-   (char (complement (partial string/index-of cs)) message)))
+   (char (complement (impl/one-of? cs)) message)))
 
 (defn match
   "Parses a character matching regex pattern `re`. Returns the parsed character.
@@ -84,16 +80,16 @@
 
 (def whitespace
   "Parses a whitespace character. Returns the parsed character."
-  (char impl/whitespace?
+  (char impl/ascii-white?
         "whitespace character"))
 
-(def skip-space*
+(def skip-white*
   "This parser skips /zero/ or more whitespace characters."
-  (p/skip* (char impl/whitespace?)))
+  (p/skip* (char impl/ascii-white?)))
 
-(def skip-space+
+(def skip-white+
   "This parser skips /one/ or more whitespace characters."
-  (p/after whitespace skip-space*))
+  (p/after whitespace skip-white*))
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
@@ -102,35 +98,30 @@
 
 (def alpha
   "Parses ASCII 7 bit alphabetic characters. Returns the parsed character."
-  (char #?(:clj  #(CharUtils/isAsciiAlpha ^char %)
-           :cljs gstring/isAlpha)
+  (char impl/ascii-alpha?
         "alphabetic character"))
 
 (def upper
   "Parses ASCII 7 bit alphabetic upper case character. Returns the parsed
   character."
-  (char #?(:clj  #(CharUtils/isAsciiAlphaUpper ^char %)
-           :cljs (partial re-matches #"[A-Z]"))
+  (char impl/ascii-upper?
         "upper case character"))
 
 (def lower
   "Parses ASCII 7 bit alphabetic lower case character. Returns the parsed
   character."
-  (char #?(:clj  #(CharUtils/isAsciiAlphaLower ^char %)
-           :cljs (partial re-matches #"[a-z]"))
+  (char impl/ascii-lower?
         "lower case character"))
 
 (def numeric
   "Parses ASCII 7 bit numeric character. Returns the parsed character."
-  (char #?(:clj  #(CharUtils/isAsciiNumeric ^char %)
-           :cljs gstring/isNumeric)
+  (char impl/ascii-numeric?
         "numeric character"))
 
 (def alpha-numeric
   "Parses ASCII 7 bit alphabetic or numeric characters. Returns the parsed
   character."
-  (char #?(:clj  #(CharUtils/isAsciiAlphanumeric ^char %)
-           :cljs gstring/isAlphaNumeric)
+  (char impl/ascii-alphanumeric?
         "alphanumeric character"))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

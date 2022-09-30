@@ -6,8 +6,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(comment
-  (test/run-tests))
+#_(test/run-tests)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -75,7 +74,7 @@
 
     ))
 
-(deftest one-of-not-t
+(deftest none-of-t
   (test/are [expr result] (= result expr)
 
     (p (t/none-of "abc")
@@ -211,32 +210,32 @@
 
     ))
 
-(deftest skip-space-t
+(deftest skip-white-t
   (test/are [expr result] (= result expr)
 
-    (p t/skip-space*
+    (p t/skip-white*
        " \t\r\n")
     {:consumed true, :value nil}
 
-    (p t/skip-space*
+    (p t/skip-white*
        "a")
     {:consumed false, :value nil}
 
-    (p t/skip-space*
+    (p t/skip-white*
        "")
     {:consumed false, :value nil}
 
-    (p t/skip-space+
+    (p t/skip-white+
        " \t\r\n")
     {:consumed true, :value nil}
 
-    (p t/skip-space+
+    (p t/skip-white+
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting whitespace character"]}
 
-    (p t/skip-space+
+    (p t/skip-white+
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
@@ -365,7 +364,7 @@
 
     ))
 
-(deftest alpha-num-t
+(deftest alpha-numeric-t
   (test/are [expr result] (= result expr)
 
     (p (p/many* t/alpha-numeric)

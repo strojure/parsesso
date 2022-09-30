@@ -3,7 +3,7 @@
   :url "https://github.com/strojure/parsesso"
   :license {:name "The MIT License" :url "http://opensource.org/licenses/MIT"}
 
-  :dependencies [[org.apache.commons/commons-lang3 "3.12.0"]]
+  :dependencies []
 
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.11.1"]
                                        [org.clojure/clojurescript "1.11.60"]]}
