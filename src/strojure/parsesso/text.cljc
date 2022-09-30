@@ -135,7 +135,7 @@
 (defn ++
   "This parser joins all characters parsed by `p` to single string."
   [p]
-  (p/map-result p join-chars))
+  (p/fmap p join-chars))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

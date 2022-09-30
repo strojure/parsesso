@@ -269,11 +269,10 @@
   ([p pp ppp & more]
    (reduce choice (list* p pp ppp more))))
 
-(defn map-result
-  "This parser applies function `f` to result of the parser `p`."
+(defn fmap
+  "This parser applies function `f` to the value returned by the parser `p`."
   [p f]
-  (when-let [x p]
-    (result (f x))))
+  (bind p (comp result f)))
 
 (defn sequence
   "This parser tries to apply parsers in order until all of them succeeds.
