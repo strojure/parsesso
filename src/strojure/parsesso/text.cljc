@@ -126,10 +126,16 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn to-str
-  "This parser converts result of the parser `p` to string."
+(defn join-chars
+  "Builds string from (possibly nested) collections of parsed characters and
+  strings."
+  [x]
+  (impl/join-chars x))
+
+(defn ++
+  "This parser joins all characters parsed by `p` to single string."
   [p]
-  (p/map-result p impl/build-string))
+  (p/map-result p join-chars))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

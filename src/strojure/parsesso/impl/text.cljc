@@ -72,15 +72,15 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn build-string
+(defn join-chars
   "Builds string from (possibly nested) collections of parsed characters and
   strings."
   ([x] (-> #?(:clj (StringBuilder.) :cljs (StringBuffer.))
-           (build-string x)
+           (join-chars x)
            (str)))
   ([sb x]
    (if (sequential? x)
-     (reduce build-string sb x)
+     (reduce join-chars sb x)
      #?(:clj  (.append ^StringBuilder sb (str x))
         :cljs (.append ^StringBuffer sb (str x))))))
 

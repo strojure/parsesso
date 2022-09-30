@@ -387,23 +387,23 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest to-str-t
+(deftest plus-plus-t
   (test/are [expr result] (= result expr)
 
-    (p (t/to-str (t/one-of "abc"))
+    (p (t/++ (t/one-of "abc"))
        "abc")
     {:consumed true, :value "a"}
 
-    (p (t/to-str (p/sequence [(p/many+ (t/one-of "abc"))
-                              (p/many+ (t/one-of "123"))]))
+    (p (t/++ (p/sequence [(p/many+ (t/one-of "abc"))
+                          (p/many+ (t/one-of "123"))]))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (t/to-str (p/many* (t/one-of "abc")))
+    (p (t/++ (p/many* (t/one-of "abc")))
        "123")
     {:consumed false, :value ""}
 
-    (p (t/to-str (t/one-of "abc"))
+    (p (t/++ (t/one-of "abc"))
        "123")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"1\""
