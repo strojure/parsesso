@@ -30,14 +30,14 @@
   [x]
   (parser
     (fn [state context]
-      (r/e-ok context x state (e/new-empty (:pos state))))))
+      (r/e-ok context x state (e/no-error (:pos state))))))
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input."
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/new-message ::e/message msg (:pos state))))))
+      (r/e-err context (e/message-error msg (:pos state))))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails /without
@@ -53,12 +53,11 @@
   [p msg]
   (parser
     (fn [state context]
-      (letfn [(set-expect-message [e msg]
-                (e/set-message e ::e/expect (or msg "")))
-              (e-ok [x s e]
-                (r/e-ok context x s (cond-> e (not (e/empty? e)) (set-expect-message msg))))
+      (letfn [(e-ok [x s e]
+                (r/e-ok context x s (cond-> e (not (e/empty? e))
+                                              (e/set-expecting msg))))
               (e-err [e]
-                (r/e-err context (set-expect-message e msg)))]
+                (r/e-err context (e/set-expecting e msg)))]
         (p state (r/replace context {r/e-ok e-ok
                                      r/e-err e-err}))))))
 
@@ -72,7 +71,7 @@
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/new-message ::e/un-expect msg (:pos state))))))
+      (r/e-err context (e/unexpected-error msg (:pos state))))))
 
 (defn silent
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -95,7 +94,7 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x _ _]
-                (r/e-ok context x state (e/new-empty (:pos state))))]
+                (r/e-ok context x state (e/no-error (:pos state))))]
         (p state (r/replace context {r/c-ok e-ok
                                      r/e-ok e-ok}))))))
 
@@ -113,9 +112,9 @@
                 (let [pos (:pos state)
                       new-input (#?(:clj .more :cljs -rest) input)
                       new-pos (pos/next-pos pos tok new-input)]
-                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/new-empty new-pos)))
-                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
-            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))
+                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/no-error new-pos)))
+                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (:pos state)))))
+            (r/e-err context (e/sys-unexpected-error (:pos state)))))))
     (fn [pred]
       (parser
         (fn [state context]
@@ -127,9 +126,9 @@
                       new-pos (pos/next-pos pos tok new-input)
                       new-state (impl/->State new-input new-pos (cond->> (:user state)
                                                                   user-fn (user-fn pos tok new-input)))]
-                  (r/c-ok context tok new-state (e/new-empty new-pos)))
-                (r/e-err context (e/new-message ::e/sys-unexpect (delay (msg-fn tok)) (:pos state)))))
-            (r/e-err context (e/new-message ::e/sys-unexpect "" (:pos state)))))))))
+                  (r/c-ok context tok new-state (e/no-error new-pos)))
+                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (:pos state)))))
+            (r/e-err context (e/sys-unexpected-error (:pos state)))))))))
 
 (def token
   "This parser accepts a token when `(pred token)` returns logical true. See
@@ -150,10 +149,10 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x _s _e]
-                (r/e-err context (e/new-message ::e/un-expect (delay (pr-str x))
-                                                (:pos state))))
+                (r/e-err context (e/unexpected-error (delay (pr-str x))
+                                                     (:pos state))))
               (e-err [_e]
-                (r/e-ok context nil state (e/new-empty (:pos state))))]
+                (r/e-ok context nil state (e/no-error (:pos state))))]
         (p state (r/replace context {r/c-ok e-ok
                                      r/e-ok e-ok
                                      r/c-err e-err

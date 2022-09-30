@@ -8,17 +8,15 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defprotocol IParseError
-  (set-message [err typ msg])
+  (set-expecting [err msg])
   (empty? [err]))
 
 (declare explain-str)
 
 (defrecord ParseError [pos messages]
   IParseError
-  (set-message
-    [_ typ msg]
-    ;; There is no reason to filter duplicates here, they are filtered when shown.
-    (ParseError. pos (cons [typ msg] messages)))
+  (set-expecting [_ msg]
+    (ParseError. pos (cons [::expecting msg] messages)))
   (empty? [_]
     (nil? messages))
   Object
@@ -27,9 +25,26 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn new-empty [pos] (ParseError. pos nil))
+(defn- new-error
+  [typ msg pos]
+  (ParseError. pos (list [typ msg])))
 
-(defn new-message [typ msg pos] (ParseError. pos (list [typ msg])))
+(defn no-error
+  [pos]
+  (ParseError. pos nil))
+
+(defn sys-unexpected-error
+  ([pos] (sys-unexpected-error "" pos))
+  ([msg pos]
+   (new-error ::sys-unexpected msg pos)))
+
+(defn unexpected-error
+  [msg pos]
+  (new-error ::unexpected msg pos))
+
+(defn message-error
+  [msg pos]
+  (new-error ::message msg pos))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -80,27 +95,27 @@
                      (distinct)
                      (reverse)
                      (group-by first))]
-         (->> [(when-let [[[_ msg]] (and (not (xs ::un-expect))
-                                         (xs ::sys-unexpect))]
+         (->> [(when-let [[[_ msg]] (and (not (xs ::unexpected))
+                                         (xs ::sys-unexpected))]
                  (str (dict :unexpected) " " (or (not-empty (force msg))
                                                  (dict :end-of-input))))
-               (show-many (xs ::un-expect) (dict :or) (dict :unexpected))
-               (show-many (xs ::expect) (dict :or) (dict :expecting))
+               (show-many (xs ::unexpected) (dict :or) (dict :unexpected))
+               (show-many (xs ::expecting) (dict :or) (dict :expecting))
                (show-many (xs ::message) (dict :or) nil)]
               (filter some?)
               (string/join "\n")))
        (dict :unknown)))))
 
 (comment
-  (->> [[::sys-unexpect nil]
-        [::sys-unexpect "SysUnExpect"]
-        [::un-expect "UnExpect1"]
-        [::un-expect (delay "UnExpect2")]
-        [::expect "Expect1"]
-        [::expect (delay "Expect2")]
-        [::expect "Expect2"]
-        [::expect ""]
-        [::expect "Expect3"]
+  (->> [[::sys-unexpected nil]
+        [::sys-unexpected "SysUnExpect"]
+        [::unexpected "UnExpect1"]
+        [::unexpected (delay "UnExpect2")]
+        [::expecting "Expect1"]
+        [::expecting (delay "Expect2")]
+        [::expecting "Expect2"]
+        [::expecting ""]
+        [::expecting "Expect3"]
         [::message "Message1"]
         [::message (delay "Message1")]
         [::message "Message2"]]
