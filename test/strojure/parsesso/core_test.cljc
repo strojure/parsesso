@@ -9,7 +9,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;; TODO: Look at remaining input.
 (defn- p
   "Parses test input using given parser. Returns custom map with test result."
   [parser input]
@@ -49,7 +48,6 @@
     ))
 
 (deftest fail-t
-  ;; TODO: Error messages
   (test/are [expr result] (= result expr)
 
     (p (p/fail "Oops")
@@ -63,7 +61,6 @@
     ))
 
 (deftest expecting-t
-  ;; TODO: Test error messages
   (test/are [expr result] (= result expr)
 
     (p (-> (p/fail "Fail")
@@ -311,6 +308,13 @@
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}
+
+    (p (p/choice (p/expecting (tok :A) :A)
+                 (p/expecting (tok :B) :B))
+       [:C])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected :C"
+                              "expecting :A or :B"]}
 
     ))
 
@@ -583,7 +587,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;; TODO: Test `many` for very long input.
 (deftest many-t
 
   (testing 'p/many
@@ -600,6 +603,10 @@
       (p (p/many (tok :A :B :C))
          [])
       {:consumed false, :value nil}
+
+      (p (p/many (tok :A))
+         (repeat 10000 :A))
+      {:consumed true, :value (repeat 10000 :A)}
 
       ))
 
@@ -619,6 +626,10 @@
          [])
       {:consumed false, :error ["at index 0:"
                                 "unexpected end of input"]}
+
+      (p (p/some-many (tok :A))
+         (repeat 10000 :A))
+      {:consumed true, :value (repeat 10000 :A)}
 
       )))
 
