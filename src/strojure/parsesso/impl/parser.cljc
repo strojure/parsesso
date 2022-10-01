@@ -1,4 +1,4 @@
-(ns strojure.parsesso.impl.core
+(ns strojure.parsesso.impl.parser
   (:require [strojure.parsesso.impl.reply :as r])
   #?(:clj (:import (clojure.lang IFn))))
 
@@ -30,24 +30,6 @@
      IFn
      (-invoke [_p state] (run f state))
      (-invoke [_p state context] (Continue. (fn [] (f state context))))))
-
-(defrecord State [input pos user])
-
-(defn new-state
-  [^State state, new-input, new-pos]
-  (State. new-input new-pos (.-user state)))
-
-(defn input
-  [state]
-  (.-input ^State state))
-
-(defn pos
-  [state]
-  (.-pos ^State state))
-
-(defn user
-  [state]
-  (.-user ^State state))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

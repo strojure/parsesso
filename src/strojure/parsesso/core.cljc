@@ -1,11 +1,12 @@
 (ns strojure.parsesso.core
   (:refer-clojure :exclude [sequence when-let])
-  (:require [strojure.parsesso.impl.core :as impl #?@(:cljs (:refer [Parser]))]
-            [strojure.parsesso.impl.error :as e]
+  (:require [strojure.parsesso.impl.error :as error]
+            [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as r #?@(:cljs (:refer [Failure replace]))])
+            [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [Failure replace]))]
+            [strojure.parsesso.impl.state :as state])
   #?(:clj  (:import (clojure.lang ISeq)
-                    (strojure.parsesso.impl.core Parser)
+                    (strojure.parsesso.impl.parser Parser)
                     (strojure.parsesso.impl.reply Failure))
      :cljs (:require-macros [strojure.parsesso.core :refer [do-parser when-let]])))
 
@@ -17,7 +18,7 @@
 (defn parser
   "Wraps function `(fn [state context])` in the instance of `Parser`."
   [f]
-  (impl/->Parser f))
+  (parser/->Parser f))
 
 (defn parser? [p] (instance? Parser p))
 
@@ -30,14 +31,14 @@
   [x]
   (parser
     (fn [state context]
-      (r/e-ok context x state (e/no-error (impl/pos state))))))
+      (reply/e-ok context x state nil))))
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input."
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/message-error msg (impl/pos state))))))
+      (reply/e-err context (error/message state msg)))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails /without
@@ -54,12 +55,11 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x s e]
-                (r/e-ok context x s (cond-> e (not (e/empty? e))
-                                              (e/set-expecting msg))))
+                (reply/e-ok context x s (some-> e (error/with-expecting msg))))
               (e-err [e]
-                (r/e-err context (e/set-expecting e msg)))]
-        (p state (r/replace context {r/e-ok e-ok
-                                     r/e-err e-err}))))))
+                (reply/e-err context (error/with-expecting e msg)))]
+        (p state (reply/replace context {reply/e-ok e-ok
+                                         reply/e-err e-err}))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
@@ -71,7 +71,7 @@
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/unexpected-error msg (impl/pos state))))))
+      (reply/e-err context (error/unexpected state msg)))))
 
 (defn silent
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -84,7 +84,7 @@
   [p]
   (parser
     (fn [state context]
-      (p state (r/replace context {r/c-err (partial r/e-err context)})))))
+      (p state (reply/replace context {reply/c-err (partial reply/e-err context)})))))
 
 (defn look-ahead
   "This parser parses `p` without consuming any input. If `p` fails and consumes
@@ -94,9 +94,9 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x _ _]
-                (r/e-ok context x state (e/no-error (impl/pos state))))]
-        (p state (r/replace context {r/c-ok e-ok
-                                     r/e-ok e-ok}))))))
+                (reply/e-ok context x state nil))]
+        (p state (reply/replace context {reply/c-ok e-ok
+                                         reply/e-ok e-ok}))))))
 
 (defn token-fn
   "This parser accepts a token when `(pred token)` returns logical true. The
@@ -106,29 +106,21 @@
     (fn [pred]
       (parser
         (fn [state context]
-          (if-let [input (-> ^ISeq (impl/input state) #?(:clj .seq :cljs -seq))]
+          (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (let [pos (impl/pos state)
-                      new-input (#?(:clj .more :cljs -rest) input)
-                      new-pos (pos/next-pos pos tok new-input)]
-                  (r/c-ok context tok (impl/new-state state new-input new-pos) (e/no-error new-pos)))
-                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (impl/pos state)))))
-            (r/e-err context (e/sys-unexpected-error (impl/pos state)))))))
+                (reply/c-ok context tok (state/next-state state tok) nil)
+                (reply/e-err context (error/sys-unexpected state (delay (msg-fn tok))))))
+            (reply/e-err context (error/sys-unexpected state))))))
     (fn [pred]
       (parser
         (fn [state context]
-          (if-let [input (-> ^ISeq (impl/input state) #?(:clj .seq :cljs -seq))]
+          (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (let [pos (impl/pos state)
-                      new-input (#?(:clj .more :cljs -rest) input)
-                      new-pos (pos/next-pos pos tok new-input)
-                      new-state (impl/->State new-input new-pos (cond->> (impl/user state)
-                                                                  user-fn (user-fn pos tok new-input)))]
-                  (r/c-ok context tok new-state (e/no-error new-pos)))
-                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (impl/pos state)))))
-            (r/e-err context (e/sys-unexpected-error (impl/pos state)))))))))
+                (reply/c-ok context tok (state/next-state state tok user-fn) nil)
+                (reply/e-err context (error/sys-unexpected state (delay (msg-fn tok))))))
+            (reply/e-err context (error/sys-unexpected state))))))))
 
 (def token
   "This parser accepts a token when `(pred token)` returns logical true. See
@@ -149,14 +141,13 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x _s _e]
-                (r/e-err context (e/unexpected-error (delay (pr-str x))
-                                                     (impl/pos state))))
+                (reply/e-err context (error/unexpected state (delay (pr-str x)))))
               (e-err [_e]
-                (r/e-ok context nil state (e/no-error (impl/pos state))))]
-        (p state (r/replace context {r/c-ok e-ok
-                                     r/e-ok e-ok
-                                     r/c-err e-err
-                                     r/e-err e-err}))))))
+                (reply/e-ok context nil state nil))]
+        (p state (reply/replace context {reply/c-ok e-ok
+                                         reply/e-ok e-ok
+                                         reply/c-err e-err
+                                         reply/e-err e-err}))))))
 
 (defn many
   "This parser applies the parser `p` zero or more times. Returns a sequence of
@@ -165,14 +156,15 @@
   (parser
     (fn [state context]
       (letfn [(walk [xs x s _e]
-                (let [xs (conj! xs x)]
-                  (p s (r/replace context {r/c-ok (partial walk xs)
-                                           r/e-ok impl/e-ok-throw-empty-input
-                                           r/e-err (fn [e] (r/c-ok context (seq (persistent! xs)) s e))}))))]
-        (p state (r/replace context
-                            {r/c-ok (partial walk (transient []))
-                             r/e-ok impl/e-ok-throw-empty-input
-                             r/e-err (partial r/e-ok context nil state)}))))))
+                (let [xs (conj! xs x)
+                      e-err (fn e-err [e]
+                              (reply/c-ok context (seq (persistent! xs)) s e))]
+                  (p s (reply/replace context {reply/c-ok (partial walk xs)
+                                               reply/e-ok parser/e-ok-throw-empty-input
+                                               reply/e-err e-err}))))]
+        (p state (reply/replace context {reply/c-ok (partial walk (transient []))
+                                         reply/e-ok parser/e-ok-throw-empty-input
+                                         reply/e-err (partial reply/e-ok context nil state)}))))))
 
 (defn skip-many
   "This parser applies the parser `p` zero or more times, skipping its result."
@@ -180,13 +172,12 @@
   (parser
     (fn [state context]
       (letfn [(walk [_x s _e]
-                (p s (r/replace context {r/c-ok walk
-                                         r/e-ok impl/e-ok-throw-empty-input
-                                         r/e-err (partial r/c-ok context nil s)})))]
-        (p state (r/replace context
-                            {r/c-ok walk
-                             r/e-ok impl/e-ok-throw-empty-input
-                             r/e-err (partial r/e-ok context nil state)}))))))
+                (p s (reply/replace context {reply/c-ok walk
+                                             reply/e-ok parser/e-ok-throw-empty-input
+                                             reply/e-err (partial reply/c-ok context nil s)})))]
+        (p state (reply/replace context {reply/c-ok walk
+                                         reply/e-ok parser/e-ok-throw-empty-input
+                                         reply/e-err (partial reply/e-ok context nil state)}))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -203,23 +194,23 @@
                 ;; - if (f x) doesn't consume input, but errors, we return the error in the
                 ;; 'consumed-err' continuation
                 (letfn [(c-ok-fx [x s ee]
-                          (r/c-ok context x s (if (e/empty? e) ee (e/merge-error e ee))))
+                          (reply/c-ok context x s (cond->> ee e (error/merge-errors e))))
                         (c-err-fx [ee]
-                          (r/c-err context (if (e/empty? e) ee (e/merge-error e ee))))]
-                  ((f x) s (r/replace context {r/e-ok c-ok-fx
-                                               r/e-err c-err-fx}))))
+                          (reply/c-err context (cond->> ee e (error/merge-errors e))))]
+                  ((f x) s (reply/replace context {reply/e-ok c-ok-fx
+                                                   reply/e-err c-err-fx}))))
               (e-ok-p [x s e]
-                (if (e/empty? e)
-                  ((f x) s context)
+                (if e
                   ;; - in these cases, (f x) can return as empty
                   (letfn [(e-ok-fx [x s ee]
-                            (r/e-ok context x s (e/merge-error e ee)))
+                            (reply/e-ok context x s (error/merge-errors e ee)))
                           (e-err-fx [ee]
-                            (r/e-err context (e/merge-error e ee)))]
-                    ((f x) s (r/replace context {r/e-ok e-ok-fx
-                                                 r/e-err e-err-fx})))))]
-        (p state (r/replace context {r/c-ok c-ok-p
-                                     r/e-ok e-ok-p}))))))
+                            (reply/e-err context (error/merge-errors e ee)))]
+                    ((f x) s (reply/replace context {reply/e-ok e-ok-fx
+                                                     reply/e-err e-err-fx})))
+                  ((f x) s context)))]
+        (p state (reply/replace context {reply/c-ok c-ok-p
+                                         reply/e-ok e-ok-p}))))))
 
 (defmacro do-parser
   [& body]
@@ -257,12 +248,12 @@
      (fn [state context]
        (letfn [(e-err-p [e]
                  (letfn [(e-ok-pp [x s ee]
-                           (r/e-ok context x s (e/merge-error e ee)))
+                           (reply/e-ok context x s (error/merge-errors e ee)))
                          (e-err-pp [ee]
-                           (r/e-err context (e/merge-error e ee)))]
-                   (pp state (r/replace context {r/e-ok e-ok-pp
-                                                 r/e-err e-err-pp}))))]
-         (p state (r/replace context {r/e-err e-err-p}))))))
+                           (reply/e-err context (error/merge-errors e ee)))]
+                   (pp state (reply/replace context {reply/e-ok e-ok-pp
+                                                     reply/e-err e-err-pp}))))]
+         (p state (reply/replace context {reply/e-err e-err-p}))))))
   ([p pp ppp]
    (-> p (choice pp) (choice ppp)))
   ([p pp ppp & more]
@@ -455,9 +446,9 @@
 
 (defn new-state
   [input pos user]
-  (impl/->State (or (seq input) ())
-                pos
-                user))
+  (state/->State (or (seq input) ())
+                 pos
+                 user))
 
 (defn parse
   [p input]

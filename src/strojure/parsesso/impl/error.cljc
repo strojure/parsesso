@@ -1,54 +1,44 @@
 (ns strojure.parsesso.impl.error
-  (:refer-clojure :exclude [empty?])
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [strojure.parsesso.impl.state :as state]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol IParseError
-  (set-expecting [err msg])
-  (empty? [err]))
-
 (declare explain-str)
 
 (defrecord ParseError [pos messages]
-  IParseError
-  (set-expecting [_ msg]
-    (ParseError. pos (cons [::expecting msg] messages)))
-  (empty? [_]
-    (nil? messages))
   Object
   (toString [_]
     (str "at " pos ":\n" (explain-str messages))))
 
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
 (defn- new-error
-  [typ msg pos]
-  (ParseError. pos (list [typ msg])))
+  [state typ msg]
+  (ParseError. (state/pos state) (cons [typ msg] nil)))
 
-(defn no-error
-  [pos]
-  (ParseError. pos nil))
+(defn sys-unexpected
+  ([state]
+   (new-error state ::sys-unexpected nil))
+  ([state msg]
+   (new-error state ::sys-unexpected msg)))
 
-(defn sys-unexpected-error
-  ([pos] (sys-unexpected-error "" pos))
-  ([msg pos]
-   (new-error ::sys-unexpected msg pos)))
+(defn unexpected
+  [state msg]
+  (new-error state ::unexpected msg))
 
-(defn unexpected-error
-  [msg pos]
-  (new-error ::unexpected msg pos))
+(defn with-expecting
+  [^ParseError err, msg]
+  (ParseError. (.-pos err) (cons [::expecting msg] (.-messages err))))
 
-(defn message-error
-  [msg pos]
-  (new-error ::message msg pos))
+(defn message
+  [state msg]
+  (new-error state ::message msg))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn merge-error [e1 e2]
+(defn merge-errors [e1 e2]
   (let [m1 (:messages e1), m2 (:messages e2)]
     (cond (and m1 (nil? m2)) e1
           (and m2 (nil? m1)) e2

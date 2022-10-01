@@ -5,31 +5,30 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol ISourcePos
-  (next-pos [pos token input]
-    "Returns new source pos for the current token and the rest of the tokens
-    `input`."))
+(defprotocol InputPos
+  (next-pos [pos token]
+    "Returns new source pos for the current token."))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 #?(:clj
-   (extend-protocol ISourcePos
+   (extend-protocol InputPos
      nil
-     (next-pos [_ _ _])
+     (next-pos [_ _])
      Number
-     (next-pos [pos _ _] (inc pos)))
+     (next-pos [pos _] (inc pos)))
    :cljs
-   (extend-protocol ISourcePos
+   (extend-protocol InputPos
      nil
-     (next-pos [_ _ _])
+     (next-pos [_ _])
      number
-     (next-pos [pos _ _] (inc pos))))
+     (next-pos [pos _] (inc pos))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defrecord IndexPos [^long i]
-  ISourcePos
-  (next-pos [_ _ _] (IndexPos. (unchecked-inc i)))
+  InputPos
+  (next-pos [_ _] (IndexPos. (unchecked-inc i)))
   #?@(:clj  (Comparable (compareTo [_ pos] (compare i (:i pos))))
       :cljs (IComparable (-compare [_ pos] (compare i (:i pos)))))
   Object

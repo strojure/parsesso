@@ -93,8 +93,8 @@
       c)))
 
 (defrecord TextPos [tab, ^long line, ^long col]
-  pos/ISourcePos
-  (next-pos [pos c _input]
+  pos/InputPos
+  (next-pos [pos c]
     (case c \tab
             (update pos :col #(-> % (+ tab) (- (mod (dec %) tab))))
             \newline
