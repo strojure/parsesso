@@ -31,12 +31,23 @@
      (-invoke [_p state] (run f state))
      (-invoke [_p state context] (Continue. (fn [] (f state context))))))
 
-(defprotocol IState
-  (new-state [state new-input new-pos]))
+(defrecord State [input pos user])
 
-(defrecord State [input pos user]
-  IState
-  (new-state [_ new-input new-pos] (State. new-input new-pos user)))
+(defn new-state
+  [^State state, new-input, new-pos]
+  (State. new-input new-pos (.-user state)))
+
+(defn input
+  [state]
+  (.-input ^State state))
+
+(defn pos
+  [state]
+  (.-pos ^State state))
+
+(defn user
+  [state]
+  (.-user ^State state))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

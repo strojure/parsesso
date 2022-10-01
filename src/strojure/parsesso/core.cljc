@@ -30,14 +30,14 @@
   [x]
   (parser
     (fn [state context]
-      (r/e-ok context x state (e/no-error (:pos state))))))
+      (r/e-ok context x state (e/no-error (impl/pos state))))))
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input."
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/message-error msg (:pos state))))))
+      (r/e-err context (e/message-error msg (impl/pos state))))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails /without
@@ -71,7 +71,7 @@
   [msg]
   (parser
     (fn [state context]
-      (r/e-err context (e/unexpected-error msg (:pos state))))))
+      (r/e-err context (e/unexpected-error msg (impl/pos state))))))
 
 (defn silent
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -94,7 +94,7 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x _ _]
-                (r/e-ok context x state (e/no-error (:pos state))))]
+                (r/e-ok context x state (e/no-error (impl/pos state))))]
         (p state (r/replace context {r/c-ok e-ok
                                      r/e-ok e-ok}))))))
 
@@ -106,29 +106,29 @@
     (fn [pred]
       (parser
         (fn [state context]
-          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
+          (if-let [input (-> ^ISeq (impl/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (let [pos (:pos state)
+                (let [pos (impl/pos state)
                       new-input (#?(:clj .more :cljs -rest) input)
                       new-pos (pos/next-pos pos tok new-input)]
                   (r/c-ok context tok (impl/new-state state new-input new-pos) (e/no-error new-pos)))
-                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (:pos state)))))
-            (r/e-err context (e/sys-unexpected-error (:pos state)))))))
+                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (impl/pos state)))))
+            (r/e-err context (e/sys-unexpected-error (impl/pos state)))))))
     (fn [pred]
       (parser
         (fn [state context]
-          (if-let [input (-> ^ISeq (:input state) #?(:clj .seq :cljs -seq))]
+          (if-let [input (-> ^ISeq (impl/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (let [pos (:pos state)
+                (let [pos (impl/pos state)
                       new-input (#?(:clj .more :cljs -rest) input)
                       new-pos (pos/next-pos pos tok new-input)
-                      new-state (impl/->State new-input new-pos (cond->> (:user state)
+                      new-state (impl/->State new-input new-pos (cond->> (impl/user state)
                                                                   user-fn (user-fn pos tok new-input)))]
                   (r/c-ok context tok new-state (e/no-error new-pos)))
-                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (:pos state)))))
-            (r/e-err context (e/sys-unexpected-error (:pos state)))))))))
+                (r/e-err context (e/sys-unexpected-error (delay (msg-fn tok)) (impl/pos state)))))
+            (r/e-err context (e/sys-unexpected-error (impl/pos state)))))))))
 
 (def token
   "This parser accepts a token when `(pred token)` returns logical true. See
@@ -150,9 +150,9 @@
     (fn [state context]
       (letfn [(e-ok [x _s _e]
                 (r/e-err context (e/unexpected-error (delay (pr-str x))
-                                                     (:pos state))))
+                                                     (impl/pos state))))
               (e-err [_e]
-                (r/e-ok context nil state (e/no-error (:pos state))))]
+                (r/e-ok context nil state (e/no-error (impl/pos state))))]
         (p state (r/replace context {r/c-ok e-ok
                                      r/e-ok e-ok
                                      r/c-err e-err
