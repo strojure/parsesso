@@ -50,7 +50,7 @@
   all possible characters. For example, if the `expr` parser from the 'silent'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
-  or letter', which is less friendly."
+  or alphabetic character', which is less friendly."
   [p msg]
   (parser
     (fn [state context]
@@ -80,7 +80,37 @@
   This combinator is used whenever arbitrary look ahead is needed. Since it
   pretends that it hasn't consumed any input when `p` fails, the `choice`
   combinator will try its second alternative even when the first parser failed
-  while consuming input."
+  while consuming input.
+
+  The `silent` combinator can for example be used to distinguish identifiers and
+  reserved words. Both reserved words and identifiers are a sequence of letters.
+  Whenever we expect a certain reserved word where we can also expect an
+  identifier we have to use the `silent` combinator. Suppose we write:
+
+      (def identifier
+        (some-many text/alpha))
+
+      (def let-expr
+        (after (char-seq \"let\")
+               ...))
+
+      (def expr
+        (-> (choice let-expr
+                    identifier)
+            (expecting \"expression\"))
+
+  If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
+  expecting \"t\" of (char-seq \"let\")`. Indeed, since the `choice` combinator
+  only tries alternatives when the first alternative hasn't consumed input, the
+  `identifier` parser is never tried (because the prefix \"le\" of the
+  `(char-seq \"let\")` parser is already consumed). The right behaviour can be
+  obtained by adding the `silent` combinator:
+
+      (def expr
+        (-> (choice (silent let-expr)
+                    identifier)
+            (expecting \"expression\"))
+  "
   [p]
   (parser
     (fn [state context]
@@ -215,31 +245,39 @@
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
   parsers."
-  ([p pp]
-   (bind p (fn [_] pp)))
-  ([p pp ppp]
-   (-> p (after pp) (after ppp)))
-  ([p pp ppp & more]
-   (reduce after (list* p pp ppp more))))
+  ([q p]
+   (bind q (fn [_] p)))
+  ([q qq p]
+   (->> p (after (after q qq))))
+  ([q qq qqq & more]
+   (reduce after (list* q qq qqq more))))
 
 (defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
-  Returns the value of the succeeding parser."
-  ([p pp]
+  Returns the value of the succeeding parser.
+
+  The parser first applies `p`. If it succeeds, the value of `p` is returned. If
+  `p` fails /without consuming any input/, parser `q` is tried and so on.
+
+  The parser is called /predictive/ since `q` is only tried when parser `p`
+  didn't consume any input (i.e. the look ahead is 1). This non-backtracking
+  behaviour allows for both an efficient implementation of the parser
+  combinators and the generation of good error messages."
+  ([p q]
    (parser
      (fn [state context]
        (letfn [(e-err-p [e]
-                 (letfn [(e-ok-pp [x s ee]
+                 (letfn [(e-ok-q [x s ee]
                            (reply/e-ok context x s (error/merge-errors e ee)))
-                         (e-err-pp [ee]
+                         (e-err-q [ee]
                            (reply/e-err context (error/merge-errors e ee)))]
-                   (pp state (reply/replace context {reply/e-ok e-ok-pp
-                                                     reply/e-err e-err-pp}))))]
+                   (q state (reply/replace context {reply/e-ok e-ok-q
+                                                     reply/e-err e-err-q}))))]
          (p state (reply/replace context {reply/e-err e-err-p}))))))
-  ([p pp ppp]
-   (-> p (choice pp) (choice ppp)))
-  ([p pp ppp & more]
-   (reduce choice (list* p pp ppp more))))
+  ([p q qq]
+   (-> p (choice q) (choice qq)))
+  ([p q qq & more]
+   (reduce choice (list* p q qq more))))
 
 (defn fmap
   "This parser applies function `f` to the value returned by the parser `p`."
@@ -259,8 +297,8 @@
   "This parser tries to apply argument parsers in order until all of them
   succeeds. Returns a sequence of values returned by every parser. It is a 2+
   arity version of the `sequence` parser."
-  [p pp & ps]
-  (sequence (cons p (cons pp ps))))
+  [p q & ps]
+  (sequence (cons p (cons q ps))))
 
 (defn token-seq
   "This parser parses a sequence of tokens given by `xs` using function `pf` to
