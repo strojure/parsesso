@@ -262,6 +262,19 @@
   [p pp & ps]
   (sequence (cons p (cons pp ps))))
 
+(defn token-seq
+  "This parser parses a sequence of tokens given by `xs` using function `pf` to
+  convert every token to its parser. Returns `xs`."
+  ([xs]
+   (token-seq xs (fn [tok]
+                   (-> (token (partial = tok))
+                       (expecting (delay (str (pr-str tok) " of (token-seq " (pr-str xs) ")")))))))
+  ([xs pf]
+   (if-let [ts (seq xs)]
+     (after (reduce after (map pf ts))
+            (result xs))
+     (result xs))))
+
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
@@ -395,7 +408,7 @@
   the keyword is actually an identifier (for example `lets`). We can write this
   behaviour as follows:
 
-      (-> (string \"let\")
+      (-> (text/char-seq \"let\")
           (not-followed-by alpha-numeric))
   "
   [p q]

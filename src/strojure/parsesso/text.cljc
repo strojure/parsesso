@@ -61,16 +61,12 @@
   ([re, message]
    (char #(re-matches re (str %)) message)))
 
-(defn string
+(defn char-seq
   "Parses a sequence of characters given by `s`. Returns `s`."
   [s]
-  (if-let [cs (seq s)]
-    (p/after (->> cs (map (fn [c] (char (partial = c)
-                                        (delay (str (char-str c) " in "
-                                                    (describe 'string s))))))
-                  (reduce p/after))
-             (p/result s))
-    (p/result s)))
+  (p/token-seq s (fn [c] (char (partial = c)
+                               (delay (str (char-str c) " in "
+                                           (describe 'char-seq s)))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

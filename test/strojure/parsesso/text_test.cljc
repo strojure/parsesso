@@ -112,7 +112,7 @@
 
     ))
 
-(deftest match-t
+(deftest matching-t
   (test/are [expr result] (= result expr)
 
     (p (p/many (t/matching #"[a-z]"))
@@ -139,36 +139,36 @@
 
     ))
 
-(deftest string-t
+(deftest char-sec-t
   (test/are [expr result] (= result expr)
 
-    (p (t/string "abc")
+    (p (t/char-seq "abc")
        "abc")
     {:consumed true, :value "abc"}
 
-    (p (t/string "abc")
+    (p (t/char-seq "abc")
        "ab")
     {:consumed true, :error ["at line 1, column 3:"
                              "unexpected end of input"
-                             "expecting \"c\" in (string \"abc\")"]}
+                             "expecting \"c\" in (char-seq \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/char-seq "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting \"a\" in (string \"abc\")"]}
+                              "expecting \"a\" in (char-seq \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/char-seq "abc")
        "abx")
     {:consumed true, :error ["at line 1, column 3:"
                              "unexpected \"x\""
-                             "expecting \"c\" in (string \"abc\")"]}
+                             "expecting \"c\" in (char-seq \"abc\")"]}
 
-    (p (t/string "abc")
+    (p (t/char-seq "abc")
        "xyz")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"x\""
-                              "expecting \"a\" in (string \"abc\")"]}
+                              "expecting \"a\" in (char-seq \"abc\")"]}
 
     ))
 
