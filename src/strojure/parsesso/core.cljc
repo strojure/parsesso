@@ -261,7 +261,7 @@
 
 (defn fmap
   "This parser applies function `f` to the value returned by the parser `p`."
-  [p f]
+  [f p]
   (bind p (comp result f)))
 
 (defn sequence
