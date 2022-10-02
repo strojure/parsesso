@@ -132,36 +132,43 @@
 (deftest not-followed-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/not-followed-by (tok :A))
+    (p (p/not-followed-by (p/result :X)
+                          (tok :A))
+       [:B])
+    {:consumed false, :value :X}
+
+    (p (p/not-followed-by (p/result :X)
+                          (p/sequence [(tok :A) (tok :B)]))
+       [:A :A])
+    {:consumed false, :value :X}
+
+    (p (p/not-followed-by (p/result :X)
+                          (tok :A))
+       [])
+    {:consumed false, :value :X}
+
+    (p (p/not-followed-by (p/result :X)
+                          p/any-token)
+       [])
+    {:consumed false, :value :X}
+
+    (p (p/not-followed-by (p/result :X)
+                          (tok :A))
        [:A])
     {:consumed false, :error ["at index 0:"
                               "unexpected :A"]}
 
-    (p (p/not-followed-by (p/sequence [(tok :A) (tok :B)]))
+    (p (p/not-followed-by (p/result :X)
+                          (p/sequence [(tok :A) (tok :B)]))
        [:A :B])
     {:consumed false, :error ["at index 0:"
                               "unexpected (:A :B)"]}
 
-    (p (p/not-followed-by p/eof)
+    (p (p/not-followed-by (p/result :X)
+                          p/eof)
        [])
     {:consumed false, :error ["at index 0:"
-                              "unexpected nil"]}
-
-    (p (p/not-followed-by (tok :A))
-       [:B])
-    {:consumed false, :value nil}
-
-    (p (p/not-followed-by (p/sequence [(tok :A) (tok :B)]))
-       [:A :A])
-    {:consumed false, :value nil}
-
-    (p (p/not-followed-by (tok :A))
-       [])
-    {:consumed false, :value nil}
-
-    (p (p/not-followed-by p/any-token)
-       [])
-    {:consumed false, :value nil}
+                              "unexpected :strojure.parsesso.core/eof"]}
 
     ))
 
@@ -1139,7 +1146,7 @@
 
     (p p/eof
        [])
-    {:consumed false, :value nil}
+    {:consumed false, :value ::p/eof}
 
     (p p/eof
        [:A])

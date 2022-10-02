@@ -131,24 +131,6 @@
   "This parser accepts any kind of token. Returns the accepted token."
   (token any?))
 
-(defn not-followed-by
-  "This parser only succeeds when parser `p` fails. This parser does not consume
-  any input. This parser can be used to implement the 'longest match' rule. For
-  example, when recognizing keywords (for example `let`), we want to make sure
-  that a keyword is not followed by a legal identifier character, in which case
-  the keyword is actually an identifier (for example `lets`)."
-  [p]
-  (parser
-    (fn [state context]
-      (letfn [(e-ok [x _s _e]
-                (reply/e-err context (error/unexpected state (delay (pr-str x)))))
-              (e-err [_e]
-                (reply/e-ok context nil state nil))]
-        (p state (reply/replace context {reply/c-ok e-ok
-                                         reply/e-ok e-ok
-                                         reply/c-err e-err
-                                         reply/e-err e-err}))))))
-
 (defn many
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`."
@@ -405,10 +387,36 @@
 
 ;;; Tricky combinators
 
+(defn not-followed-by
+  "This parser behaves like parser `p`, except that it only succeeds when parser
+  `q` fails. This parser can be used to implement the 'longest match' rule. For
+  example, when recognizing keywords (for example `let`), we want to make sure
+  that a keyword is not followed by a legal identifier character, in which case
+  the keyword is actually an identifier (for example `lets`). We can write this
+  behaviour as follows:
+
+      (-> (string \"let\")
+          (not-followed-by alpha-numeric))
+  "
+  [p q]
+  (->> (fn [px]
+         (parser
+           (fn [state context]
+             (letfn [(e-ok [qx _s _e]
+                       (reply/e-err context (error/unexpected state (delay (pr-str qx)))))
+                     (e-err [_e]
+                       (reply/e-ok context px state nil))]
+               (q state (reply/replace context {reply/c-ok e-ok
+                                                reply/e-ok e-ok
+                                                reply/c-err e-err
+                                                reply/e-err e-err}))))))
+       (bind p)))
+
 (def eof
-  "This parser only succeeds at the end of the input. This is not a primitive
-  parser but it is defined using 'not-followed-by'."
-  (-> (not-followed-by any-token)
+  "This parser only succeeds with value `::eof` at the end of the input. This is
+  not a primitive parser, but it is defined using 'not-followed-by'."
+  (-> (result ::eof)
+      (not-followed-by any-token)
       (expecting "end of input")))
 
 (defn many-till
