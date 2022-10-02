@@ -115,23 +115,23 @@
 (deftest match-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many (t/match #"[a-z]"))
+    (p (p/many (t/matching #"[a-z]"))
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p (t/match #"[a-z]")
+    (p (t/matching #"[a-z]")
        "A")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"A\""
-                              "expecting (match #\"[a-z]\")"]}
+                              "expecting (matching #\"[a-z]\")"]}
 
-    (p (t/match #"[a-z]")
+    (p (t/matching #"[a-z]")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (match #\"[a-z]\")"]}
+                              "expecting (matching #\"[a-z]\")"]}
 
-    (p (t/match #"[a-z]" "a to z")
+    (p (t/matching #"[a-z]" "a to z")
        "A")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"A\""

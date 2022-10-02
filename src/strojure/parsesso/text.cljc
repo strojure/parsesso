@@ -53,11 +53,11 @@
   ([cs, message]
    (char (complement (impl/one-of? cs)) message)))
 
-(defn match
+(defn matching
   "Parses a character matching regex pattern `re`. Returns the parsed character.
   Accepts optional second argument for expecting error message."
   ([re]
-   (match re (delay (describe 'match re))))
+   (matching re (delay (describe 'matching re))))
   ([re, message]
    (char #(re-matches re (str %)) message)))
 
