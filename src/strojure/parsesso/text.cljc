@@ -8,7 +8,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn char-str [c] (pr-str (str c)))
+(defn render-char [c] (pr-str (str c)))
 
 (defn describe
   [sym args]
@@ -23,7 +23,7 @@
        :arglists
        '([pred] [pred, message])}
   char
-  (let [token (p/token-fn {:msg-fn char-str})]
+  (let [token (p/token-fn {:render-token-fn render-char})]
     (fn
       ([pred]
        (token pred))
@@ -39,7 +39,7 @@
   expecting error message."
   ([cs]
    (one-of cs (delay (if (second cs) (describe 'one-of cs)
-                                     (char-str cs)))))
+                                     (render-char cs)))))
   ([cs, message]
    (char (impl/one-of? cs) message)))
 
@@ -49,7 +49,7 @@
   expecting error message."
   ([cs]
    (none-of cs (delay (if (second cs) (describe 'none-of cs)
-                                      (str "not " (char-str cs))))))
+                                      (str "not " (render-char cs))))))
   ([cs, message]
    (char (complement (impl/one-of? cs)) message)))
 
@@ -64,7 +64,7 @@
 (def ^{:doc "Parses a sequence of characters given by `s`. Returns `s`."
        :arglists '([s])}
   string
-  (p/tokens-fn {:render-token-fn char-str}))
+  (p/tokens-fn {:render-token-fn render-char}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

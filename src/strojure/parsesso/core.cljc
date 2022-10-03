@@ -130,10 +130,10 @@
 
 (defn token-fn
   "Function returning the parser which accepts a token when `(pred token)`
-  returns logical true. The token can be shown in error message using `(msg-fn
-  token)`."
-  [{:keys [msg-fn, user-fn] :or {msg-fn pr-str}}]
-  (if-not user-fn
+  returns logical true. The token can be shown in error message using
+  `(render-token-fn token)`."
+  [{:keys [render-token-fn, user-state-fn] :or {render-token-fn pr-str}}]
+  (if-not user-state-fn
     (fn [pred]
       (parser
         (fn [state context]
@@ -141,7 +141,7 @@
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
                 (reply/c-ok context tok (state/next-state state tok) nil)
-                (reply/e-err context (error/sys-unexpected state (delay (msg-fn tok))))))
+                (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
             (reply/e-err context (error/sys-unexpected state))))))
     (fn [pred]
       (parser
@@ -149,8 +149,8 @@
           (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (reply/c-ok context tok (state/next-state state tok user-fn) nil)
-                (reply/e-err context (error/sys-unexpected state (delay (msg-fn tok))))))
+                (reply/c-ok context tok (state/next-state state tok user-state-fn) nil)
+                (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
             (reply/e-err context (error/sys-unexpected state))))))))
 
 (defn tokens-fn

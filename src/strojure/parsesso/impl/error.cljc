@@ -7,12 +7,12 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(declare explain-str)
+(declare render-messages)
 
 (defrecord ParseError [pos messages]
   Object
   (toString [_]
-    (str "at " pos ":\n" (explain-str messages))))
+    (str "at " pos ":\n" (render-messages messages))))
 
 (defn- new-error
   [state typ msg]
@@ -56,14 +56,14 @@
       1 (str (first xs))
       (str (string/join ", " (butlast xs)) " " -or " " (last xs)))))
 
-(defn- show-many
+(defn- render-many
   [xs -or prefix]
   (when xs
     (cond->> (->> xs (map (comp force second))
                   (comma-sep -or))
       prefix (str prefix " "))))
 
-(defn explain-str
+(defn render-messages
   "The standard function for showing error messages. Formats a list of error
   messages in English. The resulting string will be formatted like:
 
@@ -72,7 +72,7 @@
   /{comma separated list of Message messages}/"
   {:arglists '([{:keys [unknown expecting unexpected end-of-input or] :as dict}, messages]
                [messages])}
-  ([messages] (explain-str nil messages))
+  ([messages] (render-messages nil messages))
   ([dict messages]
    (let [dict (->> dict (merge {:unknown "unknown parse error"
                                 :expecting "expecting"
@@ -87,11 +87,12 @@
                      (group-by first))]
          (->> [(when-let [[[_ msg]] (and (not (xs ::unexpected))
                                          (xs ::sys-unexpected))]
+                 ;; TODO: explicit detection of end of input?
                  (str (dict :unexpected) " " (or (not-empty (force msg))
                                                  (dict :end-of-input))))
-               (show-many (xs ::unexpected) (dict :or) (dict :unexpected))
-               (show-many (xs ::expecting) (dict :or) (dict :expecting))
-               (show-many (xs ::message) (dict :or) nil)]
+               (render-many (xs ::unexpected) (dict :or) (dict :unexpected))
+               (render-many (xs ::expecting) (dict :or) (dict :expecting))
+               (render-many (xs ::message) (dict :or) nil)]
               (filter some?)
               (string/join "\n")))
        (dict :unknown)))))
@@ -109,7 +110,7 @@
         [::message "Message1"]
         [::message (delay "Message1")]
         [::message "Message2"]]
-       (explain-str)
+       (render-messages)
        (println))
   )
 
