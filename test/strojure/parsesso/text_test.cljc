@@ -45,13 +45,13 @@
        "d")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"d\""
-                              "expecting (one-of \"abc\")"]}
+                              "expecting character of \"abc\""]}
 
     (p (t/one-of "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (one-of \"abc\")"]}
+                              "expecting character of \"abc\""]}
 
     (p (t/one-of "abc" "a, b or c")
        "")
@@ -84,13 +84,13 @@
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting (none-of \"abc\")"]}
+                              "expecting character of not \"abc\""]}
 
     (p (t/none-of "abc")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (none-of \"abc\")"]}
+                              "expecting character of not \"abc\""]}
 
     (p (t/none-of "abc" "one of not a, b or c")
        "")
@@ -102,13 +102,13 @@
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting not \"a\""]}
+                              "expecting not \"a\" character"]}
 
     (p (t/none-of "a")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting not \"a\""]}
+                              "expecting not \"a\" character"]}
 
     ))
 
@@ -406,7 +406,7 @@
        "123")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"1\""
-                              "expecting (one-of \"abc\")"]}
+                              "expecting character of \"abc\""]}
 
     ))
 

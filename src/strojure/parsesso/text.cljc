@@ -8,13 +8,9 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn render-char [c] (pr-str (str c)))
-
-(defn describe
-  [sym args]
-  (str "(" sym " " (pr-str args) ")"))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+(defn render-char
+  [c]
+  (pr-str (str c)))
 
 (def ^{:doc
        "This parser succeeds for any character for which the supplied predicate
@@ -38,7 +34,7 @@
   characters. Returns the parsed character. Accepts optional second argument for
   expecting error message."
   ([cs]
-   (one-of cs (delay (if (second cs) (describe 'one-of cs)
+   (one-of cs (delay (if (second cs) (str "character of " (pr-str cs))
                                      (render-char cs)))))
   ([cs, message]
    (char (impl/one-of? cs) message)))
@@ -48,8 +44,8 @@
   characters. Returns the parsed character. Accepts optional second argument for
   expecting error message."
   ([cs]
-   (none-of cs (delay (if (second cs) (describe 'none-of cs)
-                                      (str "not " (render-char cs))))))
+   (none-of cs (delay (if (second cs) (str "character of not " (pr-str cs))
+                                      (str "not " (render-char cs) " character")))))
   ([cs, message]
    (char (complement (impl/one-of? cs)) message)))
 
