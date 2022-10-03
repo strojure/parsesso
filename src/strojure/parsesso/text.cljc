@@ -53,13 +53,13 @@
   ([cs, message]
    (char (complement (impl/one-of? cs)) message)))
 
-(defn matching
+(defn char-match
   "Parses a character matching regex pattern `re`. Returns the parsed character.
   Accepts optional second argument for expecting error message."
   ([re]
-   (matching re (delay (describe 'matching re))))
+   (char-match re (delay (str "character matching pattern " (pr-str re)))))
   ([re, message]
-   (char #(re-matches re (str %)) message)))
+   (char #(re-find re (str %)) message)))
 
 (def ^{:doc "Parses a sequence of characters given by `s`. Returns `s`."
        :arglists '([s])}

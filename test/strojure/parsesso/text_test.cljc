@@ -112,26 +112,26 @@
 
     ))
 
-(deftest matching-t
+(deftest char-match-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many (t/matching #"[a-z]"))
+    (p (p/many (t/char-match #"[a-z]"))
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p (t/matching #"[a-z]")
+    (p (t/char-match #"[a-z]")
        "A")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"A\""
-                              "expecting (matching #\"[a-z]\")"]}
+                              "expecting character matching pattern #\"[a-z]\""]}
 
-    (p (t/matching #"[a-z]")
+    (p (t/char-match #"[a-z]")
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting (matching #\"[a-z]\")"]}
+                              "expecting character matching pattern #\"[a-z]\""]}
 
-    (p (t/matching #"[a-z]" "a to z")
+    (p (t/char-match #"[a-z]" "a to z")
        "A")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"A\""
