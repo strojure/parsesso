@@ -163,8 +163,8 @@
     (parser
       (fn [state context]
         (if-let [ts (seq tts)]
-          (loop [ts ts
-                 input (seq (state/input state))
+          (loop [^ISeq ts ts
+                 ^ISeq input (seq (state/input state))
                  reply-err reply/e-err]
             (cond
               (not ts)
@@ -176,10 +176,12 @@
               (reply-err context (-> (error/sys-unexpected state)
                                      (error/with-expecting (delay (render-seq-fn tts)))))
               :else
-              (let [[t & ts] ts
-                    [tok & input] input]
+              (let [t (#?(:clj .first :cljs -first) ts)
+                    tok (#?(:clj .first :cljs -first) input)]
                 (if (test-fn t tok)
-                  (recur ts input reply/c-err)
+                  (recur (#?(:clj .next :cljs -next) ts)
+                         (#?(:clj .next :cljs -next) input)
+                         reply/c-err)
                   (reply-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
                                          (error/with-expecting (delay (render-seq-fn tts)))))))))
           (reply/e-ok context tts state nil))))))
