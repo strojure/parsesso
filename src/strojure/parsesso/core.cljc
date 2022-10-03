@@ -55,9 +55,9 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [x s e]
-                (reply/e-ok context x s (some-> e (error/with-expecting msg))))
+                (reply/e-ok context x s (some-> e (error/expecting msg))))
               (e-err [e]
-                (reply/e-err context (error/with-expecting e msg)))]
+                (reply/e-err context (error/expecting e msg)))]
         (p state (reply/replace context {reply/e-ok e-ok
                                          reply/e-err e-err}))))))
 
@@ -142,7 +142,7 @@
               (if (pred tok)
                 (reply/c-ok context tok (state/next-state state tok) nil)
                 (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
-            (reply/e-err context (error/sys-unexpected state))))))
+            (reply/e-err context (error/sys-unexpected-eof state))))))
     (fn [pred]
       (parser
         (fn [state context]
@@ -151,7 +151,7 @@
               (if (pred tok)
                 (reply/c-ok context tok (state/next-state state tok user-state-fn) nil)
                 (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
-            (reply/e-err context (error/sys-unexpected state))))))))
+            (reply/e-err context (error/sys-unexpected-eof state))))))))
 
 (defn tokens-fn
   "Function returning the parser which parses a sequence of tokens given by `xs`
@@ -173,8 +173,8 @@
                                      (state/user state))]
                 (reply/c-ok context tts s nil))
               (not input)
-              (reply-err context (-> (error/sys-unexpected state)
-                                     (error/with-expecting (delay (render-seq-fn tts)))))
+              (reply-err context (-> (error/sys-unexpected-eof state)
+                                     (error/expecting (delay (render-seq-fn tts)))))
               :else
               (let [t (#?(:clj .first :cljs -first) ts)
                     tok (#?(:clj .first :cljs -first) input)]
@@ -183,7 +183,7 @@
                          (#?(:clj .next :cljs -next) input)
                          reply/c-err)
                   (reply-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
-                                         (error/with-expecting (delay (render-seq-fn tts)))))))))
+                                         (error/expecting (delay (render-seq-fn tts)))))))))
           (reply/e-ok context tts state nil))))))
 
 (def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. See

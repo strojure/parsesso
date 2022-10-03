@@ -19,16 +19,18 @@
   (ParseError. (state/pos state) (cons [typ msg] nil)))
 
 (defn sys-unexpected
-  ([state]
-   (new-error state ::sys-unexpected nil))
-  ([state msg]
-   (new-error state ::sys-unexpected msg)))
+  [state msg]
+  (new-error state ::sys-unexpected msg))
+
+(defn sys-unexpected-eof
+  [state]
+  (new-error state ::sys-unexpected nil))
 
 (defn unexpected
   [state msg]
   (new-error state ::unexpected msg))
 
-(defn with-expecting
+(defn expecting
   [^ParseError err, msg]
   (ParseError. (.-pos err) (cons [::expecting msg] (.-messages err))))
 
@@ -87,7 +89,6 @@
                      (group-by first))]
          (->> [(when-let [[[_ msg]] (and (not (xs ::unexpected))
                                          (xs ::sys-unexpected))]
-                 ;; TODO: explicit detection of end of input?
                  (str (dict :unexpected) " " (or (not-empty (force msg))
                                                  (dict :end-of-input))))
                (render-many (xs ::unexpected) (dict :or) (dict :unexpected))
