@@ -47,7 +47,7 @@
   ([field, vf]
    (fn [state f] (update state field (comp vf f)))))
 
-(defn- conform-input
+(defn conform-input
   [input]
   (or (seq input) ()))
 

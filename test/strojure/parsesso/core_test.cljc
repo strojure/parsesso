@@ -115,6 +115,39 @@
 
     ))
 
+(deftest tokens-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/tokens [:A :B :C])
+       [:A :B :C])
+    {:consumed true, :value [:A :B :C]}
+
+    (p (p/tokens [:A :B :C])
+       [:A :B])
+    {:consumed true, :error ["at index 0:"
+                             "unexpected end of input"
+                             "expecting [:A :B :C]"]}
+
+    (p (p/tokens [:A :B :C])
+       [])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected end of input"
+                              "expecting [:A :B :C]"]}
+
+    (p (p/tokens [:A :B :C])
+       [:A :B :X])
+    {:consumed true, :error ["at index 0:"
+                             "unexpected :X"
+                             "expecting [:A :B :C]"]}
+
+    (p (p/tokens [:A :B :C])
+       [:X :Y :Z])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected :X"
+                              "expecting [:A :B :C]"]}
+
+    ))
+
 (deftest any-token-t
   (test/are [expr result] (= result expr)
 
@@ -402,52 +435,6 @@
        [:A :B :C])
     {:consumed true, :error ["at index 1:"
                              "Test failure after parsing :A"]}
-
-    ))
-
-(deftest token-sec-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/token-seq [:A :B :C])
-       [:A :B :C])
-    {:consumed true, :value [:A :B :C]}
-
-    (p (p/token-seq [:A :B :C])
-       [:A :B])
-    {:consumed true, :error ["at index 2:"
-                             "unexpected end of input"
-                             "expecting :C of (token-seq [:A :B :C])"]}
-
-    (p (p/token-seq [:A :B :C])
-       [])
-    {:consumed false, :error ["at index 0:"
-                              "unexpected end of input"
-                              "expecting :A of (token-seq [:A :B :C])"]}
-
-    (p (p/token-seq [:A :B :C])
-       [:A :B :X])
-    {:consumed true, :error ["at index 2:"
-                             "unexpected :X"
-                             "expecting :C of (token-seq [:A :B :C])"]}
-
-    (p (p/token-seq [:A :B :C])
-       [:X :Y :Z])
-    {:consumed false, :error ["at index 0:"
-                              "unexpected :X"
-                              "expecting :A of (token-seq [:A :B :C])"]}
-
-    (p (p/token-seq [:A :B :C]
-                    tok)
-       [:A :B :X])
-    {:consumed true, :error ["at index 2:"
-                             "unexpected :X"]}
-
-    (p (p/token-seq [:A :B :C]
-                    (fn [t] (-> (tok t) (p/expecting "test sequence"))))
-       [:A :B :X])
-    {:consumed true, :error ["at index 2:"
-                             "unexpected :X"
-                             "expecting test sequence"]}
 
     ))
 

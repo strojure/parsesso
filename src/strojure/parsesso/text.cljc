@@ -61,12 +61,10 @@
   ([re, message]
    (char #(re-matches re (str %)) message)))
 
-(defn char-seq
-  "Parses a sequence of characters given by `s`. Returns `s`."
-  [s]
-  (p/token-seq s (fn [c] (char (partial = c)
-                               (delay (str (char-str c) " in "
-                                           (describe 'char-seq s)))))))
+(def ^{:doc "Parses a sequence of characters given by `s`. Returns `s`."
+       :arglists '([s])}
+  string
+  (p/tokens-fn {:render-token-fn char-str}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

@@ -91,7 +91,7 @@
         (some-many text/alpha))
 
       (def let-expr
-        (after (char-seq \"let\")
+        (after (string \"let\")
                ...))
 
       (def expr
@@ -100,11 +100,11 @@
             (expecting \"expression\"))
 
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
-  expecting \"t\" of (char-seq \"let\")`. Indeed, since the `choice` combinator
+  expecting \"t\" of (string \"let\")`. Indeed, since the `choice` combinator
   only tries alternatives when the first alternative hasn't consumed input, the
-  `identifier` parser is never tried (because the prefix \"le\" of the
-  `(char-seq \"let\")` parser is already consumed). The right behaviour can be
-  obtained by adding the `silent` combinator:
+  `identifier` parser is never tried (because the prefix \"le\" of the `(string
+  \"let\")` parser is already consumed). The right behaviour can be obtained by
+  adding the `silent` combinator:
 
       (def expr
         (-> (choice (silent let-expr)
@@ -129,8 +129,9 @@
                                          reply/e-ok e-ok}))))))
 
 (defn token-fn
-  "This parser accepts a token when `(pred token)` returns logical true. The
-  token can be shown in error message using `(msg-fn token)`."
+  "Function returning the parser which accepts a token when `(pred token)`
+  returns logical true. The token can be shown in error message using `(msg-fn
+  token)`."
   [{:keys [msg-fn, user-fn] :or {msg-fn pr-str}}]
   (if-not user-fn
     (fn [pred]
@@ -152,10 +153,47 @@
                 (reply/e-err context (error/sys-unexpected state (delay (msg-fn tok))))))
             (reply/e-err context (error/sys-unexpected state))))))))
 
-(def token
-  "This parser accepts a token when `(pred token)` returns logical true. See
-  `token-fn` for customized version of the parser."
+(defn tokens-fn
+  "Function returning the parser which parses a sequence of tokens given by `xs`
+  and returns `xs`. Tokens are compared using `(test-fn sample-token input-token)`."
+  [{:keys [test-fn render-token-fn render-seq-fn] :or {test-fn =
+                                                       render-token-fn pr-str
+                                                       render-seq-fn pr-str}}]
+  (fn [tts]
+    (parser
+      (fn [state context]
+        (if-let [ts (seq tts)]
+          (loop [ts ts
+                 input (seq (state/input state))
+                 reply-err reply/e-err]
+            (cond
+              (not ts)
+              (let [s (state/->State (state/conform-input input)
+                                     (reduce pos/next-pos (state/pos state) tts)
+                                     (state/user state))]
+                (reply/c-ok context tts s nil))
+              (not input)
+              (reply-err context (-> (error/sys-unexpected state)
+                                     (error/with-expecting (delay (render-seq-fn tts)))))
+              :else
+              (let [[t & ts] ts
+                    [tok & input] input]
+                (if (test-fn t tok)
+                  (recur ts input reply/c-err)
+                  (reply-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
+                                         (error/with-expecting (delay (render-seq-fn tts)))))))))
+          (reply/e-ok context tts state nil))))))
+
+(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. See
+            `token-fn` for customized version of the parser."
+       :arglists '([pred])}
+  token
   (token-fn {}))
+
+(def ^{:doc "This parser parses a sequence of tokens given by `ts` and returns `ts`."
+       :arglists '([ts])}
+  tokens
+  (tokens-fn {}))
 
 (def any-token
   "This parser accepts any kind of token. Returns the accepted token."
@@ -272,7 +310,7 @@
                          (e-err-q [ee]
                            (reply/e-err context (error/merge-errors e ee)))]
                    (q state (reply/replace context {reply/e-ok e-ok-q
-                                                     reply/e-err e-err-q}))))]
+                                                    reply/e-err e-err-q}))))]
          (p state (reply/replace context {reply/e-err e-err-p}))))))
   ([p q qq]
    (-> p (choice q) (choice qq)))
@@ -299,19 +337,6 @@
   arity version of the `sequence` parser."
   [p q & ps]
   (sequence (cons p (cons q ps))))
-
-(defn token-seq
-  "This parser parses a sequence of tokens given by `xs` using function `pf` to
-  convert every token to its parser. Returns `xs`."
-  ([xs]
-   (token-seq xs (fn [tok]
-                   (-> (token (partial = tok))
-                       (expecting (delay (str (pr-str tok) " of (token-seq " (pr-str xs) ")")))))))
-  ([xs pf]
-   (if-let [ts (seq xs)]
-     (after (reduce after (map pf ts))
-            (result xs))
-     (result xs))))
 
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
@@ -446,7 +471,7 @@
   the keyword is actually an identifier (for example `lets`). We can write this
   behaviour as follows:
 
-      (-> (text/char-seq \"let\")
+      (-> (text/string \"let\")
           (not-followed-by alpha-numeric))
   "
   [p q]
