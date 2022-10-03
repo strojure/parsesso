@@ -47,7 +47,7 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'silent'
+  all possible characters. For example, if the `expr` parser from the 'either'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
   or alphabetic character', which is less friendly."
@@ -73,7 +73,7 @@
     (fn [state context]
       (reply/e-err context (error/unexpected state msg)))))
 
-(defn silent
+(defn either
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -82,10 +82,10 @@
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
-  The `silent` combinator can for example be used to distinguish identifiers and
+  The `either` combinator can for example be used to distinguish identifiers and
   reserved words. Both reserved words and identifiers are a sequence of letters.
   Whenever we expect a certain reserved word where we can also expect an
-  identifier we have to use the `silent` combinator. Suppose we write:
+  identifier we have to use the `either` combinator. Suppose we write:
 
       (def identifier
         (some-many text/alpha))
@@ -104,10 +104,10 @@
   only tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(string
   \"let\")` parser is already consumed). The right behaviour can be obtained by
-  adding the `silent` combinator:
+  adding the `either` combinator:
 
       (def expr
-        (-> (choice (silent let-expr)
+        (-> (choice (either let-expr)
                     identifier)
             (expecting \"expression\"))
   "
@@ -510,9 +510,9 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (choice (silent (when-let [x (silent (some-many any-token))
+  (choice (either (when-let [x (either (some-many any-token))
                              _ (do-parser (println (str label ": " x))
-                                          (silent eof))]
+                                          (either eof))]
                     (fail x)))
           (result nil)))
 
