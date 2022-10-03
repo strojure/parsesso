@@ -162,6 +162,21 @@
 
     ))
 
+(deftest eof-t
+  (test/are [expr result] (= result expr)
+
+    (p p/eof
+       [])
+    {:consumed false, :value ::p/eof}
+
+    (p p/eof
+       [:A])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected :A"
+                              "expecting end of input"]}
+
+    ))
+
 (deftest not-followed-by-t
   (test/are [expr result] (= result expr)
 
@@ -1173,21 +1188,6 @@
       )))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-(deftest eof-t
-  (test/are [expr result] (= result expr)
-
-    (p p/eof
-       [])
-    {:consumed false, :value ::p/eof}
-
-    (p p/eof
-       [:A])
-    {:consumed false, :error ["at index 0:"
-                              "unexpected :A"
-                              "expecting end of input"]}
-
-    ))
 
 (deftest many-till-t
   (test/are [expr result] (= result expr)

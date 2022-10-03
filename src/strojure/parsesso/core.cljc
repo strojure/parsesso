@@ -199,6 +199,15 @@
   "This parser accepts any kind of token. Returns the accepted token."
   (token any?))
 
+(def eof
+  "This parser only succeeds with value `::eof` at the end of the input."
+  (parser
+    (fn [state context]
+      (if-let [input (seq (state/input state))]
+        (reply/e-err context (-> (error/unexpected state (delay (pr-str (first input))))
+                                 (error/expecting "end of input")))
+        (reply/e-ok context ::eof state nil)))))
+
 (defn many
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`."
@@ -487,13 +496,6 @@
                                                 reply/c-err e-err
                                                 reply/e-err e-err}))))))
        (bind p)))
-
-(def eof
-  "This parser only succeeds with value `::eof` at the end of the input. This is
-  not a primitive parser, but it is defined using 'not-followed-by'."
-  (-> (result ::eof)
-      (not-followed-by any-token)
-      (expecting "end of input")))
 
 (defn many-till
   "This parser applies parser `p` /zero/ or more times until parser `end`
