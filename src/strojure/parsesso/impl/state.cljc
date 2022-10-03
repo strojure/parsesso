@@ -19,6 +19,14 @@
            (pos/next-pos (.-pos state) tok)
            (user-fn (.-user state)))))
 
+(defn conform-input
+  [input]
+  (or (seq input) ()))
+
+(defn set-input-pos
+  [^State state, input, pos]
+  (State. (conform-input input) pos (.-user state)))
+
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn input
@@ -46,10 +54,6 @@
    (fn [state f] (update state field f)))
   ([field, vf]
    (fn [state f] (update state field (comp vf f)))))
-
-(defn conform-input
-  [input]
-  (or (seq input) ()))
 
 (def ^{:doc "Returns state with input set to `input`."
        :arglists '([state input])}

@@ -168,9 +168,7 @@
                  reply-err reply/e-err]
             (cond
               (not ts)
-              (let [s (state/->State (state/conform-input input)
-                                     (reduce pos/next-pos (state/pos state) tts)
-                                     (state/user state))]
+              (let [s (state/set-input-pos state input (reduce pos/next-pos (state/pos state) tts))]
                 (reply/c-ok context tts s nil))
               (not input)
               (reply-err context (-> (error/sys-unexpected-eof state)
