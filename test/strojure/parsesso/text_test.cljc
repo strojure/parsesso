@@ -13,7 +13,7 @@
 (defn- p
   "Parses test input using given parser. Returns custom map with test result."
   [parser input]
-  (let [result (t/parse parser input)]
+  (let [result (p/parse parser input)]
     (if (p/error? result)
       (-> (select-keys result [:consumed])
           (assoc :error (-> (:error result) (str) (string/split-lines))))

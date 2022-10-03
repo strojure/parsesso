@@ -9,6 +9,14 @@
 
 (defrecord State [input pos user])
 
+(defn conform-input
+  [input]
+  (or (seq input) ()))
+
+(defn init-state
+  [input pos user]
+  (State. (conform-input input) pos user))
+
 (defn next-state
   ([^State state, tok]
    (State. (#?(:clj .more :cljs -rest) ^ISeq (.-input state))
@@ -18,10 +26,6 @@
    (State. (#?(:clj .more :cljs -rest) ^ISeq (.-input state))
            (pos/next-pos (.-pos state) tok)
            (user-fn (.-user state)))))
-
-(defn conform-input
-  [input]
-  (or (seq input) ()))
 
 (defn set-input-pos
   [^State state, input, pos]

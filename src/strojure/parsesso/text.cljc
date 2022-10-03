@@ -129,9 +129,10 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn parse
-  [p input]
-  ;; TODO: Initialize source pos and input seq
-  (p (p/new-state input (impl/->TextPos 8 1 1) nil)))
+(defn init-pos
+  ([]
+   (init-pos 8))
+  ([tab-size]
+   (impl/->TextPos tab-size 1 1)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
