@@ -73,13 +73,13 @@
   (char impl/ascii-white?
         "whitespace character"))
 
-(def skip-whites
+(def skip-whites-zero
   "This parser skips /zero/ or more whitespace characters."
-  (p/skip-many (char impl/ascii-white?)))
+  (p/skip-many-zero (char impl/ascii-white?)))
 
-(def some-skip-whites
+(def skip-whites-more
   "This parser skips /one/ or more whitespace characters."
-  (p/after whitespace skip-whites))
+  (p/after whitespace skip-whites-zero))
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."

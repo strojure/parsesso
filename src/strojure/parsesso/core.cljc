@@ -208,7 +208,7 @@
                                  (error/expecting "end of input")))
         (reply/e-ok context ::eof state nil)))))
 
-(defn many
+(defn many-zero
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`."
   [p]
@@ -225,7 +225,7 @@
                                          reply/e-ok parser/e-ok-throw-empty-input
                                          reply/e-err (partial reply/e-ok context nil state)}))))))
 
-(defn skip-many
+(defn skip-many-zero
   "This parser applies the parser `p` zero or more times, skipping its result."
   [p]
   (parser
@@ -364,16 +364,16 @@
    (when-let [_ open, x p, _ close]
      (result x))))
 
-(defn some-skip-many
+(defn skip-many-more
   "This parser applies the parser `p` /one/ or more times, skipping its result."
   [p]
-  (after p (skip-many p)))
+  (after p (skip-many-zero p)))
 
-(defn some-many
+(defn many-more
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
   the returned values of `p`."
   [p]
-  (when-let [x p, xs (many p)]
+  (when-let [x p, xs (many-zero p)]
     (result (cons x xs))))
 
 (defn times
@@ -383,50 +383,50 @@
   [n p]
   (sequence (repeat n p)))
 
-(defn some-sep-by
+(defn sep-by-more
   "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (when-let [x p, xs (many (after sep p))]
+  (when-let [x p, xs (many-zero (after sep p))]
     (result (cons x xs))))
 
-(defn sep-by
+(defn sep-by-zero
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (some-sep-by p sep)))
+  (optional (sep-by-more p sep)))
 
-(defn some-sep-by-end
+(defn sep-by-end-more
   "This parser parses /one/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (some-many (when-let [x p, _ sep]
+  (many-more (when-let [x p, _ sep]
                (result x))))
 
-(defn sep-by-end
+(defn sep-by-end-zero
   "This parser parses /zero/ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (some-sep-by-end p sep)))
+  (optional (sep-by-end-more p sep)))
 
-(defn some-sep-by-opt-end
+(defn sep-by-opt-end-more
   "This parser parses /one/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p]
-    (choice (when-let [_ sep, xs (optional (some-sep-by-opt-end p sep))]
+    (choice (when-let [_ sep, xs (optional (sep-by-opt-end-more p sep))]
               (result (cons x xs)))
             (result [x]))))
 
-(defn sep-by-opt-end
+(defn sep-by-opt-end-zero
   "This parser parses /zero/ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (some-sep-by-opt-end p sep)))
+  (optional (sep-by-opt-end-more p sep)))
 
 ;; TODO: Consider moving chains to separate namespace like kern
 
-(defn some-chain-left
+(defn chain-left-more
   "This parser parses /one/ or more occurrences of `p`, separated by `op`
   Returns a value obtained by a /left/ associative application of all functions
   returned by `op` to the values returned by `p`. This parser can for example be
@@ -440,15 +440,15 @@
     (when-let [x p]
       (more x))))
 
-(defn chain-left
+(defn chain-left-zero
   "This parser parses /zero/ or more occurrences of `p`, separated by `op`.
   Returns a value obtained by a /left/ associative application of all functions
   returned by `op` to the values returned by `p`. If there are zero occurrences
   of `p`, the value `x` is returned."
   [p op x]
-  (optional (some-chain-left p op) x))
+  (optional (chain-left-more p op) x))
 
-(defn some-chain-right
+(defn chain-right-more
   "This parser parses /one/ or more occurrences of `p`, separated by `op`.
   Returns a value obtained by a /right/ associative application of all functions
   returned by `op` to the values returned by `p`."
@@ -462,13 +462,13 @@
                     (result x)))]
     (scan)))
 
-(defn chain-right
+(defn chain-right-zero
   "Parses /zero/ or more occurrences of `p`, separated by `op`. Returns a value
   obtained by a /right/ associative application of all functions returned by
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (optional (some-chain-right p op) x))
+  (optional (chain-right-more p op) x))
 
 ;;; Tricky combinators
 
@@ -512,7 +512,7 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (choice (start (when-let [x (start (some-many any-token))
+  (choice (start (when-let [x (start (many-more any-token))
                             _ (do-parser (println (str label ": " x))
                                          eof)]
                    (fail x)))

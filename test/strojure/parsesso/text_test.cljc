@@ -115,7 +115,7 @@
 (deftest char-match-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many (t/char-match #"[a-z]"))
+    (p (p/many-zero (t/char-match #"[a-z]"))
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -191,7 +191,7 @@
 (deftest whitespace-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many t/whitespace)
+    (p (p/many-zero t/whitespace)
        " \t\r\n")
     {:consumed true, :value (seq " \t\r\n")}
 
@@ -209,32 +209,37 @@
 
     ))
 
-(deftest skip-whites-t
+(deftest skip-whites-zero-t
   (test/are [expr result] (= result expr)
 
-    (p t/skip-whites
+    (p t/skip-whites-zero
        " \t\r\n")
     {:consumed true, :value nil}
 
-    (p t/skip-whites
+    (p t/skip-whites-zero
        "a")
     {:consumed false, :value nil}
 
-    (p t/skip-whites
+    (p t/skip-whites-zero
        "")
     {:consumed false, :value nil}
 
-    (p t/some-skip-whites
+    ))
+
+(deftest skip-whites-more-t
+  (test/are [expr result] (= result expr)
+
+    (p t/skip-whites-more
        " \t\r\n")
     {:consumed true, :value nil}
 
-    (p t/some-skip-whites
+    (p t/skip-whites-more
        "a")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting whitespace character"]}
 
-    (p t/some-skip-whites
+    (p t/skip-whites-more
        "")
     {:consumed false, :error ["at line 1, column 1:"
                               "unexpected end of input"
@@ -303,7 +308,7 @@
 (deftest upper-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many t/upper)
+    (p (p/many-zero t/upper)
        "ABC")
     {:consumed true, :value (seq "ABC")}
 
@@ -324,7 +329,7 @@
 (deftest lower-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many t/lower)
+    (p (p/many-zero t/lower)
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -345,7 +350,7 @@
 (deftest numeric-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many t/numeric)
+    (p (p/many-zero t/numeric)
        "01234567890")
     {:consumed true, :value (seq "01234567890")}
 
@@ -366,7 +371,7 @@
 (deftest alpha-numeric-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many t/alpha-numeric)
+    (p (p/many-zero t/alpha-numeric)
        "12345abcABC")
     {:consumed true, :value (seq "12345abcABC")}
 
@@ -393,12 +398,12 @@
        "abc")
     {:consumed true, :value "a"}
 
-    (p (t/++ (p/sequence [(p/some-many (t/one-of "abc"))
-                          (p/some-many (t/one-of "123"))]))
+    (p (t/++ (p/sequence [(p/many-more (t/one-of "abc"))
+                          (p/many-more (t/one-of "123"))]))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (t/++ (p/many (t/one-of "abc")))
+    (p (t/++ (p/many-zero (t/one-of "abc")))
        "123")
     {:consumed false, :value ""}
 
