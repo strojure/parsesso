@@ -44,7 +44,7 @@
    (char (impl/one-of? cs) message)))
 
 (defn none-of
-  "This parser succeeds if the current character /not/ in the supplied list of
+  "This parser succeeds if the current character _not_ in the supplied list of
   characters. Returns the parsed character. Accepts optional second argument for
   expecting error message."
   ([cs]
@@ -83,11 +83,11 @@
         "whitespace character"))
 
 (def skip-whites-zero
-  "This parser skips /zero/ or more whitespace characters."
+  "This parser skips _zero_ or more whitespace characters."
   (p/skip-many-zero (char impl/ascii-white?)))
 
 (def skip-whites-more
-  "This parser skips /one/ or more whitespace characters."
+  "This parser skips _one_ or more whitespace characters."
   (p/after whitespace skip-whites-zero))
 
 (def newline

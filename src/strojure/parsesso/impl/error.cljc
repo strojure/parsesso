@@ -69,9 +69,17 @@
   "The standard function for showing error messages. Formats a list of error
   messages in English. The resulting string will be formatted like:
 
-  |unexpected /{The first UnExpect or a SysUnExpect message}/;
-  expecting /{comma separated list of Expect messages}/;
-  /{comma separated list of Message messages}/"
+  - unexpected _{The first UnExpect or a SysUnExpect message}_
+  - expecting _{comma separated list of Expect messages}_
+  - _{comma separated list of Message messages}_
+
+  Example:
+
+      unexpected UnExpect2 or UnExpect1
+      expecting Expect3, Expect2 or Expect1
+      Message2 or Message1
+
+  "
   {:arglists '([{:keys [unknown expecting unexpected end-of-input or] :as dict}, messages]
                [messages])}
   ([messages] (render-messages nil messages))

@@ -41,8 +41,8 @@
       (reply/e-err context (error/message state msg)))))
 
 (defn expecting
-  "This parser behaves as parser `p`, but whenever the parser `p` fails /without
-  consuming any input/, it replaces expect error messages with the expect error
+  "This parser behaves as parser `p`, but whenever the parser `p` fails _without
+  consuming any input_, it replaces expect error messages with the expect error
   message `msg`.
 
   This is normally used at the end of a set alternatives where we want to return
@@ -312,9 +312,9 @@
   Returns the value of the succeeding parser.
 
   The parser first applies `p`. If it succeeds, the value of `p` is returned. If
-  `p` fails /without consuming any input/, parser `q` is tried and so on.
+  `p` fails _without consuming any input_, parser `q` is tried and so on.
 
-  The parser is called /predictive/ since `q` is only tried when parser `p`
+  The parser is called _predictive_ since `q` is only tried when parser `p`
   didn't consume any input (i.e. the look ahead is 1). This non-backtracking
   behaviour allows for both an efficient implementation of the parser
   combinators and the generation of good error messages."
@@ -378,12 +378,12 @@
      (result x))))
 
 (defn skip-many-more
-  "This parser applies the parser `p` /one/ or more times, skipping its result."
+  "This parser applies the parser `p` _one_ or more times, skipping its result."
   [p]
   (after p (skip-many-zero p)))
 
 (defn many-more
-  "This parser applies the parser `p` /one/ or more times. Returns a sequence of
+  "This parser applies the parser `p` _one_ or more times. Returns a sequence of
   the returned values of `p`.
 
      (def word
@@ -401,14 +401,14 @@
   (sequence (repeat n p)))
 
 (defn sep-by-more
-  "This parser parses /one/ or more occurrences of `p`, separated by `sep`.
+  "This parser parses _one_ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p, xs (many-zero (after sep p))]
     (result (cons x xs))))
 
 (defn sep-by-zero
-  "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
+  "This parser parses _zero_ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`.
 
       (defn comma-sep [p]
@@ -418,20 +418,20 @@
   (optional (sep-by-more p sep)))
 
 (defn sep-by-end-more
-  "This parser parses /one/ or more occurrences of `p`, separated and ended by
+  "This parser parses _one_ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (many-more (when-let [x p, _ sep]
                (result x))))
 
 (defn sep-by-end-zero
-  "This parser parses /zero/ or more occurrences of `p`, separated and ended by
+  "This parser parses _zero_ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (optional (sep-by-end-more p sep)))
 
 (defn sep-by-opt-end-more
-  "This parser parses /one/ or more occurrences of `p`, separated and optionally
+  "This parser parses _one_ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (when-let [x p]
@@ -440,7 +440,7 @@
             (result [x]))))
 
 (defn sep-by-opt-end-zero
-  "This parser parses /zero/ or more occurrences of `p`, separated and optionally
+  "This parser parses _zero_ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (optional (sep-by-opt-end-more p sep)))
@@ -473,7 +473,7 @@
        (bind p)))
 
 (defn many-till
-  "This parser applies parser `p` /zero/ or more times until parser `end`
+  "This parser applies parser `p` _zero_ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`.
 
       (def simple-comment
