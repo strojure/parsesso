@@ -4,8 +4,7 @@
             [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [Failure replace]))]
-            [strojure.parsesso.impl.state :as state]
-            [strojure.parsesso.impl.text :as text])
+            [strojure.parsesso.impl.state :as state])
   #?(:clj  (:import (clojure.lang ISeq)
                     (strojure.parsesso.impl.parser Parser)
                     (strojure.parsesso.impl.reply Failure))
@@ -531,14 +530,12 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn parse
+  {:arglists '([p input]
+               [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
   ([p input]
-   (parse p input nil))
-  ([p input {:keys [initial-pos, user-state]}]
-   (let [pos (or initial-pos
-                 (if (or (string? input) (char? (first input)))
-                   (text/new-text-pos)
-                   (pos/new-default-pos)))]
-     (p (state/init-state input pos user-state)))))
+   (p (state/init-state input (pos/init-pos nil input) nil)))
+  ([p input opts]
+   (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
 
 (defn error? [reply] (instance? Failure reply))
 

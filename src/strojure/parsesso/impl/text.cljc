@@ -1,6 +1,5 @@
 (ns strojure.parsesso.impl.text
-  (:require #?(:cljs [clojure.string :as string])
-            [strojure.parsesso.impl.pos :as pos])
+  (:require #?(:cljs [clojure.string :as string]))
   #?(:cljs (:import [goog.string StringBuffer])))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -83,39 +82,5 @@
      (reduce join-chars sb x)
      #?(:clj  (.append ^StringBuilder sb (str x))
         :cljs (.append ^StringBuffer sb (str x))))))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-(defn- compare*
-  [x y]
-  (let [c (compare x y)]
-    (when-not (zero? c)
-      c)))
-
-(defrecord TextPos [tab, ^long line, ^long col]
-  pos/InputPos
-  (next-pos [pos c]
-    (case c \tab
-            (update pos :col #(-> % (+ tab) (- (mod (dec %) tab))))
-            \newline
-            (TextPos. tab (unchecked-inc line) 1)
-            ;; default
-            (TextPos. tab line (unchecked-inc col))))
-  #?@(:clj
-      [Comparable
-       (compareTo [_ pos] (or (compare* line (:line pos))
-                              (compare* col (:col pos))
-                              0))]
-      :cljs
-      [IComparable
-       (-compare [_ pos] (or (compare* line (:line pos))
-                             (compare* col (:col pos))
-                             0))])
-  Object
-  (toString [_] (str "line " line ", column " col)))
-
-(defn new-text-pos
-  []
-  (TextPos. 8 1 1))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
