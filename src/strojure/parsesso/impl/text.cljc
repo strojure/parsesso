@@ -1,5 +1,5 @@
 (ns strojure.parsesso.impl.text
-  (:require #?(:cljs [clojure.string :as string]))
+  #?(:cljs (:require [clojure.string :as string]))
   #?(:cljs (:import [goog.string StringBuffer])))
 
 #?(:clj  (set! *warn-on-reflection* true)

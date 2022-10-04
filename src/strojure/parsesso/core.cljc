@@ -66,8 +66,7 @@
   consuming any input.
 
   The parsers 'fail', 'expecting' and `unexpected` are the three parsers used to
-  generate error messages. Of these, only `expecting` is commonly used. For an
-  example of the use of `unexpected`, see the definition of `not-followed-by`."
+  generate error messages. Of these, only `expecting` is commonly used."
   [msg]
   (parser
     (fn [state context]
@@ -117,8 +116,7 @@
 
 (defn look-ahead
   "This parser parses `p` without consuming any input. If `p` fails and consumes
-  some input, so does `look-ahead`. Combine with `accept` if this is
-  undesirable."
+  some input, so does `look-ahead`. Combine with `start` if this is undesirable."
   [p]
   (parser
     (fn [state context]
@@ -209,7 +207,14 @@
 
 (defn many-zero
   "This parser applies the parser `p` zero or more times. Returns a sequence of
-  the returned values or `p`."
+  the returned values or `p`.
+
+      (def identifier
+        (when-let [c text/letter
+                   cs (many-zero (choice text/alpha-numeric
+                                         (text/one-of \"_\")))]
+          (result (cons c cs))))
+  "
   [p]
   (parser
     (fn [state context]
@@ -225,7 +230,11 @@
                                          reply/e-err (partial reply/e-ok context nil state)}))))))
 
 (defn skip-many-zero
-  "This parser applies the parser `p` zero or more times, skipping its result."
+  "This parser applies the parser `p` zero or more times, skipping its result.
+
+      (def spaces
+        (skip-many-zero text/whitespace))
+  "
   [p]
   (parser
     (fn [state context]
@@ -357,7 +366,12 @@
 
 (defn between
   "This parser parses `open`, followed by `p` and `close`. Returns the value
-  returned by `p`."
+  returned by `p`.
+
+      (defn braces [p]
+        (-> p (between (text/one-of \"{\")
+                       (text/one-of \"}\"))))
+  "
   ([p around] (between p around around))
   ([p open close]
    (when-let [_ open, x p, _ close]
@@ -370,7 +384,11 @@
 
 (defn many-more
   "This parser applies the parser `p` /one/ or more times. Returns a sequence of
-  the returned values of `p`."
+  the returned values of `p`.
+
+     (def word
+       (many-more text/letter))
+  "
   [p]
   (when-let [x p, xs (many-zero p)]
     (result (cons x xs))))
@@ -391,7 +409,11 @@
 
 (defn sep-by-zero
   "This parser parses /zero/ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`."
+  Returns a sequence of values returned by `p`.
+
+      (defn comma-sep [p]
+        (sep-by-zero p (after (text/one-of \",\") text/skip-whites-zero)))
+  "
   [p sep]
   (optional (sep-by-more p sep)))
 
@@ -426,6 +448,7 @@
 ;; TODO: Consider moving chains to separate namespace like kern
 
 (defn chain-left-more
+  ;; TODO: Code example from haskell
   "This parser parses /one/ or more occurrences of `p`, separated by `op`
   Returns a value obtained by a /left/ associative application of all functions
   returned by `op` to the values returned by `p`. This parser can for example be
@@ -498,7 +521,15 @@
 
 (defn many-till
   "This parser applies parser `p` /zero/ or more times until parser `end`
-  succeeds. Returns a sequence of values returned by `p`."
+  succeeds. Returns a sequence of values returned by `p`.
+
+      (def simple-comment
+        (after (text/string \"<!--\")
+               (many-till text/any-char (start (text/string \"-->\")))))
+
+  Note the overlapping parsers `any-char` and `(string \"-->\")`, and therefore
+  the use of the `start` combinator.
+  "
   [p end]
   (letfn [(scan []
             (choice (after end (result nil))
@@ -509,22 +540,49 @@
 (defn debug-state
   "This parser prints the remaining parser state at the time it is invoked. It
   is intended to be used for debugging parsers by inspecting their intermediate
-  states."
+  states.
+
+      (parse (after (text/one-of \"aeiou\")
+                    (debug-state \"label\"))
+             \"atest\")
+
+      > label: (\\t \\e \\s \\t)
+  "
   [label]
   (choice (start (when-let [x (start (many-more any-token))
-                            _ (do-parser (println (str label ": " x))
-                                         eof)]
+                            _ (do-parser
+                                (println (str label ": " x))
+                                eof)]
                    (fail x)))
           (result nil)))
 
+(comment
+  (parse)
+
+  )
+
+;; TODO: argument order?
+;; TODO: check error message on fail
+;; TODO: add "parser error" to error message
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
   is invoked. It then continues to apply parser `p`, and if `p` fails will
   indicate that the label has been backtracked. It is intended to be used for
-  debugging parsers by inspecting their intermediate states."
+  debugging parsers by inspecting their intermediate states.
+
+      (p/parse (p/after (one-of \"aeiou\")
+                        (p/debug-parser \"label\" (one-of \"nope\")))
+                \"atest\")
+
+      > label: (\\t \\e \\s \\t)
+      > label backtracked
+      > at line 1, column 6:
+      > unexpected end of input
+      > (\\t \\e \\s \\t)
+  "
   [label p]
   (after (debug-state label)
-         (choice p, (do-parser (println (str label "  backtracked"))
+         (choice p, (do-parser (println (str label " backtracked"))
                                (fail label)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

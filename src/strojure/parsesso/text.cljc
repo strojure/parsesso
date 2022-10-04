@@ -15,7 +15,11 @@
 (def ^{:doc
        "This parser succeeds for any character for which the supplied predicate
        function returns `true`. Returns the character that is actually parsed.
-       Accepts optional second argument for expecting error message."
+       Accepts optional second argument for expecting error message.
+
+           (def digit
+             (char #(Character/isDigit ^char %)))
+       "
        :arglists
        '([pred] [pred, message])}
   char
@@ -57,7 +61,12 @@
   ([re, message]
    (char #(re-find re (str %)) message)))
 
-(def ^{:doc "Parses a sequence of characters given by `s`. Returns `s`."
+(def ^{:doc
+       "Parses a sequence of characters given by `s`. Returns `s`.
+
+           (def div-or-mod
+             (choice (string \"div\") (string \"mod\")))
+       "
        :arglists '([s])}
   string
   (p/tokens-fn {:render-token-fn render-char}))

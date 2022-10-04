@@ -1323,7 +1323,7 @@
         (with-out-str)
         (string/split-lines))
     ["a: (:B :C)"
-     "a  backtracked"]
+     "a backtracked"]
 
     (-> (p (p/when-let [a (p/debug-parser "a" (tok :A))
                         b (p/debug-parser "b" (tok :B))]
@@ -1333,7 +1333,7 @@
         (string/split-lines))
     ["a: (:A :C)"
      "b: (:C)"
-     "b  backtracked"]
+     "b backtracked"]
 
     ))
 
