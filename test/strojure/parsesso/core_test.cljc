@@ -453,34 +453,34 @@
 
     ))
 
-(deftest either-t
+(deftest start-t
   (test/are [expr result] (= result expr)
 
-    (p (p/either (tok :A))
+    (p (p/start (tok :A))
        [:A])
     {:consumed true, :value :A}
 
-    (p (p/either (tok :A))
+    (p (p/start (tok :A))
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/either (tok :A))
+    (p (p/start (tok :A))
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/either (fail-consumed (tok :A)))
+    (p (p/start (fail-consumed (tok :A)))
        [:A])
     {:consumed false, :error ["at index 1:"
                               "Test failure after parsing :A"]}
 
-    (p (p/either (fail-consumed (tok :A)))
+    (p (p/start (fail-consumed (tok :A)))
        [:B])
     {:consumed false, :error ["at index 0:"
                               "unexpected :B"]}
 
-    (p (p/either (fail-consumed (tok :A)))
+    (p (p/start (fail-consumed (tok :A)))
        [])
     {:consumed false, :error ["at index 0:"
                               "unexpected end of input"]}

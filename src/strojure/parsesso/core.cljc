@@ -48,7 +48,7 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'either'
+  all possible characters. For example, if the `expr` parser from the 'start'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
   or alphabetic character', which is less friendly."
@@ -74,7 +74,7 @@
     (fn [state context]
       (reply/e-err context (error/unexpected state msg)))))
 
-(defn either
+(defn start
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -83,10 +83,10 @@
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
-  The `either` combinator can for example be used to distinguish identifiers and
+  The `start` combinator can for example be used to distinguish identifiers and
   reserved words. Both reserved words and identifiers are a sequence of letters.
   Whenever we expect a certain reserved word where we can also expect an
-  identifier we have to use the `either` combinator. Suppose we write:
+  identifier we have to use the `start` combinator. Suppose we write:
 
       (def identifier
         (some-many text/alpha))
@@ -105,12 +105,11 @@
   only tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(string
   \"let\")` parser is already consumed). The right behaviour can be obtained by
-  adding the `either` combinator:
+  adding the `start` combinator:
 
-      (def expr
-        (-> (choice (either let-expr)
-                    identifier)
-            (expecting \"expression\"))
+      (def let-expr
+        (after (start (string \"let\"))
+               ...))
   "
   [p]
   (parser
@@ -513,10 +512,10 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states."
   [label]
-  (choice (either (when-let [x (either (some-many any-token))
-                             _ (do-parser (println (str label ": " x))
-                                          (either eof))]
-                    (fail x)))
+  (choice (start (when-let [x (start (some-many any-token))
+                            _ (do-parser (println (str label ": " x))
+                                         eof)]
+                   (fail x)))
           (result nil)))
 
 (defn debug-parser
