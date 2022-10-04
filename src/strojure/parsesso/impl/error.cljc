@@ -54,7 +54,7 @@
   [-or xs]
   (let [xs (->> xs (map str) (filter seq))]
     (case (count xs)
-      0 ""
+      0 nil
       1 (str (first xs))
       (str (string/join ", " (butlast xs)) " " -or " " (last xs)))))
 

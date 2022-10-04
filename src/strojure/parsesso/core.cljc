@@ -255,27 +255,16 @@
   [p f]
   (parser
     (fn [state context]
-      (letfn [(c-ok-p [x s e]
+      (letfn [(c-ok-p [x s _e]
                 ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
                 ;; continuation
                 ;; - if (f x) doesn't consume input, but errors, we return the error in the
                 ;; 'consumed-err' continuation
-                (letfn [(c-ok-fx [x s ee]
-                          (reply/c-ok context x s (cond->> ee e (error/merge-errors e))))
-                        (c-err-fx [ee]
-                          (reply/c-err context (cond->> ee e (error/merge-errors e))))]
-                  ((f x) s (reply/replace context {reply/e-ok c-ok-fx
-                                                   reply/e-err c-err-fx}))))
-              (e-ok-p [x s e]
-                (if e
-                  ;; - in these cases, (f x) can return as empty
-                  (letfn [(e-ok-fx [x s ee]
-                            (reply/e-ok context x s (error/merge-errors e ee)))
-                          (e-err-fx [ee]
-                            (reply/e-err context (error/merge-errors e ee)))]
-                    ((f x) s (reply/replace context {reply/e-ok e-ok-fx
-                                                     reply/e-err e-err-fx})))
-                  ((f x) s context)))]
+                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
+                                                 reply/e-err (partial reply/c-err context)})))
+              (e-ok-p [x s _e]
+                ;; - in these cases, (f x) can return as empty
+                ((f x) s context))]
         (p state (reply/replace context {reply/c-ok c-ok-p
                                          reply/e-ok e-ok-p}))))))
 
@@ -502,39 +491,32 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (start (when-let [x (start (many-more any-token))
-                            _ (do-parser
-                                (println (str label ": " x))
-                                eof)]
-                   (fail x)))
+  (choice (start (when-let [x (many-more any-token)]
+                   (println (str label ": " x))
+                   (fail nil)))
           (result nil)))
 
-(comment
-  (parse)
-
-  )
-
-;; TODO: check error message on fail
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
   is invoked. It then continues to apply parser `p`, and if `p` fails will
   indicate that the label has been backtracked. It is intended to be used for
   debugging parsers by inspecting their intermediate states.
 
-      (p/parse (p/after (one-of \"aeiou\")
-                        (p/debug-parser \"label\" (one-of \"nope\")))
-                \"atest\")
+      (parse (after (text/one-of \"aeiou\")
+                    (-> (text/one-of \"nope\") (debug-parser \"one-of-nope\")))
+             \"atest\")
 
-      > label: (\\t \\e \\s \\t)
-      > label backtracked
-      > at line 1, column 6:
-      > unexpected end of input
-      > (\\t \\e \\s \\t)
+      > one-of-nope: (\\t \\e \\s \\t)
+      > one-of-nope backtracked
+
+      > error at line 1, column 2:
+      > unexpected \"t\"
+      > expecting character of \"nope\"
   "
   [p label]
   (after (debug-state label)
          (choice p, (do-parser (println (str label " backtracked"))
-                               (fail label)))))
+                               (fail nil)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
