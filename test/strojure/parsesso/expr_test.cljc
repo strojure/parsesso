@@ -44,19 +44,19 @@
     (p (expr/chain-left-more (tok 1 2 3 3 4 5 6 7 8 9)
                              (tok + - * /))
        [+])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               (str "unexpected " (pr-str +))]}
 
     (p (expr/chain-left-more (tok 1 2 3 3 4 5 6 7 8 9)
                              (tok + - * /))
        [0])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               "unexpected 0"]}
 
     (p (expr/chain-left-more (tok 1 2 3 3 4 5 6 7 8 9)
                              (tok + - * /))
        [])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
     ))
@@ -125,19 +125,19 @@
     (p (expr/chain-right-more (tok 1 2 3 3 4 5 6 7 8 9)
                               (tok + - * /))
        [+])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               (str "unexpected " (pr-str +))]}
 
     (p (expr/chain-right-more (tok 1 2 3 3 4 5 6 7 8 9)
                               (tok + - * /))
        [0])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               "unexpected 0"]}
 
     (p (expr/chain-right-more (tok 1 2 3 3 4 5 6 7 8 9)
                               (tok + - * /))
        [])
-    {:consumed false, :error ["at index 0:"
+    {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
     ))

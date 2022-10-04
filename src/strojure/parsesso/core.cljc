@@ -514,9 +514,7 @@
 
   )
 
-;; TODO: argument order?
 ;; TODO: check error message on fail
-;; TODO: add "parser error" to error message
 (defn debug-parser
   "This parser prints to the console the remaining parser state at the time it
   is invoked. It then continues to apply parser `p`, and if `p` fails will
@@ -533,7 +531,7 @@
       > unexpected end of input
       > (\\t \\e \\s \\t)
   "
-  [label p]
+  [p label]
   (after (debug-state label)
          (choice p, (do-parser (println (str label " backtracked"))
                                (fail label)))))

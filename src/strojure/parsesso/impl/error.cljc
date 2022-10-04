@@ -12,7 +12,7 @@
 (defrecord ParseError [pos messages]
   Object
   (toString [_]
-    (str "at " pos ":\n" (render-messages messages))))
+    (str "error at " pos ":\n" (render-messages messages))))
 
 (defn- new-error
   [state typ msg]
