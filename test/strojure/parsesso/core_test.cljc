@@ -218,6 +218,40 @@
     {:consumed false, :error ["at index 0:"
                               "unexpected :strojure.parsesso.core/eof"]}
 
+    (p (p/not-followed-by (tok :X)
+                          (tok :A))
+       [:X :B])
+    {:consumed true, :value :X}
+
+    (p (p/not-followed-by (tok :X)
+                          (p/sequence [(tok :A) (tok :B)]))
+       [:X :A :A])
+    {:consumed true, :value :X}
+
+    (p (p/not-followed-by (tok :X)
+                          (tok :A))
+       [])
+    {:consumed false, :error ["at index 0:"
+                              "unexpected end of input"]}
+
+    (p (p/not-followed-by (tok :X)
+                          (tok :A))
+       [:X :A])
+    {:consumed true, :error ["at index 1:"
+                             "unexpected :A"]}
+
+    (p (p/not-followed-by (tok :X)
+                          (p/sequence [(tok :A) (tok :B)]))
+       [:X :A :B])
+    {:consumed true, :error ["at index 1:"
+                             "unexpected (:A :B)"]}
+
+    (p (p/not-followed-by (tok :X)
+                          p/eof)
+       [:X])
+    {:consumed true, :error ["at index 1:"
+                             "unexpected :strojure.parsesso.core/eof"]}
+
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
