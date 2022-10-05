@@ -66,7 +66,7 @@
   "This parser applies function `f` to the user state. Suppose that we want to
   count identifiers in a source, we could use the user state as:
 
-      (when-let [x identifier
+      (bind-let [x identifier
                  _ (update-user-state inc)]
         (result x))
   "

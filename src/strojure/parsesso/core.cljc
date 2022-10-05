@@ -1,5 +1,5 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [sequence when-let])
+  (:refer-clojure :exclude [sequence])
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.pos :as pos]
@@ -8,7 +8,7 @@
   #?(:clj  (:import (clojure.lang ISeq)
                     (strojure.parsesso.impl.parser Parser)
                     (strojure.parsesso.impl.reply Failure))
-     :cljs (:require-macros [strojure.parsesso.core :refer [do-parser when-let]])))
+     :cljs (:require-macros [strojure.parsesso.core :refer [bind-let do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -206,7 +206,7 @@
   the returned values or `p`.
 
       (def identifier
-        (when-let [c text/letter
+        (bind-let [c text/letter
                    cs (many-zero (choice text/alpha-numeric
                                          (text/one-of \"_\")))]
           (result (cons c cs))))
@@ -270,7 +270,7 @@
        (fn [~state ~context]
          ((do ~@body) ~state ~context)))))
 
-(defmacro when-let
+(defmacro bind-let
   [[& bindings] & body]
   (let [[sym p :as pair] (take 2 bindings)]
     (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
@@ -278,7 +278,7 @@
     (assert (some? body) "Requires some body")
     (if (= 2 (count bindings))
       `(bind ~p (fn [~sym] ~@body))
-      `(bind ~p (fn [~sym] (when-let ~(drop 2 bindings) ~@body))))))
+      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
 
 (defn after
   "This parser tries to apply the parsers in order, until last of them succeeds.
@@ -326,7 +326,7 @@
   Returns a sequence of values returned by every parser."
   [ps]
   (if-let [p (first ps)]
-    (when-let [x p, xs (sequence (rest ps))]
+    (bind-let [x p, xs (sequence (rest ps))]
       (result (cons x xs)))
     (result nil)))
 
@@ -356,7 +356,7 @@
   "
   ([p around] (between p around around))
   ([p open close]
-   (when-let [_ open, x p, _ close]
+   (bind-let [_ open, x p, _ close]
      (result x))))
 
 (defn skip-many-more
@@ -372,7 +372,7 @@
        (many-more text/letter))
   "
   [p]
-  (when-let [x p, xs (many-zero p)]
+  (bind-let [x p, xs (many-zero p)]
     (result (cons x xs))))
 
 (defn times
@@ -386,7 +386,7 @@
   "This parser parses _one_ or more occurrences of `p`, separated by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (when-let [x p, xs (many-zero (after sep p))]
+  (bind-let [x p, xs (many-zero (after sep p))]
     (result (cons x xs))))
 
 (defn sep-by-zero
@@ -403,7 +403,7 @@
   "This parser parses _one_ or more occurrences of `p`, separated and ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (many-more (when-let [x p, _ sep]
+  (many-more (bind-let [x p, _ sep]
                (result x))))
 
 (defn sep-by-end-zero
@@ -416,8 +416,8 @@
   "This parser parses _one_ or more occurrences of `p`, separated and optionally
   ended by `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (when-let [x p]
-    (choice (when-let [_ sep, xs (optional (sep-by-opt-end-more p sep))]
+  (bind-let [x p]
+    (choice (bind-let [_ sep, xs (optional (sep-by-opt-end-more p sep))]
               (result (cons x xs)))
             (result [x]))))
 
@@ -465,7 +465,7 @@
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))
-                           (when-let [x p, xs (scan)]
+                           (bind-let [x p, xs (scan)]
                              (result (cons x xs)))))]
     (scan)))
 
@@ -481,7 +481,7 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (start (when-let [x (many-more any-token)]
+  (choice (start (bind-let [x (many-more any-token)]
                    (println (str label ": " x))
                    (fail nil)))
           (result nil)))

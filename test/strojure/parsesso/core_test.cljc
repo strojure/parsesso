@@ -25,7 +25,7 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/choice (p/when-let [x parser] (p/fail (str "Test failure after parsing " x)))
+  (p/choice (p/bind-let [x parser] (p/fail (str "Test failure after parsing " x)))
             parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -1105,7 +1105,7 @@
 (deftest debug-state-t
   (test/are [expr result] (= result expr)
 
-    (-> (p (p/when-let [_ (p/debug-state "a") a (tok :A)
+    (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
              (p/result [a b]))
            [:A :B :C])
@@ -1114,7 +1114,7 @@
     ["a: (:A :B :C)"
      "b: (:B :C)"]
 
-    (-> (p (p/when-let [_ (p/debug-state "a") a (tok :A)
+    (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
              (p/result [a b]))
            [:A :B])
@@ -1123,7 +1123,7 @@
     ["a: (:A :B)"
      "b: (:B)"]
 
-    (-> (p (p/when-let [a (tok :A) _ (p/debug-state "a")
+    (-> (p (p/bind-let [a (tok :A) _ (p/debug-state "a")
                         b (tok :B) _ (p/debug-state "b")]
              (p/result [a b]))
            [:A :B])
@@ -1136,7 +1136,7 @@
 (deftest debug-parser-t
   (test/are [expr result] (= result expr)
 
-    (-> (p (p/when-let [a (p/debug-parser (tok :A) "a")
+    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
              (p/result [a b]))
            [:A :B :C])
@@ -1145,7 +1145,7 @@
     ["a: (:A :B :C)"
      "b: (:B :C)"]
 
-    (-> (p (p/when-let [a (p/debug-parser (tok :A) "a")
+    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
              (p/result [a b]))
            [:A :B])
@@ -1154,7 +1154,7 @@
     ["a: (:A :B)"
      "b: (:B)"]
 
-    (-> (p (p/when-let [a (p/debug-parser (tok :A) "a")
+    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
              (p/result [a b]))
            [:B :C])
@@ -1163,7 +1163,7 @@
     ["a: (:B :C)"
      "a backtracked"]
 
-    (-> (p (p/when-let [a (p/debug-parser (tok :A) "a")
+    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
              (p/result [a b]))
            [:A :C])
