@@ -10,23 +10,23 @@
 
 (defn c-ok
   "Replies with value as consumed (consumed-ok)."
-  [^Context c x s e]
-  ((.-cok c) x s e))
+  [^Context context, state, x]
+  ((.-cok context) state x))
 
 (defn e-ok
   "Replies with value as not consumed (empty-ok)."
-  [^Context c x s e]
-  ((.-eok c) x s e))
+  [^Context context, state, x]
+  ((.-eok context) state x))
 
 (defn c-err
   "Fails with error as consumed (consumed-error)."
-  [^Context c e]
-  ((.-cerr c) e))
+  [^Context context, error]
+  ((.-cerr context) error))
 
 (defn e-err
   "Fails with error as not consumed (empty-error)."
-  [^Context c e]
-  ((.-eerr c) e))
+  [^Context context, error]
+  ((.-eerr context) error))
 
 (defn replace*
   "Returns new instance of context with replaced functions, nil arg keep
@@ -46,7 +46,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defrecord Result [value consumed state error])
+(defrecord Result [value consumed state])
 
 (defrecord Failure [consumed error])
 
@@ -54,8 +54,8 @@
 
 (defn new-context
   []
-  (Context. (fn consumed-ok, [x s e] (Result. x true s e))
-            (fn empty-ok,,,, [x s e] (Result. x false s e))
+  (Context. (fn consumed-ok, [s x] (Result. x true s))
+            (fn empty-ok,,,, [s x] (Result. x false s))
             (fn consumed-err [e],,,, (Failure. true e))
             (fn empty-err,,, [e],,,, (Failure. false e))))
 

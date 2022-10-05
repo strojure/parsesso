@@ -14,7 +14,7 @@
    (p/parser
      (fn [state context]
        (let [s (f state)]
-         (reply/e-ok context nil s nil)))))
+         (reply/e-ok context s nil)))))
   ([f arg]
    (do-update-parser-state #(f % arg))))
 
@@ -25,7 +25,7 @@
    (p/parser
      (fn [state context]
        (let [s (f state)]
-         (reply/e-ok context s s nil)))))
+         (reply/e-ok context s s)))))
   ([f arg]
    (update-parser-state #(f % arg)))
   ([f arg & args]

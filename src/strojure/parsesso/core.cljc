@@ -31,7 +31,7 @@
   [x]
   (parser
     (fn [state context]
-      (reply/e-ok context x state nil))))
+      (reply/e-ok context state x))))
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input."
@@ -54,12 +54,8 @@
   [p msg]
   (parser
     (fn [state context]
-      (letfn [(e-ok [x s e]
-                (reply/e-ok context x s (some-> e (error/expecting msg))))
-              (e-err [e]
-                (reply/e-err context (error/expecting e msg)))]
-        (p state (reply/replace context {reply/e-ok e-ok
-                                         reply/e-err e-err}))))))
+      (letfn [(e-err [e] (reply/e-err context (error/expecting e msg)))]
+        (p state (reply/replace context {reply/e-err e-err}))))))
 
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
@@ -120,9 +116,8 @@
   [p]
   (parser
     (fn [state context]
-      (letfn [(e-ok [x _ _]
-                (reply/e-ok context x state nil))]
-        (p state (reply/replace context {reply/c-ok e-ok
+      (letfn [(e-ok [_ x] (reply/e-ok context state x))]
+        (p state (reply/replace context {reply/c-ok e-ok,
                                          reply/e-ok e-ok}))))))
 
 (defn token-fn
@@ -137,7 +132,7 @@
           (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (reply/c-ok context tok (state/next-state state tok) nil)
+                (reply/c-ok context (state/next-state state tok) tok)
                 (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
             (reply/e-err context (error/sys-unexpected-eof state))))))
     (fn [pred]
@@ -146,7 +141,7 @@
           (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
-                (reply/c-ok context tok (state/next-state state tok user-state-fn) nil)
+                (reply/c-ok context (state/next-state state tok user-state-fn) tok)
                 (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
             (reply/e-err context (error/sys-unexpected-eof state))))))))
 
@@ -165,8 +160,9 @@
                  reply-err reply/e-err]
             (cond
               (not ts)
-              (let [s (state/set-input-pos state input (reduce pos/next-pos (state/pos state) tts))]
-                (reply/c-ok context tts s nil))
+              (let [new-pos (reduce pos/next-pos (state/pos state) tts)
+                    new-state (state/set-input-pos state input new-pos)]
+                (reply/c-ok context new-state tts))
               (not input)
               (reply-err context (-> (error/sys-unexpected-eof state)
                                      (error/expecting (delay (render-seq-fn tts)))))
@@ -179,7 +175,7 @@
                          reply/c-err)
                   (reply-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
                                          (error/expecting (delay (render-seq-fn tts)))))))))
-          (reply/e-ok context tts state nil))))))
+          (reply/e-ok context state tts))))))
 
 (def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. See
             `token-fn` for customized version of the parser."
@@ -203,7 +199,7 @@
       (if-let [input (seq (state/input state))]
         (reply/e-err context (-> (error/unexpected state (delay (pr-str (first input))))
                                  (error/expecting "end of input")))
-        (reply/e-ok context ::eof state nil)))))
+        (reply/e-ok context state ::eof)))))
 
 (defn many-zero
   "This parser applies the parser `p` zero or more times. Returns a sequence of
@@ -218,16 +214,15 @@
   [p]
   (parser
     (fn [state context]
-      (letfn [(walk [xs x s _e]
+      (letfn [(walk [xs s x]
                 (let [xs (conj! xs x)
-                      e-err (fn e-err [e]
-                              (reply/c-ok context (seq (persistent! xs)) s e))]
+                      e-err (fn [_] (reply/c-ok context s (seq (persistent! xs))))]
                   (p s (reply/replace context {reply/c-ok (partial walk xs)
                                                reply/e-ok parser/e-ok-throw-empty-input
                                                reply/e-err e-err}))))]
         (p state (reply/replace context {reply/c-ok (partial walk (transient []))
                                          reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (partial reply/e-ok context nil state)}))))))
+                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
 
 (defn skip-many-zero
   "This parser applies the parser `p` zero or more times, skipping its result.
@@ -238,13 +233,13 @@
   [p]
   (parser
     (fn [state context]
-      (letfn [(walk [_x s _e]
-                (p s (reply/replace context {reply/c-ok walk
+      (letfn [(c-ok [s _]
+                (p s (reply/replace context {reply/c-ok c-ok
                                              reply/e-ok parser/e-ok-throw-empty-input
-                                             reply/e-err (partial reply/c-ok context nil s)})))]
-        (p state (reply/replace context {reply/c-ok walk
+                                             reply/e-err (fn [_] (reply/c-ok context s nil))})))]
+        (p state (reply/replace context {reply/c-ok c-ok
                                          reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (partial reply/e-ok context nil state)}))))))
+                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -255,14 +250,14 @@
   [p f]
   (parser
     (fn [state context]
-      (letfn [(c-ok-p [x s _e]
+      (letfn [(c-ok-p [s x]
                 ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
                 ;; continuation
                 ;; - if (f x) doesn't consume input, but errors, we return the error in the
                 ;; 'consumed-err' continuation
                 ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
                                                  reply/e-err (partial reply/c-err context)})))
-              (e-ok-p [x s _e]
+              (e-ok-p [s x]
                 ;; - in these cases, (f x) can return as empty
                 ((f x) s context))]
         (p state (reply/replace context {reply/c-ok c-ok-p
@@ -311,10 +306,8 @@
    (parser
      (fn [state context]
        (letfn [(e-err-p [e]
-                 (letfn [(e-ok-q [x s ee]
-                           (reply/e-ok context x s (error/merge-errors e ee)))
-                         (e-err-q [ee]
-                           (reply/e-err context (error/merge-errors e ee)))]
+                 (letfn [(e-ok-q [s x] (reply/e-ok context s x))
+                         (e-err-q [ee] (reply/e-err context (error/merge-errors e ee)))]
                    (q state (reply/replace context {reply/e-ok e-ok-q
                                                     reply/e-err e-err-q}))))]
          (p state (reply/replace context {reply/e-err e-err-p}))))))
@@ -448,13 +441,11 @@
           (not-followed-by alpha-numeric))
   "
   [p q]
-  (->> (fn [px]
+  (->> (fn [xp]
          (parser
            (fn [state context]
-             (letfn [(e-ok [qx _s _e]
-                       (reply/e-err context (error/unexpected state (delay (pr-str qx)))))
-                     (e-err [_e]
-                       (reply/e-ok context px state nil))]
+             (letfn [(e-ok [_ xq] (reply/e-err context (error/unexpected state (delay (pr-str xq)))))
+                     (e-err [_] (reply/e-ok context state xp))]
                (q state (reply/replace context {reply/c-ok e-ok
                                                 reply/e-ok e-ok
                                                 reply/c-err e-err
@@ -473,10 +464,9 @@
   the use of the `start` combinator.
   "
   [p end]
-  (letfn [(scan []
-            (choice (after end (result nil))
-                    (when-let [x p, xs (scan)]
-                      (result (cons x xs)))))]
+  (letfn [(scan [] (choice (after end (result nil))
+                           (when-let [x p, xs (scan)]
+                             (result (cons x xs)))))]
     (scan)))
 
 (defn debug-state
