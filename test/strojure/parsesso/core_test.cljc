@@ -676,51 +676,86 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest many-t
+(deftest many-zero-t
+  (test/are [expr result] (= result expr)
 
-  (testing 'p/many-zero
-    (test/are [expr result] (= result expr)
+    (p (p/many-zero (tok :A :B :C))
+       [:A :B :C :D :E :F])
+    {:consumed true, :value [:A :B :C]}
 
-      (p (p/many-zero (tok :A :B :C))
-         [:A :B :C :D :E :F])
-      {:consumed true, :value [:A :B :C]}
+    (p (p/many-zero (tok :D :E :F))
+       [:A :B :C :D :E :F])
+    {:consumed false, :value nil}
 
-      (p (p/many-zero (tok :D :E :F))
-         [:A :B :C :D :E :F])
-      {:consumed false, :value nil}
+    (p (p/many-zero (tok :A :B :C))
+       [])
+    {:consumed false, :value nil}
 
-      (p (p/many-zero (tok :A :B :C))
-         [])
-      {:consumed false, :value nil}
+    (p (p/many-zero (tok :A))
+       (repeat 10000 :A))
+    {:consumed true, :value (repeat 10000 :A)}
 
-      (p (p/many-zero (tok :A))
-         (repeat 10000 :A))
-      {:consumed true, :value (repeat 10000 :A)}
+    ))
 
-      ))
+(deftest many-more-t
+  (test/are [expr result] (= result expr)
 
-  (testing 'p/many-more
-    (test/are [expr result] (= result expr)
+    (p (p/many-more (tok :A :B :C))
+       [:A :B :C :D :E :F])
+    {:consumed true, :value [:A :B :C]}
 
-      (p (p/many-more (tok :A :B :C))
-         [:A :B :C :D :E :F])
-      {:consumed true, :value [:A :B :C]}
+    (p (p/many-more (tok :D :E :F))
+       [:A :B :C :D :E :F])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected :A"]}
 
-      (p (p/many-more (tok :D :E :F))
-         [:A :B :C :D :E :F])
-      {:consumed false, :error ["error at index 0:"
-                                "unexpected :A"]}
+    (p (p/many-more (tok :A :B :C))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected end of input"]}
 
-      (p (p/many-more (tok :A :B :C))
-         [])
-      {:consumed false, :error ["error at index 0:"
-                                "unexpected end of input"]}
+    (p (p/many-more (tok :A))
+       (repeat 10000 :A))
+    {:consumed true, :value (repeat 10000 :A)}
 
-      (p (p/many-more (tok :A))
-         (repeat 10000 :A))
-      {:consumed true, :value (repeat 10000 :A)}
+    ))
 
-      )))
+(deftest skip-zero-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/skip-zero (tok :A))
+       [:A :A :A :B :B :B])
+    {:consumed true, :value nil}
+
+    (p (p/skip-zero (tok :A))
+       [:B :B :B])
+    {:consumed false, :value nil}
+
+    (p (p/skip-zero (tok :A))
+       [])
+    {:consumed false, :value nil}
+
+    )
+  )
+
+(deftest skip-more-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/skip-more (tok :A))
+       [:A :A :A :B :B :B])
+    {:consumed true, :value nil}
+
+    (p (p/skip-more (tok :A))
+       [:B :B :B])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected :B"]}
+
+    (p (p/skip-more (tok :A))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected end of input"]}
+
+    ))
 
 (deftest times-t
   (test/are [expr result] (= result expr)
@@ -771,44 +806,6 @@
     {:consumed false, :value nil}
 
     ))
-
-(deftest skip-many-t
-
-  (testing 'p/skip-many-zero
-    (test/are [expr result] (= result expr)
-
-      (p (p/skip-many-zero (tok :A))
-         [:A :A :A :B :B :B])
-      {:consumed true, :value nil}
-
-      (p (p/skip-many-zero (tok :A))
-         [:B :B :B])
-      {:consumed false, :value nil}
-
-      (p (p/skip-many-zero (tok :A))
-         [])
-      {:consumed false, :value nil}
-
-      ))
-
-  (testing 'p/skip-many-more
-    (test/are [expr result] (= result expr)
-
-      (p (p/skip-many-more (tok :A))
-         [:A :A :A :B :B :B])
-      {:consumed true, :value nil}
-
-      (p (p/skip-many-more (tok :A))
-         [:B :B :B])
-      {:consumed false, :error ["error at index 0:"
-                                "unexpected :B"]}
-
-      (p (p/skip-many-more (tok :A))
-         [])
-      {:consumed false, :error ["error at index 0:"
-                                "unexpected end of input"]}
-
-      )))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

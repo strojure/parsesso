@@ -224,7 +224,7 @@
                                          reply/e-ok parser/e-ok-throw-empty-input
                                          reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
 
-(defn skip-many-zero
+(defn skip-zero
   "This parser applies the parser `p` zero or more times, skipping its result.
 
       (def spaces
@@ -359,10 +359,10 @@
    (bind-let [_ open, x p, _ close]
      (result x))))
 
-(defn skip-many-more
+(defn skip-more
   "This parser applies the parser `p` _one_ or more times, skipping its result."
   [p]
-  (after p (skip-many-zero p)))
+  (after p (skip-zero p)))
 
 (defn many-more
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
