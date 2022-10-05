@@ -125,42 +125,30 @@
         (p state (reply/replace context {reply/c-ok e-ok,
                                          reply/e-ok e-ok}))))))
 
-;; TODO: pass optional expecting message to token fn?
 (defn token-fn
   "Function returning the parser which accepts a token when `(pred token)`
-  returns logical true. The token can be shown in error message using
-  `(render-token-fn token)`."
-  [{:keys [render-token-fn, user-state-fn] :or {render-token-fn pr-str}}]
-  (if-not user-state-fn
-    (fn [pred]
-      (parser
-        (fn [state context]
-          (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
-            (let [tok (#?(:clj .first :cljs -first) input)]
-              (if (pred tok)
-                (reply/c-ok context (state/next-state state tok) tok)
-                (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
-                                         (error/expecting (some-> (meta pred) ::expecting))))))
-            (reply/e-err context (-> (error/sys-unexpected-eof state)
-                                     (error/expecting (some-> (meta pred) ::expecting))))))))
-    (fn [pred]
-      (parser
-        (fn [state context]
-          (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
-            (let [tok (#?(:clj .first :cljs -first) input)]
-              (if (pred tok)
-                (reply/c-ok context (state/next-state state tok user-state-fn) tok)
-                (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
-                                         (error/expecting (some-> (meta pred) ::expecting))))))
-            (reply/e-err context (-> (error/sys-unexpected-eof state)
-                                     (error/expecting (some-> (meta pred) ::expecting))))))))))
+  returns logical true, and optional expecting `msg`. The token can be shown in
+  error message using `(render-token-fn token)`."
+  [{:keys [render-token-fn] :or {render-token-fn pr-str}}]
+  (fn token
+    ([pred] (token pred nil))
+    ([pred msg]
+     (parser
+       (fn [state context]
+         (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
+           (let [tok (#?(:clj .first :cljs -first) input)]
+             (if (pred tok)
+               (reply/c-ok context (state/next-state state tok) tok)
+               (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
+                                        (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
+           (reply/e-err context (-> (error/sys-unexpected-eof state)
+                                    (error/expecting (or msg (some-> (meta pred) ::expecting)))))))))))
 
 (defn tokens-fn
   "Function returning the parser which parses a sequence of tokens given by `xs`
   and returns `xs`. Tokens are compared using `(test-fn sample-token input-token)`."
-  [{:keys [test-fn render-token-fn render-seq-fn] :or {test-fn =
-                                                       render-token-fn pr-str
-                                                       render-seq-fn pr-str}}]
+  [{:keys [test-fn render-token-fn render-seq-fn]
+    :or {test-fn =, render-token-fn pr-str, render-seq-fn pr-str}}]
   (fn [tts]
     (parser
       (fn [state context]
@@ -187,10 +175,11 @@
                                          (error/expecting (delay (render-seq-fn tts)))))))))
           (reply/e-ok context state tts))))))
 
-(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. The
-             `pred` can carry expecting error message in `::expecting` metadata. See also
-             `token-fn` for customized version of the parser."
-       :arglists '([pred])}
+(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
+             optional expecting `msg`. The `pred` can carry expecting error message in
+             `::expecting` metadata. See also `token-fn` for customized version of the
+             parser."
+       :arglists '([pred] [pred, msg])}
   token
   (token-fn {}))
 

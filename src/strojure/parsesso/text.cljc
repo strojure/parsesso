@@ -22,15 +22,9 @@
              (char #(Character/isDigit ^char %)))
        "
        :arglists
-       '([pred] [pred, message])}
+       '([pred] [pred, msg])}
   char
-  (let [token (p/token-fn {:render-token-fn render-char})]
-    (fn
-      ([pred]
-       (token pred))
-      ([pred, message]
-       (-> (token pred)
-           (p/expecting message))))))
+  (p/token-fn {:render-token-fn render-char}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
