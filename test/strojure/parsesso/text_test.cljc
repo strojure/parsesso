@@ -29,43 +29,37 @@
 (deftest one-of-t
   (test/are [expr result] (= result expr)
 
-    (p (t/one-of "abc")
+    (p (t/char (t/one-of? "abc"))
        "a")
     {:consumed true, :value (c "a")}
 
-    (p (t/one-of "abc")
+    (p (t/char (t/one-of? "abc"))
        "b")
     {:consumed true, :value (c "b")}
 
-    (p (t/one-of "abc")
+    (p (t/char (t/one-of? "abc"))
        "c")
     {:consumed true, :value (c "c")}
 
-    (p (t/one-of "abc")
+    (p (t/char (t/one-of? "abc"))
        "d")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"d\""
                               "expecting character of \"abc\""]}
 
-    (p (t/one-of "abc")
+    (p (t/char (t/one-of? "abc"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
                               "expecting character of \"abc\""]}
 
-    (p (t/one-of "abc" "a, b or c")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting a, b or c"]}
-
-    (p (t/one-of "a")
+    (p (t/char (t/one-of? "a"))
        "d")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"d\""
                               "expecting \"a\""]}
 
-    (p (t/one-of "a")
+    (p (t/char (t/one-of? "a"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -73,38 +67,32 @@
 
     ))
 
-(deftest none-of-t
+(deftest not-of-t
   (test/are [expr result] (= result expr)
 
-    (p (t/none-of "abc")
+    (p (t/char (t/not-of? "abc"))
        "x")
     {:consumed true, :value (c "x")}
 
-    (p (t/none-of "abc")
+    (p (t/char (t/not-of? "abc"))
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting character of not \"abc\""]}
+                              "expecting character not of \"abc\""]}
 
-    (p (t/none-of "abc")
+    (p (t/char (t/not-of? "abc"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting character of not \"abc\""]}
+                              "expecting character not of \"abc\""]}
 
-    (p (t/none-of "abc" "one of not a, b or c")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting one of not a, b or c"]}
-
-    (p (t/none-of "a")
+    (p (t/char (t/not-of? "a"))
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting not \"a\" character"]}
 
-    (p (t/none-of "a")
+    (p (t/char (t/not-of? "a"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -112,30 +100,24 @@
 
     ))
 
-(deftest char-match-t
+(deftest match-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (t/char-match #"[a-z]"))
+    (p (p/many-zero (t/char (t/match? #"[a-z]")))
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p (t/char-match #"[a-z]")
+    (p (t/char (t/match? #"[a-z]"))
        "A")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"A\""
                               "expecting character matching pattern #\"[a-z]\""]}
 
-    (p (t/char-match #"[a-z]")
+    (p (t/char (t/match? #"[a-z]"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
                               "expecting character matching pattern #\"[a-z]\""]}
-
-    (p (t/char-match #"[a-z]" "a to z")
-       "A")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"A\""
-                              "expecting a to z"]}
 
     ))
 
@@ -174,72 +156,125 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest any-char-t
+(deftest alpha-t
   (test/are [expr result] (= result expr)
 
-    (p t/any-char
+    (p (t/char t/alpha?)
        "a")
     {:consumed true, :value (c "a")}
 
-    (p t/any-char
+    (p (t/char t/alpha?)
+       "1")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected \"1\""
+                              "expecting alphabetic character"]}
+
+    (p (t/char t/alpha?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"]}
+                              "unexpected end of input"
+                              "expecting alphabetic character"]}
+
+    ))
+
+(deftest upper-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/many-zero (t/char t/upper?))
+       "ABC")
+    {:consumed true, :value (seq "ABC")}
+
+    (p (t/char t/upper?)
+       "a")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected \"a\""
+                              "expecting upper case character"]}
+
+    (p (t/char t/upper?)
+       "")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting upper case character"]}
+
+    ))
+
+(deftest lower-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/many-zero (t/char t/lower?))
+       "abc")
+    {:consumed true, :value (seq "abc")}
+
+    (p (t/char t/lower?)
+       "A")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected \"A\""
+                              "expecting lower case character"]}
+
+    (p (t/char t/lower?)
+       "")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting lower case character"]}
+
+    ))
+
+(deftest numeric-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/many-zero (t/char t/numeric?))
+       "01234567890")
+    {:consumed true, :value (seq "01234567890")}
+
+    (p (t/char t/numeric?)
+       "a")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected \"a\""
+                              "expecting numeric character"]}
+
+    (p (t/char t/numeric?)
+       "")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting numeric character"]}
+
+    ))
+
+(deftest alpha-numeric-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/many-zero (t/char t/alpha-numeric?))
+       "12345abcABC")
+    {:consumed true, :value (seq "12345abcABC")}
+
+    (p (t/char t/alpha-numeric?)
+       "-")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected \"-\""
+                              "expecting alphanumeric character"]}
+
+    (p (t/char t/alpha-numeric?)
+       "")
+    {:consumed false, :error ["error at line 1, column 1:"
+                              "unexpected end of input"
+                              "expecting alphanumeric character"]}
 
     ))
 
 (deftest whitespace-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero t/whitespace)
+    (p (p/many-zero (t/char t/whitespace?))
        " \t\r\n")
     {:consumed true, :value (seq " \t\r\n")}
 
-    (p t/whitespace
+    (p (t/char t/whitespace?)
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting whitespace character"]}
 
-    (p t/whitespace
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting whitespace character"]}
-
-    ))
-
-(deftest skip-whites-zero-t
-  (test/are [expr result] (= result expr)
-
-    (p t/skip-whites-zero
-       " \t\r\n")
-    {:consumed true, :value nil}
-
-    (p t/skip-whites-zero
-       "a")
-    {:consumed false, :value nil}
-
-    (p t/skip-whites-zero
-       "")
-    {:consumed false, :value nil}
-
-    ))
-
-(deftest skip-whites-more-t
-  (test/are [expr result] (= result expr)
-
-    (p t/skip-whites-more
-       " \t\r\n")
-    {:consumed true, :value nil}
-
-    (p t/skip-whites-more
-       "a")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"a\""
-                              "expecting whitespace character"]}
-
-    (p t/skip-whites-more
+    (p (t/char t/whitespace?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -284,130 +319,25 @@
 
     ))
 
-(deftest alpha-t
-  (test/are [expr result] (= result expr)
-
-    (p t/alpha
-       "a")
-    {:consumed true, :value (c "a")}
-
-    (p t/alpha
-       "1")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"1\""
-                              "expecting alphabetic character"]}
-
-    (p t/alpha
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting alphabetic character"]}
-
-    ))
-
-(deftest upper-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/many-zero t/upper)
-       "ABC")
-    {:consumed true, :value (seq "ABC")}
-
-    (p t/upper
-       "a")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"a\""
-                              "expecting upper case character"]}
-
-    (p t/upper
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting upper case character"]}
-
-    ))
-
-(deftest lower-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/many-zero t/lower)
-       "abc")
-    {:consumed true, :value (seq "abc")}
-
-    (p t/lower
-       "A")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"A\""
-                              "expecting lower case character"]}
-
-    (p t/lower
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting lower case character"]}
-
-    ))
-
-(deftest numeric-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/many-zero t/numeric)
-       "01234567890")
-    {:consumed true, :value (seq "01234567890")}
-
-    (p t/numeric
-       "a")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"a\""
-                              "expecting numeric character"]}
-
-    (p t/numeric
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting numeric character"]}
-
-    ))
-
-(deftest alpha-numeric-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/many-zero t/alpha-numeric)
-       "12345abcABC")
-    {:consumed true, :value (seq "12345abcABC")}
-
-    (p t/alpha-numeric
-       "-")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"-\""
-                              "expecting alphanumeric character"]}
-
-    (p t/alpha-numeric
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting alphanumeric character"]}
-
-    ))
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest plus-plus-t
   (test/are [expr result] (= result expr)
 
-    (p (t/++ (t/one-of "abc"))
+    (p (t/++ (t/char (t/one-of? "abc")))
        "abc")
     {:consumed true, :value "a"}
 
-    (p (t/++ (p/sequence [(p/many-more (t/one-of "abc"))
-                          (p/many-more (t/one-of "123"))]))
+    (p (t/++ (p/sequence [(p/many-more (t/char (t/one-of? "abc")))
+                          (p/many-more (t/char (t/one-of? "123")))]))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (t/++ (p/many-zero (t/one-of "abc")))
+    (p (t/++ (p/many-zero (t/char (t/one-of? "abc"))))
        "123")
     {:consumed false, :value ""}
 
-    (p (t/++ (t/one-of "abc"))
+    (p (t/++ (t/char (t/one-of? "abc")))
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""

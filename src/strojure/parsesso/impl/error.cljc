@@ -32,7 +32,9 @@
 
 (defn expecting
   [^ParseError err, msg]
-  (ParseError. (.-pos err) (cons [::expecting msg] (.-messages err))))
+  (if msg
+    (ParseError. (.-pos err) (cons [::expecting msg] (.-messages err)))
+    err))
 
 (defn message
   [state msg]

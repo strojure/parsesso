@@ -57,6 +57,11 @@
       (letfn [(e-err [e] (reply/e-err context (error/expecting e msg)))]
         (p state (reply/replace context {reply/e-err e-err}))))))
 
+(defn expecting-meta
+  "Attaches expecting error message to `obj`, i.e. to token predicate function."
+  [obj msg]
+  (with-meta obj {::expecting msg}))
+
 (defn unexpected
   "This parser always fails with an unexpected error message `msg` without
   consuming any input.
@@ -83,10 +88,10 @@
   identifier we have to use the `start` combinator. Suppose we write:
 
       (def identifier
-        (some-many text/alpha))
+        (some-many (text/char text/alpha?)))
 
       (def let-expr
-        (after (string \"let\")
+        (after (text/string \"let\")
                ...))
 
       (def expr
@@ -102,7 +107,7 @@
   adding the `start` combinator:
 
       (def let-expr
-        (after (start (string \"let\"))
+        (after (start (text/string \"let\"))
                ...))
   "
   [p]
@@ -120,6 +125,7 @@
         (p state (reply/replace context {reply/c-ok e-ok,
                                          reply/e-ok e-ok}))))))
 
+;; TODO: pass optional expecting message to token fn?
 (defn token-fn
   "Function returning the parser which accepts a token when `(pred token)`
   returns logical true. The token can be shown in error message using
@@ -133,8 +139,10 @@
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
                 (reply/c-ok context (state/next-state state tok) tok)
-                (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
-            (reply/e-err context (error/sys-unexpected-eof state))))))
+                (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
+                                         (error/expecting (some-> (meta pred) ::expecting))))))
+            (reply/e-err context (-> (error/sys-unexpected-eof state)
+                                     (error/expecting (some-> (meta pred) ::expecting))))))))
     (fn [pred]
       (parser
         (fn [state context]
@@ -142,8 +150,10 @@
             (let [tok (#?(:clj .first :cljs -first) input)]
               (if (pred tok)
                 (reply/c-ok context (state/next-state state tok user-state-fn) tok)
-                (reply/e-err context (error/sys-unexpected state (delay (render-token-fn tok))))))
-            (reply/e-err context (error/sys-unexpected-eof state))))))))
+                (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
+                                         (error/expecting (some-> (meta pred) ::expecting))))))
+            (reply/e-err context (-> (error/sys-unexpected-eof state)
+                                     (error/expecting (some-> (meta pred) ::expecting))))))))))
 
 (defn tokens-fn
   "Function returning the parser which parses a sequence of tokens given by `xs`
@@ -177,8 +187,9 @@
                                          (error/expecting (delay (render-seq-fn tts)))))))))
           (reply/e-ok context state tts))))))
 
-(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. See
-            `token-fn` for customized version of the parser."
+(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true. The
+             `pred` can carry expecting error message in `::expecting` metadata. See also
+             `token-fn` for customized version of the parser."
        :arglists '([pred])}
   token
   (token-fn {}))
@@ -206,9 +217,9 @@
   the returned values or `p`.
 
       (def identifier
-        (bind-let [c text/letter
-                   cs (many-zero (choice text/alpha-numeric
-                                         (text/one-of \"_\")))]
+        (bind-let [c (text/char text/alpha?)
+                   cs (many-zero (choice (text/char text/alpha-numeric?)
+                                         (text/char (text/one-of? \"_\"))))]
           (result (cons c cs))))
   "
   [p]
@@ -228,7 +239,7 @@
   "This parser applies the parser `p` zero or more times, skipping its result.
 
       (def spaces
-        (skip-many-zero text/whitespace))
+        (skip-many-zero (text/char text/whitespace?)))
   "
   [p]
   (parser
@@ -351,8 +362,8 @@
   returned by `p`.
 
       (defn braces [p]
-        (-> p (between (text/one-of \"{\")
-                       (text/one-of \"}\"))))
+        (-> p (between (text/char (text/one-of? \"{\"))
+                       (text/char (text/one-of? \"}\")))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -369,7 +380,7 @@
   the returned values of `p`.
 
      (def word
-       (many-more text/letter))
+       (many-more (text/char text/alpha?))
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
@@ -394,7 +405,8 @@
   Returns a sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (text/one-of \",\") text/skip-whites-zero)))
+        (sep-by-zero p (after (text/char (text/one-of? \",\"))
+                              (skip-many-zero (text/char text/whitespace?)))))
   "
   [p sep]
   (optional (sep-by-more p sep)))
@@ -458,10 +470,10 @@
 
       (def simple-comment
         (after (text/string \"<!--\")
-               (many-till text/any-char (start (text/string \"-->\")))))
+               (many-till (text/char any?) (start (text/string \"-->\")))))
 
-  Note the overlapping parsers `any-char` and `(string \"-->\")`, and therefore
-  the use of the `start` combinator.
+  Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
+  therefore the use of the `start` combinator.
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))

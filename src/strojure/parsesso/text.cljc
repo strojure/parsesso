@@ -1,6 +1,7 @@
 (ns strojure.parsesso.text
   (:refer-clojure :exclude [char newline])
-  (:require [strojure.parsesso.core :as p]
+  (:require #?(:cljs [clojure.string :as string])
+            [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.text :as impl]))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -33,33 +34,34 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn one-of
-  "This parser succeeds if the current character is in the supplied string of
-  characters. Returns the parsed character. Accepts optional second argument for
-  expecting error message."
-  ([cs]
-   (one-of cs (delay (if (second cs) (str "character of " (pr-str cs))
-                                     (render-char cs)))))
-  ([cs, message]
-   (char (impl/one-of? cs) message)))
+(defn one-of?
+  "Predicate function returning true if the character `c` is in the supplied
+  string of characters `cs`."
+  [cs]
+  ^{::p/expecting (delay (if (second cs) (str "character of " (pr-str cs))
+                                         (render-char cs)))}
+  (fn [c]
+    #?(:clj
+       (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
+       :cljs
+       (string/index-of cs c))))
 
-(defn none-of
-  "This parser succeeds if the current character _not_ in the supplied list of
-  characters. Returns the parsed character. Accepts optional second argument for
-  expecting error message."
-  ([cs]
-   (none-of cs (delay (if (second cs) (str "character of not " (pr-str cs))
-                                      (str "not " (render-char cs) " character")))))
-  ([cs, message]
-   (char (complement (impl/one-of? cs)) message)))
+(defn not-of?
+  "Predicate function returning true if the character `c` is _not_ in the
+  supplied string of characters `cs`."
+  [cs]
+  (-> (complement (one-of? cs))
+      (p/expecting-meta (delay (if (second cs)
+                                 (str "character not of " (pr-str cs))
+                                 (str "not " (render-char cs) " character"))))))
 
-(defn char-match
-  "Parses a character matching regex pattern `re`. Returns the parsed character.
-  Accepts optional second argument for expecting error message."
-  ([re]
-   (char-match re (delay (str "character matching pattern " (pr-str re)))))
-  ([re, message]
-   (char #(re-find re (str %)) message)))
+(defn match?
+  "Predicate function returning true if the character `c` is matching regex
+  pattern `re`."
+  [re]
+  ^{::p/expecting (delay (str "character matching pattern " (pr-str re)))}
+  (fn [c]
+    (re-find re (str c))))
 
 (def ^{:doc
        "Parses a sequence of characters given by `s`. Returns `s`.
@@ -73,55 +75,75 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def any-char
-  "This parser succeeds for any character. Returns the parsed character."
-  (char any?))
+(def ^{:doc "True if the character is ASCII 7 bit alphabetic upper case."
+       :arglists '([c])}
+  upper?
+  ^{::p/expecting "upper case character"}
+  (fn [c]
+    #?(:clj
+       (let [c (unchecked-int (.charValue ^Character c))]
+         (and (<= 65 c) (<= c 90)))
+       :cljs
+       (re-find #"[A-Z]" c))))
 
-(def whitespace
-  "Parses a whitespace character. Returns the parsed character."
-  (char impl/ascii-white?
-        "whitespace character"))
+(def ^{:doc "True if the character is ASCII 7 bit alphabetic upper case."
+       :arglists '([c])}
+  lower?
+  ^{::p/expecting "lower case character"}
+  (fn [c]
+    #?(:clj
+       (let [c (unchecked-int (.charValue ^Character c))]
+         (and (<= 97 c) (<= c 122)))
+       :cljs
+       (re-find #"[a-z]" c))))
 
-(def skip-whites-zero
-  "This parser skips _zero_ or more whitespace characters."
-  (p/skip-many-zero (char impl/ascii-white?)))
+(def ^{:doc "True if the character is ASCII 7 bit alphabetic."
+       :arglists '([c])}
+  alpha?
+  ^{::p/expecting "alphabetic character"}
+  (fn [c]
+    #?(:clj
+       (or (upper? c) (lower? c))
+       :cljs
+       (re-find #"[a-zA-Z]" c))))
 
-(def skip-whites-more
-  "This parser skips _one_ or more whitespace characters."
-  (p/after whitespace skip-whites-zero))
+(def ^{:doc "True if the character is ASCII 7 bit numeric."
+       :arglists '([c])}
+  numeric?
+  ^{::p/expecting "numeric character"}
+  (fn [c]
+    #?(:clj
+       (let [c (unchecked-int (.charValue ^Character c))]
+         (and (<= 48 c) (<= c 57)))
+       :cljs
+       (re-find #"[0-9]" c))))
+
+(def ^{:doc "True if the character is ASCII 7 bit alphabetic or numeric."
+       :arglists '([c])}
+  alpha-numeric?
+  ^{::p/expecting "alphanumeric character"}
+  (fn [c]
+    #?(:clj
+       (or (alpha? c) (numeric? c))
+       :cljs
+       (re-find #"[a-zA-Z0-9]" c))))
+
+(def ^{:doc "True if the character is ASCII 7 bit whitespace."
+       :arglists '([c])}
+  whitespace?
+  ^{::p/expecting "whitespace character"}
+  (fn [c]
+    #?(:clj
+       (Character/isSpace ^char c)
+       :cljs
+       (string/index-of " \n\r\t\f" c))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
-  (p/choice (one-of "\n")
-            (p/after (one-of "\r") (one-of "\n"))))
-
-(def alpha
-  "Parses ASCII 7 bit alphabetic characters. Returns the parsed character."
-  (char impl/ascii-alpha?
-        "alphabetic character"))
-
-(def upper
-  "Parses ASCII 7 bit alphabetic upper case character. Returns the parsed
-  character."
-  (char impl/ascii-upper?
-        "upper case character"))
-
-(def lower
-  "Parses ASCII 7 bit alphabetic lower case character. Returns the parsed
-  character."
-  (char impl/ascii-lower?
-        "lower case character"))
-
-(def numeric
-  "Parses ASCII 7 bit numeric character. Returns the parsed character."
-  (char impl/ascii-numeric?
-        "numeric character"))
-
-(def alpha-numeric
-  "Parses ASCII 7 bit alphabetic or numeric characters. Returns the parsed
-  character."
-  (char impl/ascii-alphanumeric?
-        "alphanumeric character"))
+  (p/choice (char (one-of? "\n"))
+            (p/after (char (one-of? "\r")) (char (one-of? "\n")))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
