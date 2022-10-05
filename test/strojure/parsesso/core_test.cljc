@@ -683,6 +683,11 @@
        [:A :B :C :D :E :F])
     {:consumed true, :value [:A :B :C]}
 
+    (p (p/many-zero (fail-consumed (tok :A :B :C)))
+       [:A :B :C :D :E :F])
+    {:consumed true, :error ["error at index 1:"
+                             "Test failure after parsing :A"]}
+
     (p (p/many-zero (tok :D :E :F))
        [:A :B :C :D :E :F])
     {:consumed false, :value nil}
@@ -726,6 +731,11 @@
     (p (p/skip-zero (tok :A))
        [:A :A :A :B :B :B])
     {:consumed true, :value nil}
+
+    (p (p/skip-zero (fail-consumed (tok :A)))
+       [:A :A :A :B :B :B])
+    {:consumed true, :error ["error at index 1:"
+                             "Test failure after parsing :A"]}
 
     (p (p/skip-zero (tok :A))
        [:B :B :B])
@@ -1077,6 +1087,18 @@
        [:B :END])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
+
+    (p (p/many-till (tok :A1 :A2 :A3)
+                    (tok :END))
+       [:A1 :A2 :A3])
+    {:consumed true, :error ["error at index 3:"
+                             "unexpected end of input"]}
+
+    (p (p/many-till (fail-consumed (tok :A1 :A2 :A3))
+                    (tok :END))
+       [:A1 :A2 :A3 :END])
+    {:consumed true, :error ["error at index 1:"
+                             "Test failure after parsing :A1"]}
 
     (p (p/many-till (tok :A1 :A2 :A3)
                     (tok :END))

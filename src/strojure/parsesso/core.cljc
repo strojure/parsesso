@@ -27,14 +27,20 @@
 ;;; parsers
 
 (defn result
-  "This parser always succeeds with value `x` without consuming any input."
+  "This parser always succeeds with value `x` without consuming any input.
+
+  - Fails: never.
+  - Consumes: never."
   [x]
   (parser
     (fn [state context]
       (reply/e-ok context state x))))
 
 (defn fail
-  "This parser always fails with message `msg` without consuming any input."
+  "This parser always fails with message `msg` without consuming any input.
+
+  - Fails: always.
+  - Consumes: never."
   [msg]
   (parser
     (fn [state context]
@@ -66,6 +72,9 @@
   "This parser always fails with an unexpected error message `msg` without
   consuming any input.
 
+  - Fails: always.
+  - Consumes: never.
+
   The parsers 'fail', 'expecting' and `unexpected` are the three parsers used to
   generate error messages. Of these, only `expecting` is commonly used."
   [msg]
@@ -76,6 +85,9 @@
 (defn start
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
+
+  - Fails: when `p` fails.
+  - Consumes: when `p` succeeds and consumes some input.
 
   This combinator is used whenever arbitrary look ahead is needed. Since it
   pretends that it hasn't consumed any input when `p` fails, the `choice`
@@ -116,8 +128,11 @@
       (p state (reply/replace context {reply/c-err (partial reply/e-err context)})))))
 
 (defn look-ahead
-  "This parser parses `p` without consuming any input. If `p` fails and consumes
-  some input, so does `look-ahead`. Combine with `start` if this is undesirable."
+  "Parses `p` without consuming any input. If `p` fails and consumes some input,
+  so does `look-ahead`. Combine with `start` if this is undesirable.
+
+  - Fails: when `p` fails.
+  - Consumes: when `p` fails and consumes some input."
   [p]
   (parser
     (fn [state context]
@@ -178,22 +193,34 @@
 (def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
              optional expecting `msg`. The `pred` can carry expecting error message in
              `::expecting` metadata. See also `token-fn` for customized version of the
-             parser."
+             parser.
+
+             - Fails: when `(pred token)` return logical false.
+             - Consumes: when succeeds."
        :arglists '([pred] [pred, msg])}
   token
   (token-fn {}))
 
-(def ^{:doc "This parser parses a sequence of tokens given by `ts` and returns `ts`."
+(def ^{:doc "Parses a sequence of tokens given by `ts` and returns `ts`.
+
+            - Fails: when any of tokens don't match the input.
+            - Consumes: when at least first token match the input."
        :arglists '([ts])}
   tokens
   (tokens-fn {}))
 
 (def any-token
-  "This parser accepts any kind of token. Returns the accepted token."
+  "This parser accepts any kind of token. Returns the accepted token.
+
+  - Fails: at the end of input.
+  - Consumes: when succeeds."
   (token any?))
 
 (def eof
-  "This parser only succeeds with value `::eof` at the end of the input."
+  "This parser only succeeds with value `::eof` at the end of the input.
+
+  - Fails: when input is not completely consumed.
+  - Consumes: never."
   (parser
     (fn [state context]
       (if-let [input (seq (state/input state))]
@@ -204,6 +231,9 @@
 (defn many-zero
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`.
+
+  - Fails: when `p` fails and consumes some input.
+  - Consumes: when `p` consumes some input.
 
       (def identifier
         (bind-let [c (text/char text/alpha?)
@@ -227,6 +257,9 @@
 (defn skip-zero
   "This parser applies the parser `p` zero or more times, skipping its result.
 
+  - Fails: when `p` fails and consumes some input.
+  - Consumes: when `p` consumes some input.
+
       (def spaces
         (skip-many-zero (text/char text/whitespace?)))
   "
@@ -246,7 +279,11 @@
 ;;; combinators
 
 (defn bind
-  "m - parser, f - (fn [x] parser), returns parser"
+  "This parser applies parser `p` and then parser `(f x)` where x is a return
+  value of the parser `p`.
+
+  - Fails: when any of parsers `p` or `(f x)` fails.
+  - Consumes: when any of parsers `p` or `(f x)` consumes some input."
   [p f]
   (parser
     (fn [state context]
@@ -283,7 +320,10 @@
 (defn after
   "This parser tries to apply the parsers in order, until last of them succeeds.
   Returns the value of the last parser, discards result of all preceding
-  parsers."
+  parsers.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input."
   ([q p]
    (bind q (fn [_] p)))
   ([q qq p]
@@ -294,6 +334,12 @@
 (defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
   Returns the value of the succeeding parser.
+
+  - Fails:
+      - when any of tried parsers fails consuming some input.
+      - when all tried parsers fail without consuming any input.
+  - Consumes:
+      - when any of tried parsers consumes some input.
 
   The parser first applies `p`. If it succeeds, the value of `p` is returned. If
   `p` fails _without consuming any input_, parser `q` is tried and so on.
@@ -323,7 +369,10 @@
 
 (defn sequence
   "This parser tries to apply parsers in order until all of them succeeds.
-  Returns a sequence of values returned by every parser."
+  Returns a sequence of values returned by every parser.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input."
   [ps]
   (if-let [p (first ps)]
     (bind-let [x p, xs (sequence (rest ps))]
@@ -333,7 +382,10 @@
 (defn tuple
   "This parser tries to apply argument parsers in order until all of them
   succeeds. Returns a sequence of values returned by every parser. It is a 2+
-  arity version of the `sequence` parser."
+  arity version of the `sequence` parser.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input."
   [p q & ps]
   (sequence (cons p (cons q ps))))
 
@@ -341,14 +393,19 @@
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
   Unlike Haskell's `optional` combinator it does not discard the result of `p`
-  and behaves like `option` combinator."
+  and behaves like `option` combinator.
+
+  - Fails: when `p` fails and consumes come input.
+  - Consumes: when `p` consumes some input."
   ([p] (optional p nil))
   ([p x]
    (choice p (result x))))
 
 (defn between
-  "This parser parses `open`, followed by `p` and `close`. Returns the value
-  returned by `p`.
+  "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`.
+
+  - Fails: when any of parses fail.
+  - Consumes: in all cases except when `open` fails without consuming any input.
 
       (defn braces [p]
         (-> p (between (text/char (text/one-of? \"{\"))
@@ -359,14 +416,12 @@
    (bind-let [_ open, x p, _ close]
      (result x))))
 
-(defn skip-more
-  "This parser applies the parser `p` _one_ or more times, skipping its result."
-  [p]
-  (after p (skip-zero p)))
-
 (defn many-more
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
   the returned values of `p`.
+
+  - Fails: when `p` does not succeed at least once.
+  - Consumes: when `p` consumes some input.
 
      (def word
        (many-more (text/char text/alpha?))
@@ -375,23 +430,30 @@
   (bind-let [x p, xs (many-zero p)]
     (result (cons x xs))))
 
+(defn skip-more
+  "This parser applies the parser `p` _one_ or more times, skipping its result.
+
+  - Fails: when `p` does not succeed at least once.
+  - Consumes: when `p` consumes some input."
+  [p]
+  (after p (skip-zero p)))
+
 (defn times
-  "This parser parses `n` occurrences of `p`. If `n` is smaller or equal to
-  zero, the parser equals to `(return nil)`. Returns a sequence of `n` values
-  returned by `p`."
+  "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
+  equals to `(return nil)`. Returns a sequence of `n` values returned by `p`."
   [n p]
   (sequence (repeat n p)))
 
 (defn sep-by-more
-  "This parser parses _one_ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`."
+  "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
+  sequence of values returned by `p`."
   [p sep]
   (bind-let [x p, xs (many-zero (after sep p))]
     (result (cons x xs))))
 
 (defn sep-by-zero
-  "This parser parses _zero_ or more occurrences of `p`, separated by `sep`.
-  Returns a sequence of values returned by `p`.
+  "Parses _zero_ or more occurrences of `p`, separated by `sep`. Returns a
+  sequence of values returned by `p`.
 
       (defn comma-sep [p]
         (sep-by-zero p (after (text/char (text/one-of? \",\"))
@@ -401,21 +463,21 @@
   (optional (sep-by-more p sep)))
 
 (defn sep-by-end-more
-  "This parser parses _one_ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a sequence of values returned by `p`."
+  "Parses _one_ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a sequence of values returned by `p`."
   [p sep]
   (many-more (bind-let [x p, _ sep]
                (result x))))
 
 (defn sep-by-end-zero
-  "This parser parses _zero_ or more occurrences of `p`, separated and ended by
-  `sep`. Returns a sequence of values returned by `p`."
+  "Parses _zero_ or more occurrences of `p`, separated and ended by `sep`.
+  Returns a sequence of values returned by `p`."
   [p sep]
   (optional (sep-by-end-more p sep)))
 
 (defn sep-by-opt-end-more
-  "This parser parses _one_ or more occurrences of `p`, separated and optionally
-  ended by `sep`. Returns a sequence of values returned by `p`."
+  "Parses _one_ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (bind-let [x p]
     (choice (bind-let [_ sep, xs (optional (sep-by-opt-end-more p sep))]
@@ -423,8 +485,8 @@
             (result [x]))))
 
 (defn sep-by-opt-end-zero
-  "This parser parses _zero_ or more occurrences of `p`, separated and optionally
-  ended by `sep`. Returns a sequence of values returned by `p`."
+  "Parses _zero_ or more occurrences of `p`, separated and optionally ended by
+  `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (optional (sep-by-opt-end-more p sep)))
 
@@ -440,7 +502,12 @@
 
       (-> (text/string \"let\")
           (not-followed-by alpha-numeric))
-  "
+
+  - Fails:
+      - when `p` fails.
+      - when `q` succeeds.
+  - Consumes:
+      - when `p` consumes some input."
   [p q]
   (->> (fn [xp]
          (parser
@@ -456,6 +523,12 @@
 (defn many-till
   "This parser applies parser `p` _zero_ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`.
+
+  - Fails:
+      - when `p` fails.
+      - when `end` does not succeed before end of input.
+  - Consumes:
+      - when `p` or `end` consumes some input.
 
       (def simple-comment
         (after (text/string \"<!--\")
@@ -475,6 +548,9 @@
   is intended to be used for debugging parsers by inspecting their intermediate
   states.
 
+  - Fails: never.
+  - Consumes: never.
+
       (parse (after (text/one-of \"aeiou\")
                     (debug-state \"label\"))
              \"atest\")
@@ -492,6 +568,9 @@
   is invoked. It then continues to apply parser `p`, and if `p` fails will
   indicate that the label has been backtracked. It is intended to be used for
   debugging parsers by inspecting their intermediate states.
+
+  - Fails: when `p` fails.
+  - Consumes: when `p` consumes some input.
 
       (parse (after (text/one-of \"aeiou\")
                     (-> (text/one-of \"nope\") (debug-parser \"one-of-nope\")))
