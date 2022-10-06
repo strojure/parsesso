@@ -101,10 +101,10 @@
   identifier we have to use the `offer` combinator. Suppose we write:
 
       (def identifier
-        (some-many (text/char text/alpha?)))
+        (some-many (t/char t/alpha?)))
 
       (def let-expr
-        (after (text/string \"let\")
+        (after (t/string \"let\")
                ...))
 
       (def expr
@@ -120,7 +120,7 @@
   adding the `offer` combinator:
 
       (def let-expr
-        (after (offer (text/string \"let\"))
+        (after (offer (t/string \"let\"))
                ...))
   "
   [p]
@@ -237,9 +237,9 @@
   - Consumes: when `p` consumes some input.
 
       (def identifier
-        (bind-let [c (text/char text/alpha?)
-                   cs (many-zero (choice (text/char text/alpha-numeric?)
-                                         (text/char (text/one-of? \"_\"))))]
+        (bind-let [c (t/char t/alpha?)
+                   cs (many-zero (choice (t/char t/alpha-numeric?)
+                                         (t/char (t/one-of? \"_\"))))]
           (result (cons c cs))))
   "
   [p]
@@ -262,7 +262,7 @@
   - Consumes: when `p` consumes some input.
 
       (def spaces
-        (skip-zero (text/char text/whitespace?)))
+        (skip-zero (t/char t/whitespace?)))
   "
   [p]
   (parser
@@ -409,8 +409,8 @@
   - Consumes: in all cases except when `open` fails without consuming any input.
 
       (defn braces [p]
-        (-> p (between (text/char (text/one-of? \"{\"))
-                       (text/char (text/one-of? \"}\")))))
+        (-> p (between (t/char (t/one-of? \"{\"))
+                       (t/char (t/one-of? \"}\")))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -425,7 +425,7 @@
   - Consumes: when `p` consumes some input.
 
      (def word
-       (many-some (text/char text/alpha?))
+       (many-some (t/char t/alpha?))
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
@@ -457,8 +457,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (text/char (text/one-of? \",\"))
-                              (skip-zero (text/char text/whitespace?)))))
+        (sep-by-zero p (after (t/char (t/one-of? \",\"))
+                              (skip-zero (t/char t/whitespace?)))))
   "
   [p sep]
   (optional (sep-by-some p sep)))
@@ -501,8 +501,8 @@
   the keyword is actually an identifier (for example `lets`). We can write this
   behaviour as follows:
 
-      (-> (text/string \"let\")
-          (not-followed-by alpha-numeric))
+      (-> (t/string \"let\")
+          (not-followed-by (t/char t/alpha-numeric?)))
 
   - Fails:
       - when `p` fails.
@@ -532,8 +532,8 @@
       - when `p` or `end` consumes some input.
 
       (def simple-comment
-        (after (text/string \"<!--\")
-               (many-till (text/char any?) (offer (text/string \"-->\")))))
+        (after (t/string \"<!--\")
+               (many-till (t/char any?) (offer (t/string \"-->\")))))
 
   Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
   therefore the use of the `offer` combinator.
@@ -552,7 +552,7 @@
   - Fails: never.
   - Consumes: never.
 
-      (parse (after (text/one-of \"aeiou\")
+      (parse (after (t/char (t/one-of? \"aeiou\"))
                     (debug-state \"label\"))
              \"atest\")
 
@@ -573,8 +573,9 @@
   - Fails: when `p` fails.
   - Consumes: when `p` consumes some input.
 
-      (parse (after (text/one-of \"aeiou\")
-                    (-> (text/one-of \"nope\") (debug-parser \"one-of-nope\")))
+      (parse (after (t/char (t/one-of? \"aeiou\"))
+                    (-> (t/char (t/one-of? \"nope\"))
+                        (debug-parser \"one-of-nope\")))
              \"atest\")
 
       > one-of-nope: (\\t \\e \\s \\t)
