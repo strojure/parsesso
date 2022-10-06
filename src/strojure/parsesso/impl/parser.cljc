@@ -31,6 +31,10 @@
      (-invoke [_p state] (run f state))
      (-invoke [_p state context] (Continue. (fn [] (f state context))))))
 
+(defn parser?
+  [p]
+  (instance? Parser p))
+
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn e-ok-throw-empty-input

@@ -1,12 +1,10 @@
 (ns strojure.parsesso.parser
   (:require [strojure.parsesso.impl.error :as error]
-            [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
+            [strojure.parsesso.impl.parser :as parser]
             [strojure.parsesso.impl.pos :as pos]
-            [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [Failure replace]))]
+            [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [replace]))]
             [strojure.parsesso.impl.state :as state])
-  #?(:clj  (:import (clojure.lang ISeq)
-                    (strojure.parsesso.impl.parser Parser)
-                    (strojure.parsesso.impl.reply Failure))
+  #?(:clj  (:import (clojure.lang ISeq))
      :cljs (:require-macros [strojure.parsesso.parser :refer [bind-let do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -14,14 +12,12 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn parser
+(def ^{:arglists '([f])} parser
   "Wraps function `(fn [state context])` in the instance of `Parser`."
-  [f]
-  (parser/->Parser f))
+  parser/->Parser)
 
-(defn parser?
-  [p]
-  (instance? Parser p))
+(def ^{:arglists '([p])} parser?
+  parser/parser?)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -80,6 +76,8 @@
   ([q qq qqq & more]
    (reduce after (list* q qq qqq more))))
 
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (defn result
   "This parser always succeeds with value `x` without consuming any input.
 
@@ -94,6 +92,8 @@
   "This parser applies function `f` to the value returned by the parser `p`."
   [f p]
   (bind p (comp result f)))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input.
@@ -142,6 +142,8 @@
   "Attaches expecting error message to `obj`, i.e. to token predicate function."
   [obj msg]
   (with-meta obj {::expecting msg}))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn offer
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -229,6 +231,8 @@
                                                 reply/e-err e-err}))))))
        (bind p)))
 
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (defn many-zero
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`.
@@ -296,6 +300,8 @@
   - Consumes: when `p` consumes some input."
   [p]
   (after p (skip-zero p)))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn token*
   "Function returning the parser which accepts a token when `(pred token)`
@@ -498,6 +504,8 @@
                              (result (cons x xs)))))]
     (scan)))
 
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (defn sep-by-some
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`."
@@ -545,8 +553,6 @@
   (optional (sep-by-opt-end-some p sep)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-;;; debugging combinators
 
 (defn debug-state
   "This parser prints the remaining parser state at the time it is invoked. It
@@ -596,14 +602,17 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(def ^{:arglists '([reply])} error?
+  reply/error?)
+
 (defn parse
   {:arglists '([p input]
                [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
   ([p input]
+   (assert (parser? p))
    (p (state/init-state input (pos/init-pos nil input) nil)))
   ([p input opts]
+   (assert (parser? p))
    (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
-
-(defn error? [reply] (instance? Failure reply))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

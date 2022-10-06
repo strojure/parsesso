@@ -50,6 +50,9 @@
 
 (defrecord Failure [consumed error])
 
+(def ^{:arglists '([reply])} error?
+  (partial instance? Failure))
+
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn new-context
