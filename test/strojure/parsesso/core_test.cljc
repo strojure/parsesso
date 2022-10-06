@@ -50,32 +50,70 @@
 (deftest fail-t
   (test/are [expr result] (= result expr)
 
-    (p (p/fail "Oops")
+    (p (p/fail "Test failure")
        [])
     {:consumed false, :error ["error at index 0:"
-                              "Oops"]}
-    (p (p/fail "Oops")
+                              "Test failure"]}
+
+    (p (p/fail "Test failure")
        [:A])
     {:consumed false, :error ["error at index 0:"
-                              "Oops"]}
+                              "Test failure"]}
+
+    (p (p/fail nil)
+       [])
+    {:consumed false, :error ["error at index 0:"]}
+
+    (p (p/fail)
+       [])
+    {:consumed false, :error ["error at index 0:"]}
+
     ))
 
 (deftest expecting-t
   (test/are [expr result] (= result expr)
 
-    (p (-> (p/fail "Fail")
+    (p (-> (p/fail "Test failure")
+           (p/expecting "expectation"))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting expectation"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting (delay "expectation")))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting expectation"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting nil))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "Test failure"]}
+
+    ))
+
+(deftest fail-unexpected-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/fail-unexpected "Boom")
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected Boom"]}
+
+    (p (-> (p/fail-unexpected "Boom")
            (p/expecting "description"))
        [])
     {:consumed false, :error ["error at index 0:"
-                              "expecting description"
-                              "Fail"]}
+                              "unexpected Boom"
+                              "expecting description"]}
 
-    (p (-> (p/fail "Fail")
-           (p/expecting (delay "description")))
+    (p (p/fail-unexpected nil)
        [])
     {:consumed false, :error ["error at index 0:"
-                              "expecting description"
-                              "Fail"]}
+                              "unexpected nil"]}
 
     ))
 

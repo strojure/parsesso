@@ -40,10 +40,12 @@
 
   - Fails: always.
   - Consumes: never."
-  [msg]
-  (parser
-    (fn [state context]
-      (reply/e-err context (error/message state msg)))))
+  ([]
+   (fail nil))
+  ([msg]
+   (parser
+     (fn [state context]
+       (reply/e-err context (error/message state msg))))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails _without
@@ -67,19 +69,19 @@
   [obj msg]
   (with-meta obj {::expecting msg}))
 
-(defn unexpected
+(defn fail-unexpected
   "This parser always fails with an unexpected error message `msg` without
   consuming any input.
 
   - Fails: always.
   - Consumes: never.
 
-  The parsers 'fail', 'expecting' and `unexpected` are the three parsers used to
-  generate error messages. Of these, only `expecting` is commonly used."
+  The parsers 'fail', 'expecting' and `fail-unexpected` are the three parsers
+  used to generate error messages. Of these, only `expecting` is commonly used."
   [msg]
   (parser
     (fn [state context]
-      (reply/e-err context (error/unexpected state msg)))))
+      (reply/e-err context (error/unexpected state (or msg (delay (pr-str msg))))))))
 
 (defn offer
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -559,7 +561,7 @@
   [label]
   (choice (offer (bind-let [x (many-more any-token)]
                    (println (str label ": " x))
-                   (fail nil)))
+                   (fail)))
           (result nil)))
 
 (defn debug-parser
@@ -585,7 +587,7 @@
   [p label]
   (after (debug-state label)
          (choice p, (do-parser (println (str label " backtracked"))
-                               (fail nil)))))
+                               (fail)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
