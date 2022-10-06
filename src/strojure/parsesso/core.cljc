@@ -262,7 +262,7 @@
   - Consumes: when `p` consumes some input.
 
       (def spaces
-        (skip-many-zero (text/char text/whitespace?)))
+        (skip-zero (text/char text/whitespace?)))
   "
   [p]
   (parser
@@ -417,7 +417,7 @@
    (bind-let [_ open, x p, _ close]
      (result x))))
 
-(defn many-more
+(defn many-some
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
   the returned values of `p`.
 
@@ -425,13 +425,13 @@
   - Consumes: when `p` consumes some input.
 
      (def word
-       (many-more (text/char text/alpha?))
+       (many-some (text/char text/alpha?))
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
     (result (cons x xs))))
 
-(defn skip-more
+(defn skip-some
   "This parser applies the parser `p` _one_ or more times, skipping its result.
 
   - Fails: when `p` does not succeed at least once.
@@ -445,7 +445,7 @@
   [n p]
   (each (repeat n p)))
 
-(defn sep-by-more
+(defn sep-by-some
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`."
   [p sep]
@@ -458,30 +458,30 @@
 
       (defn comma-sep [p]
         (sep-by-zero p (after (text/char (text/one-of? \",\"))
-                              (skip-many-zero (text/char text/whitespace?)))))
+                              (skip-zero (text/char text/whitespace?)))))
   "
   [p sep]
-  (optional (sep-by-more p sep)))
+  (optional (sep-by-some p sep)))
 
-(defn sep-by-end-more
+(defn sep-by-end-some
   "Parses _one_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (many-more (bind-let [x p, _ sep]
+  (many-some (bind-let [x p, _ sep]
                (result x))))
 
 (defn sep-by-end-zero
   "Parses _zero_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (sep-by-end-more p sep)))
+  (optional (sep-by-end-some p sep)))
 
-(defn sep-by-opt-end-more
+(defn sep-by-opt-end-some
   "Parses _one_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (bind-let [x p]
-    (choice (bind-let [_ sep, xs (optional (sep-by-opt-end-more p sep))]
+    (choice (bind-let [_ sep, xs (optional (sep-by-opt-end-some p sep))]
               (result (cons x xs)))
             (result [x]))))
 
@@ -489,7 +489,7 @@
   "Parses _zero_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (sep-by-opt-end-more p sep)))
+  (optional (sep-by-opt-end-some p sep)))
 
 ;;; Tricky combinators
 
@@ -559,7 +559,7 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (offer (bind-let [x (many-more any-token)]
+  (choice (offer (bind-let [x (many-some any-token)]
                    (println (str label ": " x))
                    (fail)))
           (result nil)))
