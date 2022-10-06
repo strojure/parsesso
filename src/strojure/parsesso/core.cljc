@@ -52,7 +52,7 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'start'
+  all possible characters. For example, if the `expr` parser from the 'offer'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
   or alphabetic character', which is less friendly."
@@ -81,7 +81,7 @@
     (fn [state context]
       (reply/e-err context (error/unexpected state msg)))))
 
-(defn start
+(defn offer
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -93,10 +93,10 @@
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
-  The `start` combinator can for example be used to distinguish identifiers and
+  The `offer` combinator can for example be used to distinguish identifiers and
   reserved words. Both reserved words and identifiers are a sequence of letters.
   Whenever we expect a certain reserved word where we can also expect an
-  identifier we have to use the `start` combinator. Suppose we write:
+  identifier we have to use the `offer` combinator. Suppose we write:
 
       (def identifier
         (some-many (text/char text/alpha?)))
@@ -115,10 +115,10 @@
   only tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(string
   \"let\")` parser is already consumed). The right behaviour can be obtained by
-  adding the `start` combinator:
+  adding the `offer` combinator:
 
       (def let-expr
-        (after (start (text/string \"let\"))
+        (after (offer (text/string \"let\"))
                ...))
   "
   [p]
@@ -128,7 +128,7 @@
 
 (defn look-ahead
   "Parses `p` without consuming any input. If `p` fails and consumes some input,
-  so does `look-ahead`. Combine with `start` if this is undesirable.
+  so does `look-ahead`. Combine with `offer` if this is undesirable.
 
   - Fails: when `p` fails.
   - Consumes: when `p` fails and consumes some input."
@@ -531,10 +531,10 @@
 
       (def simple-comment
         (after (text/string \"<!--\")
-               (many-till (text/char any?) (start (text/string \"-->\")))))
+               (many-till (text/char any?) (offer (text/string \"-->\")))))
 
   Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
-  therefore the use of the `start` combinator.
+  therefore the use of the `offer` combinator.
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))
@@ -557,7 +557,7 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (start (bind-let [x (many-more any-token)]
+  (choice (offer (bind-let [x (many-more any-token)]
                    (println (str label ": " x))
                    (fail nil)))
           (result nil)))
