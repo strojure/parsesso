@@ -50,16 +50,30 @@
 
 (defrecord Failure [consumed error])
 
+(def ^{:arglists '([reply])} result?
+  "True if `reply` is parsing result with value."
+  (partial instance? Result))
+
 (def ^{:arglists '([reply])} error?
+  "True if `reply` is parser error."
   (partial instance? Failure))
+
+(defn value
+  "Returns value for Result reply or throws exception otherwise."
+  [reply]
+  (cond
+    (result? reply) (:value reply)
+    (error? reply) (throw (ex-info (str (:error reply)) reply))
+    :else (throw (ex-info "Invalid parser reply" {::reply reply}))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn new-context
+  "Returns new instance of context with initialized reply functions."
   []
-  (Context. (fn consumed-ok, [s x] (Result. x true s))
-            (fn empty-ok,,,, [s x] (Result. x false s))
-            (fn consumed-err [e],,,, (Failure. true e))
-            (fn empty-err,,, [e],,,, (Failure. false e))))
+  (Context. (fn c-ok [s x] (Result. x true s))
+            (fn e-ok [s x] (Result. x false s))
+            (fn c-err [e] (Failure. true e))
+            (fn e-err [e] (Failure. false e))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

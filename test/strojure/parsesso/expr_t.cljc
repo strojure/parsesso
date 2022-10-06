@@ -11,10 +11,10 @@
 (defn- p
   "Parses test input using given parser. Returns custom map with test result."
   [parser input]
-  (let [result (p/parse parser input)]
-    (if (p/error? result)
+  (let [result (p/parse* parser input)]
+    (if-let [error (:error result)]
       (-> (select-keys result [:consumed])
-          (assoc :error (-> (:error result) (str) (string/split-lines))))
+          (assoc :error (-> (str error) (string/split-lines))))
       (select-keys result [:consumed :value]))))
 
 (defn- tok

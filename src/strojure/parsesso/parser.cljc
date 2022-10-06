@@ -602,17 +602,22 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^{:arglists '([reply])} error?
-  reply/error?)
+(defn parse*
+  {:arglists '([p input]
+               [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
+  ([p input]
+   (assert (parser? p) (str "Requires parser argument: " (pr-str p)))
+   (p (state/init-state input (pos/init-pos nil input) nil)))
+  ([p input opts]
+   (assert (parser? p) (str "Requires parser argument: " (pr-str p)))
+   (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
 
 (defn parse
   {:arglists '([p input]
                [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
   ([p input]
-   (assert (parser? p))
-   (p (state/init-state input (pos/init-pos nil input) nil)))
+   (-> (parse* p input) (reply/value)))
   ([p input opts]
-   (assert (parser? p))
-   (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
+   (-> (parse* p input opts) (reply/value))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
