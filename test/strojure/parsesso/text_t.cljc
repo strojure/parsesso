@@ -1,7 +1,7 @@
-(ns strojure.parsesso.text-test
+(ns strojure.parsesso.text-t
   (:require [clojure.string :as string]
-            [clojure.test :as test :refer [deftest testing]]
-            [strojure.parsesso.core :as p]
+            [clojure.test :as test :refer [deftest]]
+            [strojure.parsesso.parser :as p]
             [strojure.parsesso.text :as t]))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

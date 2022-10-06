@@ -1,8 +1,8 @@
 (ns strojure.parsesso.text
   (:refer-clojure :exclude [char newline])
   (:require #?(:cljs [clojure.string :as string])
-            [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.text :as impl]))
+            [strojure.parsesso.impl.text :as impl]
+            [strojure.parsesso.parser :as p]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))

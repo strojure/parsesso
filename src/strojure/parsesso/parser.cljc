@@ -1,4 +1,4 @@
-(ns strojure.parsesso.core
+(ns strojure.parsesso.parser
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.pos :as pos]
@@ -7,7 +7,7 @@
   #?(:clj  (:import (clojure.lang ISeq)
                     (strojure.parsesso.impl.parser Parser)
                     (strojure.parsesso.impl.reply Failure))
-     :cljs (:require-macros [strojure.parsesso.core :refer [bind-let do-parser]])))
+     :cljs (:require-macros [strojure.parsesso.parser :refer [bind-let do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))

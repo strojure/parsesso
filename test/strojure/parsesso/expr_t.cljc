@@ -1,8 +1,8 @@
-(ns strojure.parsesso.expr-test
+(ns strojure.parsesso.expr-t
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest]]
-            [strojure.parsesso.core :as p]
-            [strojure.parsesso.expr :as expr]))
+            [strojure.parsesso.expr :as expr]
+            [strojure.parsesso.parser :as p]))
 
 #_(test/run-tests)
 

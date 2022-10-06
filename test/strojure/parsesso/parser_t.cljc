@@ -1,7 +1,7 @@
-(ns strojure.parsesso.core-test
+(ns strojure.parsesso.parser-t
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest testing]]
-            [strojure.parsesso.core :as p]))
+            [strojure.parsesso.parser :as p]))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -254,7 +254,7 @@
                           p/eof)
        [])
     {:consumed false, :error ["error at index 0:"
-                              "unexpected :strojure.parsesso.core/eof"]}
+                              "unexpected :strojure.parsesso.parser/eof"]}
 
     (p (p/not-followed-by (tok :X)
                           (tok :A))
@@ -288,7 +288,7 @@
                           p/eof)
        [:X])
     {:consumed true, :error ["error at index 1:"
-                             "unexpected :strojure.parsesso.core/eof"]}
+                             "unexpected :strojure.parsesso.parser/eof"]}
 
     ))
 
@@ -1164,7 +1164,7 @@
 
     (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -1173,7 +1173,7 @@
 
     (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
                         _ (p/debug-state "b") b (tok :B)]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -1182,7 +1182,7 @@
 
     (-> (p (p/bind-let [a (tok :A) _ (p/debug-state "a")
                         b (tok :B) _ (p/debug-state "b")]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -1195,7 +1195,7 @@
 
     (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :B :C])
         (with-out-str)
         (string/split-lines))
@@ -1204,7 +1204,7 @@
 
     (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :B])
         (with-out-str)
         (string/split-lines))
@@ -1213,7 +1213,7 @@
 
     (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:B :C])
         (with-out-str)
         (string/split-lines))
@@ -1222,7 +1222,7 @@
 
     (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
                         b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
+                       (p/result [a b]))
            [:A :C])
         (with-out-str)
         (string/split-lines))
