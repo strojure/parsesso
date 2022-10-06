@@ -186,7 +186,7 @@
     {:consumed false, :value :X}
 
     (p (p/not-followed-by (p/result :X)
-                          (p/sequence [(tok :A) (tok :B)]))
+                          (p/each [(tok :A) (tok :B)]))
        [:A :A])
     {:consumed false, :value :X}
 
@@ -207,7 +207,7 @@
                               "unexpected :A"]}
 
     (p (p/not-followed-by (p/result :X)
-                          (p/sequence [(tok :A) (tok :B)]))
+                          (p/each [(tok :A) (tok :B)]))
        [:A :B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected (:A :B)"]}
@@ -224,7 +224,7 @@
     {:consumed true, :value :X}
 
     (p (p/not-followed-by (tok :X)
-                          (p/sequence [(tok :A) (tok :B)]))
+                          (p/each [(tok :A) (tok :B)]))
        [:X :A :A])
     {:consumed true, :value :X}
 
@@ -241,7 +241,7 @@
                              "unexpected :A"]}
 
     (p (p/not-followed-by (tok :X)
-                          (p/sequence [(tok :A) (tok :B)]))
+                          (p/each [(tok :A) (tok :B)]))
        [:X :A :B])
     {:consumed true, :error ["error at index 1:"
                              "unexpected (:A :B)"]}
@@ -441,28 +441,28 @@
 
     ))
 
-(deftest sequence-t
+(deftest each-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sequence [(tok :A) (tok :B) (tok :C)])
+    (p (p/each [(tok :A) (tok :B) (tok :C)])
        [:A :B :C])
     '{:consumed true, :value (:A :B :C)}
 
-    (p (p/sequence [(tok :A) (tok :B) (tok :C)])
+    (p (p/each [(tok :A) (tok :B) (tok :C)])
        [:B :C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/sequence [(fail-consumed (tok :A)) (tok :B) (tok :C)])
+    (p (p/each [(fail-consumed (tok :A)) (tok :B) (tok :C)])
        [:A :B :C])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/sequence [])
+    (p (p/each [])
        [:A :B :C])
     {:consumed false, :value nil}
 
-    (p (p/sequence nil)
+    (p (p/each nil)
        [:A :B :C])
     {:consumed false, :value nil}
 

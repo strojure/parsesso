@@ -1,5 +1,4 @@
 (ns strojure.parsesso.core
-  (:refer-clojure :exclude [sequence])
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser #?@(:cljs (:refer [Parser]))]
             [strojure.parsesso.impl.pos :as pos]
@@ -367,7 +366,7 @@
   [f p]
   (bind p (comp result f)))
 
-(defn sequence
+(defn each
   "This parser tries to apply parsers in order until all of them succeeds.
   Returns a sequence of values returned by every parser.
 
@@ -375,19 +374,19 @@
   - Consumes: when any of tried parsers consumes some input."
   [ps]
   (if-let [p (first ps)]
-    (bind-let [x p, xs (sequence (rest ps))]
+    (bind-let [x p, xs (each (rest ps))]
       (result (cons x xs)))
     (result nil)))
 
 (defn tuple
   "This parser tries to apply argument parsers in order until all of them
   succeeds. Returns a sequence of values returned by every parser. It is a 2+
-  arity version of the `sequence` parser.
+  arity version of the `each` parser.
 
   - Fails: when any of tried parsers fails.
   - Consumes: when any of tried parsers consumes some input."
   [p q & ps]
-  (sequence (cons p (cons q ps))))
+  (each (cons p (cons q ps))))
 
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
@@ -442,7 +441,7 @@
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
   equals to `(return nil)`. Returns a sequence of `n` values returned by `p`."
   [n p]
-  (sequence (repeat n p)))
+  (each (repeat n p)))
 
 (defn sep-by-more
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a

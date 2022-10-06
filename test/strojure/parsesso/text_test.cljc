@@ -328,7 +328,7 @@
        "abc")
     {:consumed true, :value "a"}
 
-    (p (t/++ (p/sequence [(p/many-more (t/char (t/one-of? "abc")))
+    (p (t/++ (p/each [(p/many-more (t/char (t/one-of? "abc")))
                           (p/many-more (t/char (t/one-of? "123")))]))
        "abc123")
     {:consumed true, :value "abc123"}
