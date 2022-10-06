@@ -19,11 +19,66 @@
   [f]
   (parser/->Parser f))
 
-(defn parser? [p] (instance? Parser p))
+(defn parser?
+  [p]
+  (instance? Parser p))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; parsers
+
+(defn bind
+  "This parser applies parser `p` and then parser `(f x)` where x is a return
+  value of the parser `p`.
+
+  - Fails: when any of parsers `p` or `(f x)` fails.
+  - Consumes: when any of parsers `p` or `(f x)` consumes some input."
+  [p f]
+  (parser
+    (fn [state context]
+      (letfn [(c-ok-p [s x]
+                ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
+                ;; continuation
+                ;; - if (f x) doesn't consume input, but errors, we return the error in the
+                ;; 'consumed-err' continuation
+                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
+                                                 reply/e-err (partial reply/c-err context)})))
+              (e-ok-p [s x]
+                ;; - in these cases, (f x) can return as empty
+                ((f x) s context))]
+        (p state (reply/replace context {reply/c-ok c-ok-p
+                                         reply/e-ok e-ok-p}))))))
+
+(defmacro do-parser
+  [& body]
+  (let [state (gensym) context (gensym)]
+    `(parser
+       (fn [~state ~context]
+         ((do ~@body) ~state ~context)))))
+
+(defmacro bind-let
+  [[& bindings] & body]
+  (let [[sym p :as pair] (take 2 bindings)]
+    (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
+    (assert (symbol? sym) (str "Requires symbol for binding name: " sym))
+    (assert (some? body) "Requires some body")
+    (if (= 2 (count bindings))
+      `(bind ~p (fn [~sym] ~@body))
+      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
+
+(defn after
+  "This parser tries to apply the parsers in order, until last of them succeeds.
+  Returns the value of the last parser, discards result of all preceding
+  parsers.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input."
+  ([q p]
+   (bind q (fn [_] p)))
+  ([q qq p]
+   (->> p (after (after q qq))))
+  ([q qq qqq & more]
+   (reduce after (list* q qq qqq more))))
 
 (defn result
   "This parser always succeeds with value `x` without consuming any input.
@@ -35,17 +90,33 @@
     (fn [state context]
       (reply/e-ok context state x))))
 
+(defn fmap
+  "This parser applies function `f` to the value returned by the parser `p`."
+  [f p]
+  (bind p (comp result f)))
+
 (defn fail
   "This parser always fails with message `msg` without consuming any input.
 
   - Fails: always.
   - Consumes: never."
-  ([]
-   (fail nil))
   ([msg]
    (parser
      (fn [state context]
-       (reply/e-err context (error/message state msg))))))
+       (reply/e-err context (error/message state msg)))))
+  ([]
+   (fail nil)))
+
+(defn fail-unexpected
+  "This parser always fails with an unexpected error message `msg` without
+  consuming any input.
+
+  - Fails: always.
+  - Consumes: never."
+  [msg]
+  (parser
+    (fn [state context]
+      (reply/e-err context (error/unexpected state (or msg (delay (pr-str msg))))))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails _without
@@ -57,7 +128,10 @@
   all possible characters. For example, if the `expr` parser from the 'offer'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
-  or alphabetic character', which is less friendly."
+  or alphabetic character', which is less friendly.
+
+  The parsers `fail`, `fail-unexpected` and `expecting` are the three parsers
+  used to generate error messages. Of these, only `expecting` is commonly used."
   [p msg]
   (parser
     (fn [state context]
@@ -68,20 +142,6 @@
   "Attaches expecting error message to `obj`, i.e. to token predicate function."
   [obj msg]
   (with-meta obj {::expecting msg}))
-
-(defn fail-unexpected
-  "This parser always fails with an unexpected error message `msg` without
-  consuming any input.
-
-  - Fails: always.
-  - Consumes: never.
-
-  The parsers 'fail', 'expecting' and `fail-unexpected` are the three parsers
-  used to generate error messages. Of these, only `expecting` is commonly used."
-  [msg]
-  (parser
-    (fn [state context]
-      (reply/e-err context (error/unexpected state (or msg (delay (pr-str msg))))))))
 
 (defn offer
   "This parser behaves like parser `p`, except that it pretends that it hasn't
@@ -141,7 +201,103 @@
         (p state (reply/replace context {reply/c-ok e-ok,
                                          reply/e-ok e-ok}))))))
 
-(defn token-fn
+(defn not-followed-by
+  "This parser behaves like parser `p`, except that it only succeeds when parser
+  `q` fails. This parser can be used to implement the 'longest match' rule. For
+  example, when recognizing keywords (for example `let`), we want to make sure
+  that a keyword is not followed by a legal identifier character, in which case
+  the keyword is actually an identifier (for example `lets`). We can write this
+  behaviour as follows:
+
+      (-> (t/string \"let\")
+          (not-followed-by (t/char t/alpha-numeric?)))
+
+  - Fails:
+      - when `p` fails.
+      - when `q` succeeds.
+  - Consumes:
+      - when `p` consumes some input."
+  [p q]
+  (->> (fn [xp]
+         (parser
+           (fn [state context]
+             (letfn [(e-ok [_ xq] (reply/e-err context (error/unexpected state (delay (pr-str xq)))))
+                     (e-err [_] (reply/e-ok context state xp))]
+               (q state (reply/replace context {reply/c-ok e-ok
+                                                reply/e-ok e-ok
+                                                reply/c-err e-err
+                                                reply/e-err e-err}))))))
+       (bind p)))
+
+(defn many-zero
+  "This parser applies the parser `p` zero or more times. Returns a sequence of
+  the returned values or `p`.
+
+  - Fails: when `p` fails and consumes some input.
+  - Consumes: when `p` consumes some input.
+
+      (def identifier
+        (bind-let [c (t/char t/alpha?)
+                   cs (many-zero (choice (t/char t/alpha-numeric?)
+                                         (t/char (t/one-of? \"_\"))))]
+          (result (cons c cs))))
+  "
+  [p]
+  (parser
+    (fn [state context]
+      (letfn [(walk [xs s x]
+                (let [xs (conj! xs x)
+                      e-err (fn [_] (reply/c-ok context s (seq (persistent! xs))))]
+                  (p s (reply/replace context {reply/c-ok (partial walk xs)
+                                               reply/e-ok parser/e-ok-throw-empty-input
+                                               reply/e-err e-err}))))]
+        (p state (reply/replace context {reply/c-ok (partial walk (transient []))
+                                         reply/e-ok parser/e-ok-throw-empty-input
+                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
+
+(defn many-some
+  "This parser applies the parser `p` _one_ or more times. Returns a sequence of
+  the returned values of `p`.
+
+  - Fails: when `p` does not succeed at least once.
+  - Consumes: when `p` consumes some input.
+
+     (def word
+       (many-some (t/char t/alpha?))
+  "
+  [p]
+  (bind-let [x p, xs (many-zero p)]
+    (result (cons x xs))))
+
+(defn skip-zero
+  "This parser applies the parser `p` zero or more times, skipping its result.
+
+  - Fails: when `p` fails and consumes some input.
+  - Consumes: when `p` consumes some input.
+
+      (def spaces
+        (skip-zero (t/char t/whitespace?)))
+  "
+  [p]
+  (parser
+    (fn [state context]
+      (letfn [(c-ok [s _]
+                (p s (reply/replace context {reply/c-ok c-ok
+                                             reply/e-ok parser/e-ok-throw-empty-input
+                                             reply/e-err (fn [_] (reply/c-ok context s nil))})))]
+        (p state (reply/replace context {reply/c-ok c-ok
+                                         reply/e-ok parser/e-ok-throw-empty-input
+                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
+
+(defn skip-some
+  "This parser applies the parser `p` _one_ or more times, skipping its result.
+
+  - Fails: when `p` does not succeed at least once.
+  - Consumes: when `p` consumes some input."
+  [p]
+  (after p (skip-zero p)))
+
+(defn token*
   "Function returning the parser which accepts a token when `(pred token)`
   returns logical true, and optional expecting `msg`. The token can be shown in
   error message using `(render-token-fn token)`."
@@ -160,7 +316,18 @@
            (reply/e-err context (-> (error/sys-unexpected-eof state)
                                     (error/expecting (or msg (some-> (meta pred) ::expecting)))))))))))
 
-(defn tokens-fn
+(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
+             optional expecting `msg`. The `pred` can carry expecting error message in
+             `::expecting` metadata. See also `token-fn` for customized version of the
+             parser.
+
+             - Fails: when `(pred token)` return logical false.
+             - Consumes: when succeeds."
+       :arglists '([pred] [pred, msg])}
+  token
+  (token* {}))
+
+(defn tokens*
   "Function returning the parser which parses a sequence of tokens given by `xs`
   and returns `xs`. Tokens are compared using `(test-fn sample-token input-token)`."
   [{:keys [test-fn render-token-fn render-seq-fn]
@@ -191,24 +358,13 @@
                                          (error/expecting (delay (render-seq-fn tts)))))))))
           (reply/e-ok context state tts))))))
 
-(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
-             optional expecting `msg`. The `pred` can carry expecting error message in
-             `::expecting` metadata. See also `token-fn` for customized version of the
-             parser.
-
-             - Fails: when `(pred token)` return logical false.
-             - Consumes: when succeeds."
-       :arglists '([pred] [pred, msg])}
-  token
-  (token-fn {}))
-
 (def ^{:doc "Parses a sequence of tokens given by `ts` and returns `ts`.
 
             - Fails: when any of tokens don't match the input.
             - Consumes: when at least first token match the input."
        :arglists '([ts])}
   tokens
-  (tokens-fn {}))
+  (tokens* {}))
 
 (def any-token
   "This parser accepts any kind of token. Returns the accepted token.
@@ -229,108 +385,31 @@
                                  (error/expecting "end of input")))
         (reply/e-ok context state ::eof)))))
 
-(defn many-zero
-  "This parser applies the parser `p` zero or more times. Returns a sequence of
-  the returned values or `p`.
-
-  - Fails: when `p` fails and consumes some input.
-  - Consumes: when `p` consumes some input.
-
-      (def identifier
-        (bind-let [c (t/char t/alpha?)
-                   cs (many-zero (choice (t/char t/alpha-numeric?)
-                                         (t/char (t/one-of? \"_\"))))]
-          (result (cons c cs))))
-  "
-  [p]
-  (parser
-    (fn [state context]
-      (letfn [(walk [xs s x]
-                (let [xs (conj! xs x)
-                      e-err (fn [_] (reply/c-ok context s (seq (persistent! xs))))]
-                  (p s (reply/replace context {reply/c-ok (partial walk xs)
-                                               reply/e-ok parser/e-ok-throw-empty-input
-                                               reply/e-err e-err}))))]
-        (p state (reply/replace context {reply/c-ok (partial walk (transient []))
-                                         reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
-
-(defn skip-zero
-  "This parser applies the parser `p` zero or more times, skipping its result.
-
-  - Fails: when `p` fails and consumes some input.
-  - Consumes: when `p` consumes some input.
-
-      (def spaces
-        (skip-zero (t/char t/whitespace?)))
-  "
-  [p]
-  (parser
-    (fn [state context]
-      (letfn [(c-ok [s _]
-                (p s (reply/replace context {reply/c-ok c-ok
-                                             reply/e-ok parser/e-ok-throw-empty-input
-                                             reply/e-err (fn [_] (reply/c-ok context s nil))})))]
-        (p state (reply/replace context {reply/c-ok c-ok
-                                         reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; combinators
 
-(defn bind
-  "This parser applies parser `p` and then parser `(f x)` where x is a return
-  value of the parser `p`.
-
-  - Fails: when any of parsers `p` or `(f x)` fails.
-  - Consumes: when any of parsers `p` or `(f x)` consumes some input."
-  [p f]
-  (parser
-    (fn [state context]
-      (letfn [(c-ok-p [s x]
-                ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
-                ;; continuation
-                ;; - if (f x) doesn't consume input, but errors, we return the error in the
-                ;; 'consumed-err' continuation
-                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
-                                                 reply/e-err (partial reply/c-err context)})))
-              (e-ok-p [s x]
-                ;; - in these cases, (f x) can return as empty
-                ((f x) s context))]
-        (p state (reply/replace context {reply/c-ok c-ok-p
-                                         reply/e-ok e-ok-p}))))))
-
-(defmacro do-parser
-  [& body]
-  (let [state (gensym) context (gensym)]
-    `(parser
-       (fn [~state ~context]
-         ((do ~@body) ~state ~context)))))
-
-(defmacro bind-let
-  [[& bindings] & body]
-  (let [[sym p :as pair] (take 2 bindings)]
-    (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
-    (assert (symbol? sym) (str "Requires symbol for binding name: " sym))
-    (assert (some? body) "Requires some body")
-    (if (= 2 (count bindings))
-      `(bind ~p (fn [~sym] ~@body))
-      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
-
-(defn after
-  "This parser tries to apply the parsers in order, until last of them succeeds.
-  Returns the value of the last parser, discards result of all preceding
-  parsers.
+(defn each
+  "This parser tries to apply parsers in order until all of them succeeds.
+  Returns a sequence of values returned by every parser.
 
   - Fails: when any of tried parsers fails.
   - Consumes: when any of tried parsers consumes some input."
-  ([q p]
-   (bind q (fn [_] p)))
-  ([q qq p]
-   (->> p (after (after q qq))))
-  ([q qq qqq & more]
-   (reduce after (list* q qq qqq more))))
+  [ps]
+  (if-let [p (first ps)]
+    (bind-let [x p, xs (each (rest ps))]
+      (result (cons x xs)))
+    (result nil)))
+
+(defn tuple
+  "This parser tries to apply argument parsers in order until all of them
+  succeeds. Returns a sequence of values returned by every parser. It is a 2+
+  arity version of the `each` parser.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input."
+  [p q & ps]
+  (each (cons p (cons q ps))))
 
 (defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
@@ -363,33 +442,6 @@
   ([p q qq & more]
    (reduce choice (list* p q qq more))))
 
-(defn fmap
-  "This parser applies function `f` to the value returned by the parser `p`."
-  [f p]
-  (bind p (comp result f)))
-
-(defn each
-  "This parser tries to apply parsers in order until all of them succeeds.
-  Returns a sequence of values returned by every parser.
-
-  - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input."
-  [ps]
-  (if-let [p (first ps)]
-    (bind-let [x p, xs (each (rest ps))]
-      (result (cons x xs)))
-    (result nil)))
-
-(defn tuple
-  "This parser tries to apply argument parsers in order until all of them
-  succeeds. Returns a sequence of values returned by every parser. It is a 2+
-  arity version of the `each` parser.
-
-  - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input."
-  [p q & ps]
-  (each (cons p (cons q ps))))
-
 (defn optional
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
@@ -417,33 +469,34 @@
    (bind-let [_ open, x p, _ close]
      (result x))))
 
-(defn many-some
-  "This parser applies the parser `p` _one_ or more times. Returns a sequence of
-  the returned values of `p`.
-
-  - Fails: when `p` does not succeed at least once.
-  - Consumes: when `p` consumes some input.
-
-     (def word
-       (many-some (t/char t/alpha?))
-  "
-  [p]
-  (bind-let [x p, xs (many-zero p)]
-    (result (cons x xs))))
-
-(defn skip-some
-  "This parser applies the parser `p` _one_ or more times, skipping its result.
-
-  - Fails: when `p` does not succeed at least once.
-  - Consumes: when `p` consumes some input."
-  [p]
-  (after p (skip-zero p)))
-
 (defn times
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
   equals to `(return nil)`. Returns a sequence of `n` values returned by `p`."
   [n p]
   (each (repeat n p)))
+
+(defn many-till
+  "This parser applies parser `p` _zero_ or more times until parser `end`
+  succeeds. Returns a sequence of values returned by `p`.
+
+  - Fails:
+      - when `p` fails.
+      - when `end` does not succeed before end of input.
+  - Consumes:
+      - when `p` or `end` consumes some input.
+
+      (def simple-comment
+        (after (t/string \"<!--\")
+               (many-till (t/char any?) (offer (t/string \"-->\")))))
+
+  Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
+  therefore the use of the `offer` combinator.
+  "
+  [p end]
+  (letfn [(scan [] (choice (after end (result nil))
+                           (bind-let [x p, xs (scan)]
+                             (result (cons x xs)))))]
+    (scan)))
 
 (defn sep-by-some
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
@@ -491,58 +544,9 @@
   [p sep]
   (optional (sep-by-opt-end-some p sep)))
 
-;;; Tricky combinators
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn not-followed-by
-  "This parser behaves like parser `p`, except that it only succeeds when parser
-  `q` fails. This parser can be used to implement the 'longest match' rule. For
-  example, when recognizing keywords (for example `let`), we want to make sure
-  that a keyword is not followed by a legal identifier character, in which case
-  the keyword is actually an identifier (for example `lets`). We can write this
-  behaviour as follows:
-
-      (-> (t/string \"let\")
-          (not-followed-by (t/char t/alpha-numeric?)))
-
-  - Fails:
-      - when `p` fails.
-      - when `q` succeeds.
-  - Consumes:
-      - when `p` consumes some input."
-  [p q]
-  (->> (fn [xp]
-         (parser
-           (fn [state context]
-             (letfn [(e-ok [_ xq] (reply/e-err context (error/unexpected state (delay (pr-str xq)))))
-                     (e-err [_] (reply/e-ok context state xp))]
-               (q state (reply/replace context {reply/c-ok e-ok
-                                                reply/e-ok e-ok
-                                                reply/c-err e-err
-                                                reply/e-err e-err}))))))
-       (bind p)))
-
-(defn many-till
-  "This parser applies parser `p` _zero_ or more times until parser `end`
-  succeeds. Returns a sequence of values returned by `p`.
-
-  - Fails:
-      - when `p` fails.
-      - when `end` does not succeed before end of input.
-  - Consumes:
-      - when `p` or `end` consumes some input.
-
-      (def simple-comment
-        (after (t/string \"<!--\")
-               (many-till (t/char any?) (offer (t/string \"-->\")))))
-
-  Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
-  therefore the use of the `offer` combinator.
-  "
-  [p end]
-  (letfn [(scan [] (choice (after end (result nil))
-                           (bind-let [x p, xs (scan)]
-                             (result (cons x xs)))))]
-    (scan)))
+;;; debugging combinators
 
 (defn debug-state
   "This parser prints the remaining parser state at the time it is invoked. It

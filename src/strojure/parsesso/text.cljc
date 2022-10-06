@@ -24,7 +24,7 @@
        :arglists
        '([pred] [pred, msg])}
   char
-  (p/token-fn {:render-token-fn render-char}))
+  (p/token* {:render-token-fn render-char}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -65,7 +65,7 @@
        "
        :arglists '([s])}
   string
-  (p/tokens-fn {:render-token-fn render-char}))
+  (p/tokens* {:render-token-fn render-char}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
