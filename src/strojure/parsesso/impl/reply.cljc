@@ -9,22 +9,22 @@
 (deftype Context [cok, eok, cerr, eerr])
 
 (defn c-ok
-  "Replies with value as consumed (consumed-ok)."
+  "Replies with result value as consumed (consumed-ok)."
   [^Context context, state, x]
   ((.-cok context) state x))
 
 (defn e-ok
-  "Replies with value as not consumed (empty-ok)."
+  "Replies with result value as not consumed (empty-ok)."
   [^Context context, state, x]
   ((.-eok context) state x))
 
 (defn c-err
-  "Fails with error as consumed (consumed-error)."
+  "Fails with parser error as consumed (consumed-error)."
   [^Context context, error]
   ((.-cerr context) error))
 
 (defn e-err
-  "Fails with error as not consumed (empty-error)."
+  "Fails with parser error as not consumed (empty-error)."
   [^Context context, error]
   ((.-eerr context) error))
 
@@ -38,6 +38,7 @@
             (or -e-err (.-eerr context))))
 
 (defmacro replace
+  "Expands to code updating specified context functions at once."
   [context m]
   (assert (map? m))
   (let [m (update-keys m (comp eval eval))]

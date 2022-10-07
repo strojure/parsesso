@@ -9,15 +9,17 @@
 
 (defrecord State [input pos user])
 
-(defn conform-input
+(defn- conform-input
   [input]
   (or (seq input) ()))
 
 (defn init-state
+  "Returns new instance of parser state."
   [input pos user]
   (State. (conform-input input) pos user))
 
 (defn next-state
+  "Returns next (incremented) instance of parser state for parsed token `tok`."
   ([^State state, tok]
    (State. (#?(:clj .more :cljs -rest) ^ISeq (.-input state))
            (pos/next-pos (.-pos state) tok)
@@ -28,20 +30,24 @@
            (user-fn (.-user state)))))
 
 (defn set-input-pos
+  "Returns instance of parser state with new values of input and pos."
   [^State state, input, pos]
   (State. (conform-input input) pos (.-user state)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn input
+  "Returns parsing state input."
   [state]
   (.-input ^State state))
 
 (defn pos
+  "Returns parsing state position."
   [state]
   (.-pos ^State state))
 
 (defn user
+  "Returns user state."
   [state]
   (.-user ^State state))
 
@@ -59,34 +65,34 @@
   ([field, vf]
    (fn [state f] (update state field (comp vf f)))))
 
-(def ^{:doc "Returns state with input set to `input`."
-       :arglists '([state input])}
+(def ^{:arglists '([state input])}
   set-input
+  "Returns state with input set to `input`."
   (set-field-fn :input conform-input))
 
-(def ^{:doc "Returns state with pos set to `pos`."
-       :arglists '([state pos])}
+(def ^{:arglists '([state pos])}
   set-pos
+  "Returns state with pos set to `pos`."
   (set-field-fn :pos))
 
-(def ^{:doc "Returns state with user state set to `u`."
-       :arglists '([state, u])}
+(def ^{:arglists '([state, u])}
   set-user-state
+  "Returns state with user state set to `u`."
   (set-field-fn :user))
 
-(def ^{:doc "Applies function `f` to the state input. Conforms result to sequence."
-       :arglists '([state, f])}
+(def ^{:arglists '([state, f])}
   update-input
+  "Applies function `f` to the state input. Conforms result to sequence."
   (update-field-fn :input conform-input))
 
-(def ^{:doc "Applies function `f` to the state pos."
-       :arglists '([state, f])}
+(def ^{:arglists '([state, f])}
   update-pos
+  "Applies function `f` to the state pos."
   (update-field-fn :pos))
 
-(def ^{:doc "Applies function `f` to the user state."
-       :arglists '([state, f])}
+(def ^{:arglists '([state, f])}
   update-user-state
+  "Applies function `f` to the user state."
   (update-field-fn :user))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

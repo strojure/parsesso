@@ -41,9 +41,9 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^{:doc "True if the character is ASCII 7 bit alphabetic upper case."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   upper?
+  "True if the character is ASCII 7 bit alphabetic upper case."
   ^{::p/expecting "upper case character"}
   (fn [c]
     #?(:clj
@@ -52,9 +52,9 @@
        :cljs
        (re-find #"[A-Z]" c))))
 
-(def ^{:doc "True if the character is ASCII 7 bit alphabetic upper case."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   lower?
+  "True if the character is ASCII 7 bit alphabetic upper case."
   ^{::p/expecting "lower case character"}
   (fn [c]
     #?(:clj
@@ -63,9 +63,9 @@
        :cljs
        (re-find #"[a-z]" c))))
 
-(def ^{:doc "True if the character is ASCII 7 bit alphabetic."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   alpha?
+  "True if the character is ASCII 7 bit alphabetic."
   ^{::p/expecting "alphabetic character"}
   (fn [c]
     #?(:clj
@@ -73,9 +73,9 @@
        :cljs
        (re-find #"[a-zA-Z]" c))))
 
-(def ^{:doc "True if the character is ASCII 7 bit numeric."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   numeric?
+  "True if the character is ASCII 7 bit numeric."
   ^{::p/expecting "numeric character"}
   (fn [c]
     #?(:clj
@@ -84,9 +84,9 @@
        :cljs
        (re-find #"[0-9]" c))))
 
-(def ^{:doc "True if the character is ASCII 7 bit alphabetic or numeric."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   alpha-numeric?
+  "True if the character is ASCII 7 bit alphabetic or numeric."
   ^{::p/expecting "alphanumeric character"}
   (fn [c]
     #?(:clj
@@ -94,9 +94,9 @@
        :cljs
        (re-find #"[a-zA-Z0-9]" c))))
 
-(def ^{:doc "True if the character is ASCII 7 bit whitespace."
-       :arglists '([c])}
+(def ^{:arglists '([c])}
   whitespace?
+  "True if the character is ASCII 7 bit whitespace."
   ^{::p/expecting "whitespace character"}
   (fn [c]
     #?(:clj

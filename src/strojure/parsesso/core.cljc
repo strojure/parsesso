@@ -1,7 +1,7 @@
 (ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]
-            [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [replace]))]
+            [strojure.parsesso.impl.reply :as reply :include-macros true]
             [strojure.parsesso.impl.state :as state]
             [strojure.parsesso.parser.pos :as pos]
             [strojure.parsesso.parser.render :as render])
@@ -13,11 +13,14 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^{:arglists '([f])} parser
-  "Wraps function `(fn [state context])` in the instance of `Parser`."
+(def ^{:arglists '([f])}
+  parser
+  "Returns instance of parser for the function `(fn [state context])`."
   parser/->Parser)
 
-(def ^{:arglists '([p])} parser?
+(def ^{:arglists '([p])}
+  parser?
+  "True if `p` is the instance of parser."
   parser/parser?)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -48,6 +51,9 @@
                                          reply/e-ok e-ok-p}))))))
 
 (defmacro do-parser
+  "Delays the evaluation of a parser that was forward (declare)d and
+  it has not been defined yet. For use in (def)s of no-arg parsers,
+  since the parser expression evaluates immediately."
   [& body]
   (let [state (gensym) context (gensym)]
     `(parser
@@ -55,6 +61,21 @@
          ((do ~@body) ~state ~context)))))
 
 (defmacro bind-let
+  "Expands into nested bind forms and a function body.
+
+  The pattern:
+
+      (bind p (fn [x]
+                (bind q (fn [y]
+                          ...
+                          (result (f x y ...))))))
+
+   can be more conveniently be written as:
+
+       (bind-let [x p
+                  y q ...]
+         (result (f x y ...)))
+  "
   [[& bindings] & body]
   (let [[sym p :as pair] (take 2 bindings)]
     (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
@@ -607,8 +628,10 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn parse*
+  "Executes parser `p` given `input` sequence of tokens, returns reply record.
+  See `parse` for available options."
   {:arglists '([p input]
-               [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
+               [p input {:keys [initial-pos, tab-size, user-state] :as options}])}
   ([p input]
    (assert (parser? p) (str "Requires parser argument: " (pr-str p)))
    (p (state/init-state input (pos/init-pos nil input) nil)))
@@ -617,8 +640,21 @@
    (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
 
 (defn parse
+  "Executes parser `p` given `input` sequence of tokens, returns result value or
+  throws exception on parsing error.
+
+  Options:
+
+  **`:initial-pos`** The instance of InputPos or keyword for `pos/init-pos` to
+  init parser pos. By default pos is initialized to TextPos for string input or
+  first token of char type, or IndexPos otherwise.
+
+  **`:tab-size`** Tab size for TextPos, which is 8 by default.
+
+  **`:user-state`** Initial value of user state.
+  "
   {:arglists '([p input]
-               [p input {:keys [initial-pos, tab-size, user-state] :as opts}])}
+               [p input {:keys [initial-pos, tab-size, user-state] :as options}])}
   ([p input]
    (-> (parse* p input) (reply/value)))
   ([p input opts]

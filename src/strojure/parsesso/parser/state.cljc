@@ -1,7 +1,7 @@
 (ns strojure.parsesso.parser.state
-  (:require [strojure.parsesso.impl.reply :as reply]
-            [strojure.parsesso.impl.state :as state]
-            [strojure.parsesso.core :as p]))
+  (:require [strojure.parsesso.core :as p]
+            [strojure.parsesso.impl.reply :as reply]
+            [strojure.parsesso.impl.state :as state]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -35,9 +35,9 @@
   "This parser returns the full parser state as a 'State' record."
   (update-parser-state identity))
 
-(def ^{:doc "This parser set the full parser state to `state`."
-       :arglists '([state])}
+(def ^{:arglists '([state])}
   set-parser-state
+  "This parser set the full parser state to `state`."
   (comp do-update-parser-state constantly))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -46,9 +46,9 @@
   "This parser returns the current input."
   (p/fmap state/input get-parser-state))
 
-(def ^{:doc "This parser continues parsing with `input`."
-       :arglists '([input])}
+(def ^{:arglists '([input])}
   set-input
+  "This parser continues parsing with `input`."
   (partial do-update-parser-state state/set-input))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -57,9 +57,9 @@
   "This parser returns the current user state."
   (p/fmap state/user get-parser-state))
 
-(def ^{:docs "This parser sets the user state to `u`"
-       :arglists '([u])}
+(def ^{:arglists '([u])}
   set-user-state
+  "This parser sets the user state to `u`"
   (partial do-update-parser-state state/set-user-state))
 
 (defn update-user-state

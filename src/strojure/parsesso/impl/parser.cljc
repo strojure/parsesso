@@ -32,12 +32,14 @@
      (-invoke [_p state context] (Continue. (fn [] (f state context))))))
 
 (defn parser?
+  "True if `p` is instance of parser."
   [p]
   (instance? Parser p))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn e-ok-throw-empty-input
+  "Throws exception in `many` combinator."
   [_ _]
   (throw (ex-info (str "Combinator is applied to a parser that accepts an empty input.") {})))
 

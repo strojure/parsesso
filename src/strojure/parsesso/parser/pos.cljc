@@ -12,6 +12,7 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defmulti init-pos
+  "Returns initial InputPos for given options and input."
   (fn [opts _input] (:initial-pos opts)))
 
 (defmethod init-pos :default
@@ -22,6 +23,7 @@
 
 (defmethod init-pos nil
   [opts input]
+  ;; Tries to detect text input and use text pos.
   (let [f (get-method init-pos (if (or (string? input) (char? (first input)))
                                  :text :sequence))]
     (f opts input)))
