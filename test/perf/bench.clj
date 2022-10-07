@@ -114,7 +114,8 @@
 ;   Execution time lower quantile : 201,064298 µs ( 2,5%)
 ;   Execution time upper quantile : 245,166269 µs (97,5%)
 
-(krn/parse (krn/token* -input-10000) -input-10000)
+(comment
+  (krn/parse (krn/token* -input-10000) -input-10000))
 ; Execution error (StackOverflowError) at blancas.kern.core/>>=$fn
 
 (prt/run (prt/string -input-10000) -input-10000)
