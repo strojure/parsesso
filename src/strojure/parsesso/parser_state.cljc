@@ -44,7 +44,7 @@
 
 (def get-input
   "This parser returns the current input."
-  (p/fmap state/input get-parser-state))
+  (-> get-parser-state (p/update-value state/input)))
 
 (def ^{:arglists '([input])}
   set-input
@@ -55,7 +55,7 @@
 
 (def get-user-state
   "This parser returns the current user state."
-  (p/fmap state/user get-parser-state))
+  (-> get-parser-state (p/update-value state/user)))
 
 (def ^{:arglists '([u])}
   set-user-state

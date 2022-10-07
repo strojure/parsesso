@@ -122,6 +122,6 @@
 (defn ++
   "This parser joins all characters parsed by `p` to single string."
   [p]
-  (p/fmap deep-join p))
+  (-> p (p/update-value deep-join)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

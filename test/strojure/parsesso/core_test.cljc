@@ -116,34 +116,38 @@
 
     ))
 
-(deftest fmap-t
+(deftest update-value-t
   (test/are [expr result] (= result expr)
 
-    (p (p/fmap name (tok :A))
+    (p (p/update-value (tok :A) name)
        [:A])
     {:consumed true, :value "A"}
 
-    (p (p/fmap name (tok :A))
+    (p (p/update-value (tok :A) cons '(:B))
+       [:A])
+    {:consumed true, :value '(:A :B)}
+
+    (p (p/update-value (tok :A) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/fmap name (tok :A))
+    (p (p/update-value (tok :A) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/update-value (fail-consumed (tok :A)) name)
        [:A])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/update-value (fail-consumed (tok :A)) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/fmap name (fail-consumed (tok :A)))
+    (p (p/update-value (fail-consumed (tok :A)) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}

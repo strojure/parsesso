@@ -22,33 +22,6 @@
   "True if `p` is the instance of parser."
   parser/parser?)
 
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-;;; parsers
-
-(defn bind
-  "This parser applies parser `p` and then parser `(f x)` where x is a return
-  value of the parser `p`.
-
-  - Fails: when any of parsers `p` or `(f x)` fails.
-  - Consumes: when any of parsers `p` or `(f x)` consumes some input.
-  "
-  [p f]
-  (parser
-    (fn [state context]
-      (letfn [(c-ok-p [s x]
-                ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
-                ;; continuation
-                ;; - if (f x) doesn't consume input, but errors, we return the error in the
-                ;; 'consumed-err' continuation
-                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
-                                                 reply/e-err (partial reply/c-err context)})))
-              (e-ok-p [s x]
-                ;; - in these cases, (f x) can return as empty
-                ((f x) s context))]
-        (p state (reply/replace context {reply/c-ok c-ok-p
-                                         reply/e-ok e-ok-p}))))))
-
 (defmacro do-parser
   "Delays the evaluation of a parser that was forward (declare)d and
   it has not been defined yet. For use in (def)s of no-arg parsers,
@@ -59,47 +32,9 @@
        (fn [~state ~context]
          ((do ~@body) ~state ~context)))))
 
-(defmacro bind-let
-  "Expands into nested bind forms and a function body.
-
-  The pattern:
-
-      (bind p (fn [x]
-                (bind q (fn [y]
-                          ...
-                          (result (f x y ...))))))
-
-   can be more conveniently be written as:
-
-       (bind-let [x p
-                  y q ...]
-         (result (f x y ...)))
-  "
-  [[& bindings] & body]
-  (let [[sym p :as pair] (take 2 bindings)]
-    (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
-    (assert (symbol? sym) (str "Requires symbol for binding name: " sym))
-    (assert (some? body) "Requires some body")
-    (if (= 2 (count bindings))
-      `(bind ~p (fn [~sym] ~@body))
-      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
-
-(defn after
-  "This parser tries to apply the parsers in order, until last of them succeeds.
-  Returns the value of the last parser, discards result of all preceding
-  parsers.
-
-  - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input.
-  "
-  ([q p]
-   (bind q (fn [_] p)))
-  ([q qq p]
-   (->> p (after (after q qq))))
-  ([q qq qqq & more]
-   (reduce after (list* q qq qqq more))))
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+;;; parsers
 
 (defn result
   "This parser always succeeds with value `x` without consuming any input.
@@ -111,13 +46,6 @@
   (parser
     (fn [state context]
       (reply/e-ok context state x))))
-
-(defn fmap
-  "This parser applies function `f` to the value returned by the parser `p`."
-  [f p]
-  (bind p (comp result f)))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn fail
   "This parser always fails with message `msg` without consuming any input.
@@ -169,6 +97,79 @@
   "Attaches expecting error message to `obj`, i.e. to token predicate function."
   [obj msg]
   (with-meta obj {::expecting msg}))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(defn bind
+  "This parser applies parser `p` and then parser `(f x)` where x is a return
+  value of the parser `p`.
+
+  - Fails: when any of parsers `p` or `(f x)` fails.
+  - Consumes: when any of parsers `p` or `(f x)` consumes some input.
+  "
+  [p f]
+  (parser
+    (fn [state context]
+      (letfn [(c-ok-p [s x]
+                ;; - if (f x) doesn't consume input, but is okay, we still return in the consumed
+                ;; continuation
+                ;; - if (f x) doesn't consume input, but errors, we return the error in the
+                ;; 'consumed-err' continuation
+                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
+                                                 reply/e-err (partial reply/c-err context)})))
+              (e-ok-p [s x]
+                ;; - in these cases, (f x) can return as empty
+                ((f x) s context))]
+        (p state (reply/replace context {reply/c-ok c-ok-p
+                                         reply/e-ok e-ok-p}))))))
+
+(defmacro bind-let
+  "Expands into nested bind forms and a function body.
+
+  The pattern:
+
+      (bind p (fn [x]
+                (bind q (fn [y]
+                          ...
+                          (result (f x y ...))))))
+
+   can be more conveniently be written as:
+
+       (bind-let [x p
+                  y q
+                  ...]
+         (result (f x y ...)))
+  "
+  [[& bindings] & body]
+  (let [[sym p :as pair] (take 2 bindings)]
+    (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
+    (assert (symbol? sym) (str "Requires symbol for binding name: " sym))
+    (assert (some? body) "Requires some body")
+    (if (= 2 (count bindings))
+      `(bind ~p (fn [~sym] ~@body))
+      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
+
+(defn after
+  "This parser tries to apply the parsers in order, until last of them succeeds.
+  Returns the value of the last parser, discards result of all preceding
+  parsers.
+
+  - Fails: when any of tried parsers fails.
+  - Consumes: when any of tried parsers consumes some input.
+  "
+  ([q p]
+   (bind q (fn [_] p)))
+  ([q qq p]
+   (->> p (after (after q qq))))
+  ([q qq qqq & more]
+   (reduce after (list* q qq qqq more))))
+
+(defn update-value
+  "This parser applies function `f` to the value returned by the parser `p`."
+  ([p f]
+   (bind p (comp result f)))
+  ([p f & args]
+   (update-value p #(apply f % args))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
