@@ -1,6 +1,7 @@
 (ns strojure.parsesso.text
-  (:refer-clojure :exclude [char newline])
+  (:refer-clojure :exclude [newline])
   (:require #?(:cljs [clojure.string :as string])
+            [strojure.parsesso.impl.parser :as parser]
             [strojure.parsesso.impl.text :as impl]
             [strojure.parsesso.parser :as p]))
 
@@ -9,29 +10,12 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn render-char
-  [c]
-  (pr-str (str c)))
-
-(def ^{:doc "This parser succeeds for any character for which the supplied predicate
-  function returns `true`. Returns the character that is actually parsed.
-  Accepts optional second argument for expecting error message.
-
-      (def digit
-        (char #(Character/isDigit ^char %)))
-  "
-       :arglists '([pred] [pred, msg])}
-  char
-  (p/token* {:render-token-fn render-char}))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
 (defn one-of?
   "Predicate function returning true if the character `c` is in the supplied
   string of characters `cs`."
   [cs]
   ^{::p/expecting (delay (if (second cs) (str "character of " (pr-str cs))
-                                         (render-char cs)))}
+                                         (parser/render cs)))}
   (fn [c]
     #?(:clj
        (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
@@ -45,7 +29,7 @@
   (-> (complement (one-of? cs))
       (p/expecting-meta (delay (if (second cs)
                                  (str "character not of " (pr-str cs))
-                                 (str "not " (render-char cs) " character"))))))
+                                 (str "not " (parser/render cs) " character"))))))
 
 (defn match?
   "Predicate function returning true if the character `c` is matching regex
@@ -54,16 +38,6 @@
   ^{::p/expecting (delay (str "character matching pattern " (pr-str re)))}
   (fn [c]
     (re-find re (str c))))
-
-(def ^{:doc "Parses a sequence of characters given by `s`.
-  Returns `s`.
-
-      (def div-or-mod
-        (choice (string \"div\") (string \"mod\")))
-  "
-       :arglists '([s])}
-  string
-  (p/tokens* {:render-token-fn render-char}))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -126,7 +100,7 @@
   ^{::p/expecting "whitespace character"}
   (fn [c]
     #?(:clj
-       (Character/isSpace ^char c)
+       (Character/isSpace c)
        :cljs
        (string/index-of " \n\r\t\f" c))))
 
@@ -134,8 +108,8 @@
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
-  (p/choice (char (one-of? "\n"))
-            (p/after (char (one-of? "\r")) (char (one-of? "\n")))))
+  (p/choice (p/token (one-of? "\n"))
+            (p/after (p/token (one-of? "\r")) (p/token (one-of? "\n")))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

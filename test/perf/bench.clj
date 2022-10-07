@@ -60,7 +60,7 @@
 
 ;;; Parse exact string
 
-(p/parse (t/string "abc") "abc")
+(p/parse (p/word "abc") "abc")
 ;             Execution time mean : 487,794555 ns
 ;    Execution time std-deviation : 125,625337 ns
 ;   Execution time lower quantile : 428,076023 ns ( 2,5%)
@@ -82,7 +82,7 @@
 
 ;;; Parse letters
 
-(p/parse (p/many-zero (t/char t/alpha?)) "abc")
+(p/parse (p/many-zero (p/token t/alpha?)) "abc")
 ;             Execution time mean : 906,599211 ns
 ;    Execution time std-deviation : 185,143135 ns
 ;   Execution time lower quantile : 690,083851 ns ( 2,5%)
@@ -104,7 +104,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (t/++ (p/many-zero (t/char t/alpha?))) "abc")
+(p/parse (t/++ (p/many-zero (p/token t/alpha?))) "abc")
 ;             Execution time mean : 1,466334 µs
 ;    Execution time std-deviation : 338,852792 ns
 ;   Execution time lower quantile : 1,217230 µs ( 2,5%)

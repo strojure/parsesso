@@ -496,32 +496,32 @@
 
     ))
 
-(deftest tokens-t
+(deftest word-t
   (test/are [expr result] (= result expr)
 
-    (p (p/tokens [:A :B :C])
+    (p (p/word [:A :B :C])
        [:A :B :C])
     {:consumed true, :value [:A :B :C]}
 
-    (p (p/tokens [:A :B :C])
+    (p (p/word [:A :B :C])
        [:A :B])
     {:consumed true, :error ["error at index 0:"
                              "unexpected end of input"
                              "expecting [:A :B :C]"]}
 
-    (p (p/tokens [:A :B :C])
+    (p (p/word [:A :B :C])
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"
                               "expecting [:A :B :C]"]}
 
-    (p (p/tokens [:A :B :C])
+    (p (p/word [:A :B :C])
        [:A :B :X])
     {:consumed true, :error ["error at index 0:"
                              "unexpected :X"
                              "expecting [:A :B :C]"]}
 
-    (p (p/tokens [:A :B :C])
+    (p (p/word [:A :B :C])
        [:X :Y :Z])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :X"

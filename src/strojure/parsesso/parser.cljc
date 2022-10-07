@@ -169,10 +169,10 @@
   identifier we have to use the `offer` combinator. Suppose we write:
 
       (def identifier
-        (some-many (t/char t/alpha?)))
+        (some-many (token t/alpha?)))
 
       (def let-expr
-        (after (t/string \"let\")
+        (after (word \"let\")
                ...))
 
       (def expr
@@ -181,14 +181,14 @@
             (expecting \"expression\"))
 
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
-  expecting \"t\" of (string \"let\")`. Indeed, since the `choice` combinator
+  expecting \"t\" of (word \"let\")`. Indeed, since the `choice` combinator
   only tries alternatives when the first alternative hasn't consumed input, the
-  `identifier` parser is never tried (because the prefix \"le\" of the `(string
+  `identifier` parser is never tried (because the prefix \"le\" of the `(word
   \"let\")` parser is already consumed). The right behaviour can be obtained by
   adding the `offer` combinator:
 
       (def let-expr
-        (after (offer (t/string \"let\"))
+        (after (offer (word \"let\"))
                ...))
   "
   [p]
@@ -218,8 +218,8 @@
   the keyword is actually an identifier (for example `lets`). We can write this
   behaviour as follows:
 
-      (-> (t/string \"let\")
-          (not-followed-by (t/char t/alpha-numeric?)))
+      (-> (word \"let\")
+          (not-followed-by (token t/alpha-numeric?)))
 
   - Fails:
       - when `p` fails.
@@ -249,9 +249,9 @@
   - Consumes: when `p` consumes some input.
 
       (def identifier
-        (bind-let [c (t/char t/alpha?)
-                   cs (many-zero (choice (t/char t/alpha-numeric?)
-                                         (t/char (t/one-of? \"_\"))))]
+        (bind-let [c (token t/alpha?)
+                   cs (many-zero (choice (token t/alpha-numeric?)
+                                         (token (t/one-of? \"_\"))))]
           (result (cons c cs))))
   "
   [p]
@@ -275,7 +275,7 @@
   - Consumes: when `p` consumes some input.
 
      (def word
-       (many-some (t/char t/alpha?))
+       (many-some (token t/alpha?))
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
@@ -288,7 +288,7 @@
   - Consumes: when `p` consumes some input.
 
       (def spaces
-        (skip-zero (t/char t/whitespace?)))
+        (skip-zero (token t/whitespace?)))
   "
   [p]
   (parser
@@ -312,26 +312,8 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn token*
-  "Function returning the parser which accepts a token when `(pred token)`
-  returns logical true, and optional expecting `msg`. The token can be shown in
-  error message using `(render-token-fn token)`."
-  [{:keys [render-token-fn] :or {render-token-fn pr-str}}]
-  (fn token
-    ([pred] (token pred nil))
-    ([pred msg]
-     (parser
-       (fn [state context]
-         (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
-           (let [tok (#?(:clj .first :cljs -first) input)]
-             (if (pred tok)
-               (reply/c-ok context (state/next-state state tok) tok)
-               (reply/e-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
-                                        (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
-           (reply/e-err context (-> (error/sys-unexpected-eof state)
-                                    (error/expecting (or msg (some-> (meta pred) ::expecting)))))))))))
-
-(def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
+(defn token
+  "This parser accepts a token when `(pred token)` returns logical true, and
   optional expecting `msg`. The `pred` can carry expecting error message in
   `::expecting` metadata. See also `token-fn` for customized version of the
   parser.
@@ -339,49 +321,51 @@
   - Fails: when `(pred token)` return logical false.
   - Consumes: when succeeds.
   "
-       :arglists '([pred] [pred, msg])}
-  token
-  (token* {}))
+  ([pred] (token pred nil))
+  ([pred msg]
+   (parser
+     (fn [state context]
+       (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
+         (let [tok (#?(:clj .first :cljs -first) input)]
+           (if (pred tok)
+             (reply/c-ok context (state/next-state state tok) tok)
+             (reply/e-err context (-> (error/sys-unexpected state (delay (parser/render tok)))
+                                      (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
+         (reply/e-err context (-> (error/sys-unexpected-eof state)
+                                  (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
 
-(defn tokens*
-  "Function returning the parser which parses a sequence of tokens given by `xs`
-  and returns `xs`. Tokens are compared using `(test-fn sample-token input-token)`."
-  [{:keys [test-fn render-token-fn render-seq-fn]
-    :or {test-fn =, render-token-fn pr-str, render-seq-fn pr-str}}]
-  (fn [tts]
-    (parser
-      (fn [state context]
-        (if-let [ts (seq tts)]
-          (loop [^ISeq ts ts
-                 ^ISeq input (seq (state/input state))
-                 reply-err reply/e-err]
-            (cond
-              (not ts)
-              (let [new-pos (reduce pos/next-pos (state/pos state) tts)
-                    new-state (state/set-input-pos state input new-pos)]
-                (reply/c-ok context new-state tts))
-              (not input)
-              (reply-err context (-> (error/sys-unexpected-eof state)
-                                     (error/expecting (delay (render-seq-fn tts)))))
-              :else
-              (let [t (#?(:clj .first :cljs -first) ts)
-                    tok (#?(:clj .first :cljs -first) input)]
-                (if (test-fn t tok)
-                  (recur (#?(:clj .next :cljs -next) ts)
-                         (#?(:clj .next :cljs -next) input)
-                         reply/c-err)
-                  (reply-err context (-> (error/sys-unexpected state (delay (render-token-fn tok)))
-                                         (error/expecting (delay (render-seq-fn tts)))))))))
-          (reply/e-ok context state tts))))))
-
-(def ^{:doc "Parses a sequence of tokens given by `ts` and returns `ts`.
+(defn word
+  "Parses a sequence of tokens given by `ts` and returns `ts`.
 
   - Fails: when any of tokens don't match the input.
-  - Consumes: when at least first token match the input.
+  - Consumes: when at least first token matches the input.
   "
-       :arglists '([ts])}
-  tokens
-  (tokens* {}))
+  ([tokens] (word tokens =))
+  ([tokens test-fn]
+   (parser
+     (fn [state context]
+       (if-let [ts (seq tokens)]
+         (loop [^ISeq ts ts
+                ^ISeq input (seq (state/input state))
+                reply-err reply/e-err]
+           (cond
+             (not ts)
+             (let [new-pos (reduce pos/next-pos (state/pos state) tokens)
+                   new-state (state/set-input-pos state input new-pos)]
+               (reply/c-ok context new-state tokens))
+             (not input)
+             (reply-err context (-> (error/sys-unexpected-eof state)
+                                    (error/expecting (delay (parser/render tokens)))))
+             :else
+             (let [t (#?(:clj .first :cljs -first) ts)
+                   tok (#?(:clj .first :cljs -first) input)]
+               (if (test-fn t tok)
+                 (recur (#?(:clj .next :cljs -next) ts)
+                        (#?(:clj .next :cljs -next) input)
+                        reply/c-err)
+                 (reply-err context (-> (error/sys-unexpected state (delay (parser/render tok)))
+                                        (error/expecting (delay (parser/render tokens)))))))))
+         (reply/e-ok context state tokens))))))
 
 (def any-token
   "This parser accepts any kind of token. Returns the accepted token.
@@ -484,8 +468,8 @@
   - Consumes: in all cases except when `open` fails without consuming any input.
 
       (defn braces [p]
-        (-> p (between (t/char (t/one-of? \"{\"))
-                       (t/char (t/one-of? \"}\")))))
+        (-> p (between (token (t/one-of? \"{\"))
+                       (token (t/one-of? \"}\")))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -509,10 +493,10 @@
       - when `p` or `end` consumes some input.
 
       (def simple-comment
-        (after (t/string \"<!--\")
-               (many-till (t/char any?) (offer (t/string \"-->\")))))
+        (after (word \"<!--\")
+               (many-till any-token (offer (word \"-->\")))))
 
-  Note the overlapping parsers `(char any?)` and `(string \"-->\")`, and
+  Note the overlapping parsers `any-token` and `(word \"-->\")`, and
   therefore the use of the `offer` combinator.
   "
   [p end]
@@ -535,8 +519,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (t/char (t/one-of? \",\"))
-                              (skip-zero (t/char t/whitespace?)))))
+        (sep-by-zero p (after (token (t/one-of? \",\"))
+                              (skip-zero (token t/whitespace?)))))
   "
   [p sep]
   (optional (sep-by-some p sep)))
@@ -579,7 +563,7 @@
   - Fails: never.
   - Consumes: never.
 
-      (parse (after (t/char (t/one-of? \"aeiou\"))
+      (parse (after (token (t/one-of? \"aeiou\"))
                     (debug-state \"label\"))
              \"atest\")
 
@@ -600,8 +584,8 @@
   - Fails: when `p` fails.
   - Consumes: when `p` consumes some input.
 
-      (parse (after (t/char (t/one-of? \"aeiou\"))
-                    (-> (t/char (t/one-of? \"nope\"))
+      (parse (after (token (t/one-of? \"aeiou\"))
+                    (-> (token (t/one-of? \"nope\"))
                         (debug-parser \"one-of-nope\")))
              \"atest\")
 
