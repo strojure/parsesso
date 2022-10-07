@@ -8,7 +8,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn do-update-parser-state
+(defn do-update-state
   "This parser applies function `f` to the parser state and returns `nil`."
   ([f]
    (p/parser
@@ -16,7 +16,7 @@
        (let [s (f state)]
          (reply/e-ok context s nil)))))
   ([f arg]
-   (do-update-parser-state #(f % arg))))
+   (do-update-state #(f % arg))))
 
 (defn update-parser-state
   "This parser applies function `f` to the parser state and returns modified
@@ -38,7 +38,7 @@
 (def ^{:arglists '([state])}
   set-parser-state
   "This parser set the full parser state to `state`."
-  (comp do-update-parser-state constantly))
+  (comp do-update-state constantly))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -49,7 +49,7 @@
 (def ^{:arglists '([input])}
   set-input
   "This parser continues parsing with `input`."
-  (partial do-update-parser-state state/set-input))
+  (partial do-update-state state/set-input))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -60,7 +60,7 @@
 (def ^{:arglists '([u])}
   set-user-state
   "This parser sets the user state to `u`"
-  (partial do-update-parser-state state/set-user-state))
+  (partial do-update-state state/set-user-state))
 
 (defn update-user-state
   "This parser applies function `f` to the user state. Suppose that we want to
@@ -71,8 +71,8 @@
         (result x))
   "
   ([f]
-   (do-update-parser-state state/update-user-state f))
+   (do-update-state state/update-user-state f))
   ([f & args]
-   (do-update-parser-state state/update-user-state #(apply f % args))))
+   (do-update-state state/update-user-state #(apply f % args))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
