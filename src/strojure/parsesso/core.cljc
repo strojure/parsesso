@@ -91,7 +91,7 @@
   (parser
     (fn [state context]
       (letfn [(e-err [e] (reply/e-err context (error/expecting e msg)))]
-        (p state (reply/replace context {reply/e-err e-err}))))))
+        (p state (reply/assign context {reply/e-err e-err}))))))
 
 (defn expecting-meta
   "Attaches expecting error message to `obj`, i.e. to token predicate function."
@@ -115,13 +115,13 @@
                 ;; continuation
                 ;; - if (f x) doesn't consume input, but errors, we return the error in the
                 ;; 'consumed-err' continuation
-                ((f x) s (reply/replace context {reply/e-ok (partial reply/c-ok context)
-                                                 reply/e-err (partial reply/c-err context)})))
+                ((f x) s (reply/assign context {reply/e-ok (partial reply/c-ok context)
+                                                reply/e-err (partial reply/c-err context)})))
               (e-ok-p [s x]
                 ;; - in these cases, (f x) can return as empty
                 ((f x) s context))]
-        (p state (reply/replace context {reply/c-ok c-ok-p
-                                         reply/e-ok e-ok-p}))))))
+        (p state (reply/assign context {reply/c-ok c-ok-p
+                                        reply/e-ok e-ok-p}))))))
 
 (defmacro bind-let
   "Expands into nested bind forms and a function body.
@@ -216,7 +216,7 @@
   [p]
   (parser
     (fn [state context]
-      (p state (reply/replace context {reply/c-err (partial reply/e-err context)})))))
+      (p state (reply/assign context {reply/c-err (partial reply/e-err context)})))))
 
 (defn look-ahead
   "Parses `p` without consuming any input. If `p` fails and consumes some input,
@@ -229,8 +229,8 @@
   (parser
     (fn [state context]
       (letfn [(e-ok [_ x] (reply/e-ok context state x))]
-        (p state (reply/replace context {reply/c-ok e-ok,
-                                         reply/e-ok e-ok}))))))
+        (p state (reply/assign context {reply/c-ok e-ok,
+                                        reply/e-ok e-ok}))))))
 
 (defn not-followed-by
   "This parser behaves like parser `p`, except that it only succeeds when parser
@@ -255,10 +255,10 @@
            (fn [state context]
              (letfn [(e-ok [_ xq] (reply/e-err context (error/unexpected state (delay (pr-str xq)))))
                      (e-err [_] (reply/e-ok context state xp))]
-               (q state (reply/replace context {reply/c-ok e-ok
-                                                reply/e-ok e-ok
-                                                reply/c-err e-err
-                                                reply/e-err e-err}))))))
+               (q state (reply/assign context {reply/c-ok e-ok
+                                               reply/e-ok e-ok
+                                               reply/c-err e-err
+                                               reply/e-err e-err}))))))
        (bind p)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -282,12 +282,12 @@
       (letfn [(walk [xs s x]
                 (let [xs (conj! xs x)
                       e-err (fn [_] (reply/c-ok context s (seq (persistent! xs))))]
-                  (p s (reply/replace context {reply/c-ok (partial walk xs)
-                                               reply/e-ok parser/e-ok-throw-empty-input
-                                               reply/e-err e-err}))))]
-        (p state (reply/replace context {reply/c-ok (partial walk (transient []))
-                                         reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
+                  (p s (reply/assign context {reply/c-ok (partial walk xs)
+                                              reply/e-ok parser/e-ok-throw-empty-input
+                                              reply/e-err e-err}))))]
+        (p state (reply/assign context {reply/c-ok (partial walk (transient []))
+                                        reply/e-ok parser/e-ok-throw-empty-input
+                                        reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
 
 (defn many-some
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
@@ -316,12 +316,12 @@
   (parser
     (fn [state context]
       (letfn [(c-ok [s _]
-                (p s (reply/replace context {reply/c-ok c-ok
-                                             reply/e-ok parser/e-ok-throw-empty-input
-                                             reply/e-err (fn [_] (reply/c-ok context s nil))})))]
-        (p state (reply/replace context {reply/c-ok c-ok
-                                         reply/e-ok parser/e-ok-throw-empty-input
-                                         reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
+                (p s (reply/assign context {reply/c-ok c-ok
+                                            reply/e-ok parser/e-ok-throw-empty-input
+                                            reply/e-err (fn [_] (reply/c-ok context s nil))})))]
+        (p state (reply/assign context {reply/c-ok c-ok
+                                        reply/e-ok parser/e-ok-throw-empty-input
+                                        reply/e-err (fn [_] (reply/e-ok context state nil))}))))))
 
 (defn skip-some
   "This parser applies the parser `p` _one_ or more times, skipping its result.
@@ -464,9 +464,9 @@
        (letfn [(e-err-p [e]
                  (letfn [(e-ok-q [s x] (reply/e-ok context s x))
                          (e-err-q [ee] (reply/e-err context (error/merge-errors e ee)))]
-                   (q state (reply/replace context {reply/e-ok e-ok-q
-                                                    reply/e-err e-err-q}))))]
-         (p state (reply/replace context {reply/e-err e-err-p}))))))
+                   (q state (reply/assign context {reply/e-ok e-ok-q
+                                                   reply/e-err e-err-q}))))]
+         (p state (reply/assign context {reply/e-err e-err-p}))))))
   ([p q qq]
    (-> p (choice q) (choice qq)))
   ([p q qq & more]
