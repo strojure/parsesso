@@ -3,7 +3,7 @@
   (:require #?(:cljs [clojure.string :as string])
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.char :as impl]
-            [strojure.parsesso.parser.render :as render]))
+            [strojure.parsesso.impl.error :as error]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -15,7 +15,7 @@
   string of characters `cs`."
   [cs]
   ^{::p/expecting (delay (if (second cs) (str "character of " (pr-str cs))
-                                         (render/render cs)))}
+                                         (error/render-object cs)))}
   (fn [c]
     #?(:clj
        (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
@@ -29,7 +29,7 @@
   (-> (complement (one-of? cs))
       (p/expecting-meta (delay (if (second cs)
                                  (str "character not of " (pr-str cs))
-                                 (str "not " (render/render cs) " character"))))))
+                                 (str "not " (error/render-object cs) " character"))))))
 
 (defn re-match?
   "Predicate function returning true if the character `c` is matching regex

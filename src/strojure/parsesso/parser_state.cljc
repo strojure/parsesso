@@ -1,4 +1,4 @@
-(ns strojure.parsesso.parser.state
+(ns strojure.parsesso.parser-state
   (:require [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.reply :as reply]
             [strojure.parsesso.impl.state :as state]))

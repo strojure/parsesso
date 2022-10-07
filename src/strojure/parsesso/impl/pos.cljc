@@ -1,4 +1,4 @@
-(ns strojure.parsesso.parser.pos)
+(ns strojure.parsesso.impl.pos)
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -36,16 +36,12 @@
 
 #?(:clj
    (extend-protocol InputPos
-     nil
-     (next-pos [_ _])
-     Number
-     (next-pos [pos _] (inc pos)))
+     nil,,, (next-pos [_ _])
+     Number (next-pos [pos _] (inc pos)))
    :cljs
    (extend-protocol InputPos
-     nil
-     (next-pos [_ _])
-     number
-     (next-pos [pos _] (inc pos))))
+     nil,,, (next-pos [_ _])
+     number (next-pos [pos _] (inc pos))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

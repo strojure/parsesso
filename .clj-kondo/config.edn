@@ -3,6 +3,7 @@
            :shadowed-var {:level :warning
                           :exclude []
                           :suggest {}}
+           :unknown-require-option {:level :off}
            :unsorted-required-namespaces {:level :warning}}
  :lint-as {cljs.core/defrecord clojure.core/defrecord
            strojure.parsesso.core/bind-let clojure.core/let}

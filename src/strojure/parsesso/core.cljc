@@ -1,10 +1,9 @@
 (ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]
+            [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as reply :include-macros true]
-            [strojure.parsesso.impl.state :as state]
-            [strojure.parsesso.parser.pos :as pos]
-            [strojure.parsesso.parser.render :as render])
+            [strojure.parsesso.impl.state :as state])
   #?(:clj  (:import (clojure.lang ISeq))
      :cljs (:require-macros [strojure.parsesso.core :refer [bind-let do-parser]])))
 
@@ -351,7 +350,7 @@
          (let [tok (#?(:clj .first :cljs -first) input)]
            (if (pred tok)
              (reply/c-ok context (state/next-state state tok) tok)
-             (reply/e-err context (-> (error/sys-unexpected state (delay (render/render tok)))
+             (reply/e-err context (-> (error/sys-unexpected state (delay (error/render-object tok)))
                                       (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
          (reply/e-err context (-> (error/sys-unexpected-eof state)
                                   (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
@@ -379,7 +378,7 @@
                (reply/c-ok context new-state tokens))
              (not input)
              (reply-err context (-> (error/sys-unexpected-eof state)
-                                    (error/expecting (delay (render/render tokens)))))
+                                    (error/expecting (delay (error/render-object tokens)))))
              :else
              (let [w (#?(:clj .first :cljs -first) ws)
                    t (#?(:clj .first :cljs -first) input)]
@@ -387,8 +386,8 @@
                  (recur (#?(:clj .next :cljs -next) ws)
                         (#?(:clj .next :cljs -next) input)
                         reply/c-err)
-                 (reply-err context (-> (error/sys-unexpected state (delay (render/render t)))
-                                        (error/expecting (delay (render/render tokens)))))))))
+                 (reply-err context (-> (error/sys-unexpected state (delay (error/render-object t)))
+                                        (error/expecting (delay (error/render-object tokens)))))))))
          (reply/e-ok context state tokens))))))
 
 (def any-token

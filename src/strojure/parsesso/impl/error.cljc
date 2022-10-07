@@ -7,6 +7,23 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(defprotocol IRenderObject
+  (render-object [obj]
+    "Returns string representation of the `obj` in parser error messages."))
+
+#?(:clj
+   (extend-protocol IRenderObject
+     nil,,,,,, (render-object [x] (pr-str x))
+     Object,,, (render-object [x] (pr-str x))
+     Character (render-object [c] (pr-str (str c))))
+
+   :cljs
+   (extend-protocol IRenderObject
+     nil,,, (render-object [x] (pr-str x))
+     object (render-object [x] (pr-str x))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (declare render-messages)
 
 (defrecord ParseError [pos messages]
