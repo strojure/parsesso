@@ -15,3 +15,7 @@ Parser combinators for Clojure(Script).
 * [blancas/kern](https://github.com/blancas/kern)
 * [youngnh/parsatron](https://github.com/youngnh/parsatron)
 * [rm-hull/jasentaa](https://github.com/rm-hull/jasentaa)
+
+## Performance
+
+See some benchmarks [here](test/perf/bench.clj).
