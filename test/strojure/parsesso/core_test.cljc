@@ -527,6 +527,11 @@
                               "unexpected :X"
                               "expecting [:A :B :C]"]}
 
+    (p (p/word [:ns/A :ns/B :ns/C]
+               (fn [w t] (= (name w) (name t))))
+       [:A :B :C])
+    {:consumed true, :value [:ns/A :ns/B :ns/C]}
+
     ))
 
 (deftest any-token-t

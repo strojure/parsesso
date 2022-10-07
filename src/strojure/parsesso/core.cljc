@@ -336,21 +336,23 @@
                                   (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
 
 (defn word
-  "Parses a sequence of tokens given by `ts` and returns `ts`.
+  "Parses a sequence of tokens given by `ts` and returns `ts`. The optional
+  function `(test-fn word-token input-token)` is used to match tokens
+  differently than simple equality.
 
   - Fails: when any of tokens don't match the input.
   - Consumes: when at least first token matches the input.
   "
   ([tokens] (word tokens =))
-  ([tokens test-fn]
+  ([tokens, test-fn]
    (parser
      (fn [state context]
-       (if-let [ts (seq tokens)]
-         (loop [^ISeq ts ts
+       (if-let [ws (seq tokens)]
+         (loop [^ISeq ws ws
                 ^ISeq input (seq (state/input state))
                 reply-err reply/e-err]
            (cond
-             (not ts)
+             (not ws)
              (let [new-pos (reduce pos/next-pos (state/pos state) tokens)
                    new-state (state/set-input-pos state input new-pos)]
                (reply/c-ok context new-state tokens))
@@ -358,13 +360,13 @@
              (reply-err context (-> (error/sys-unexpected-eof state)
                                     (error/expecting (delay (render/render tokens)))))
              :else
-             (let [t (#?(:clj .first :cljs -first) ts)
-                   tok (#?(:clj .first :cljs -first) input)]
-               (if (test-fn t tok)
-                 (recur (#?(:clj .next :cljs -next) ts)
+             (let [w (#?(:clj .first :cljs -first) ws)
+                   t (#?(:clj .first :cljs -first) input)]
+               (if (test-fn w t)
+                 (recur (#?(:clj .next :cljs -next) ws)
                         (#?(:clj .next :cljs -next) input)
                         reply/c-err)
-                 (reply-err context (-> (error/sys-unexpected state (delay (render/render tok)))
+                 (reply-err context (-> (error/sys-unexpected state (delay (render/render t)))
                                         (error/expecting (delay (render/render tokens)))))))))
          (reply/e-ok context state tokens))))))
 
