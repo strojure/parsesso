@@ -28,7 +28,8 @@
   value of the parser `p`.
 
   - Fails: when any of parsers `p` or `(f x)` fails.
-  - Consumes: when any of parsers `p` or `(f x)` consumes some input."
+  - Consumes: when any of parsers `p` or `(f x)` consumes some input.
+  "
   [p f]
   (parser
     (fn [state context]
@@ -68,7 +69,8 @@
   parsers.
 
   - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input."
+  - Consumes: when any of tried parsers consumes some input.
+  "
   ([q p]
    (bind q (fn [_] p)))
   ([q qq p]
@@ -82,7 +84,8 @@
   "This parser always succeeds with value `x` without consuming any input.
 
   - Fails: never.
-  - Consumes: never."
+  - Consumes: never.
+  "
   [x]
   (parser
     (fn [state context]
@@ -99,7 +102,8 @@
   "This parser always fails with message `msg` without consuming any input.
 
   - Fails: always.
-  - Consumes: never."
+  - Consumes: never.
+  "
   ([msg]
    (parser
      (fn [state context]
@@ -112,7 +116,8 @@
   consuming any input.
 
   - Fails: always.
-  - Consumes: never."
+  - Consumes: never.
+  "
   [msg]
   (parser
     (fn [state context]
@@ -131,7 +136,8 @@
   or alphabetic character', which is less friendly.
 
   The parsers `fail`, `fail-unexpected` and `expecting` are the three parsers
-  used to generate error messages. Of these, only `expecting` is commonly used."
+  used to generate error messages. Of these, only `expecting` is commonly used.
+  "
   [p msg]
   (parser
     (fn [state context]
@@ -195,7 +201,8 @@
   so does `look-ahead`. Combine with `offer` if this is undesirable.
 
   - Fails: when `p` fails.
-  - Consumes: when `p` fails and consumes some input."
+  - Consumes: when `p` fails and consumes some input.
+  "
   [p]
   (parser
     (fn [state context]
@@ -218,7 +225,8 @@
       - when `p` fails.
       - when `q` succeeds.
   - Consumes:
-      - when `p` consumes some input."
+      - when `p` consumes some input.
+  "
   [p q]
   (->> (fn [xp]
          (parser
@@ -297,7 +305,8 @@
   "This parser applies the parser `p` _one_ or more times, skipping its result.
 
   - Fails: when `p` does not succeed at least once.
-  - Consumes: when `p` consumes some input."
+  - Consumes: when `p` consumes some input.
+  "
   [p]
   (after p (skip-zero p)))
 
@@ -323,12 +332,13 @@
                                     (error/expecting (or msg (some-> (meta pred) ::expecting)))))))))))
 
 (def ^{:doc "This parser accepts a token when `(pred token)` returns logical true, and
-             optional expecting `msg`. The `pred` can carry expecting error message in
-             `::expecting` metadata. See also `token-fn` for customized version of the
-             parser.
+  optional expecting `msg`. The `pred` can carry expecting error message in
+  `::expecting` metadata. See also `token-fn` for customized version of the
+  parser.
 
-             - Fails: when `(pred token)` return logical false.
-             - Consumes: when succeeds."
+  - Fails: when `(pred token)` return logical false.
+  - Consumes: when succeeds.
+  "
        :arglists '([pred] [pred, msg])}
   token
   (token* {}))
@@ -366,8 +376,9 @@
 
 (def ^{:doc "Parses a sequence of tokens given by `ts` and returns `ts`.
 
-            - Fails: when any of tokens don't match the input.
-            - Consumes: when at least first token match the input."
+  - Fails: when any of tokens don't match the input.
+  - Consumes: when at least first token match the input.
+  "
        :arglists '([ts])}
   tokens
   (tokens* {}))
@@ -376,14 +387,16 @@
   "This parser accepts any kind of token. Returns the accepted token.
 
   - Fails: at the end of input.
-  - Consumes: when succeeds."
+  - Consumes: when succeeds.
+  "
   (token any?))
 
 (def eof
   "This parser only succeeds with value `::eof` at the end of the input.
 
   - Fails: when input is not completely consumed.
-  - Consumes: never."
+  - Consumes: never.
+  "
   (parser
     (fn [state context]
       (if-let [input (seq (state/input state))]
@@ -400,7 +413,8 @@
   Returns a sequence of values returned by every parser.
 
   - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input."
+  - Consumes: when any of tried parsers consumes some input.
+  "
   [ps]
   (if-let [p (first ps)]
     (bind-let [x p, xs (each (rest ps))]
@@ -413,7 +427,8 @@
   arity version of the `each` parser.
 
   - Fails: when any of tried parsers fails.
-  - Consumes: when any of tried parsers consumes some input."
+  - Consumes: when any of tried parsers consumes some input.
+  "
   [p q & ps]
   (each (cons p (cons q ps))))
 
@@ -433,7 +448,8 @@
   The parser is called _predictive_ since `q` is only tried when parser `p`
   didn't consume any input (i.e. the look ahead is 1). This non-backtracking
   behaviour allows for both an efficient implementation of the parser
-  combinators and the generation of good error messages."
+  combinators and the generation of good error messages.
+  "
   ([p q]
    (parser
      (fn [state context]
@@ -455,7 +471,8 @@
   and behaves like `option` combinator.
 
   - Fails: when `p` fails and consumes come input.
-  - Consumes: when `p` consumes some input."
+  - Consumes: when `p` consumes some input.
+  "
   ([p] (optional p nil))
   ([p x]
    (choice p (result x))))

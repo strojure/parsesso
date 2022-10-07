@@ -13,16 +13,14 @@
   [c]
   (pr-str (str c)))
 
-(def ^{:doc
-       "This parser succeeds for any character for which the supplied predicate
-       function returns `true`. Returns the character that is actually parsed.
-       Accepts optional second argument for expecting error message.
+(def ^{:doc "This parser succeeds for any character for which the supplied predicate
+  function returns `true`. Returns the character that is actually parsed.
+  Accepts optional second argument for expecting error message.
 
-           (def digit
-             (char #(Character/isDigit ^char %)))
-       "
-       :arglists
-       '([pred] [pred, msg])}
+      (def digit
+        (char #(Character/isDigit ^char %)))
+  "
+       :arglists '([pred] [pred, msg])}
   char
   (p/token* {:render-token-fn render-char}))
 
@@ -57,12 +55,12 @@
   (fn [c]
     (re-find re (str c))))
 
-(def ^{:doc
-       "Parses a sequence of characters given by `s`. Returns `s`.
+(def ^{:doc "Parses a sequence of characters given by `s`.
+  Returns `s`.
 
-           (def div-or-mod
-             (choice (string \"div\") (string \"mod\")))
-       "
+      (def div-or-mod
+        (choice (string \"div\") (string \"mod\")))
+  "
        :arglists '([s])}
   string
   (p/tokens* {:render-token-fn render-char}))
