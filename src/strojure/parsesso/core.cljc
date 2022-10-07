@@ -1,11 +1,12 @@
-(ns strojure.parsesso.parser
+(ns strojure.parsesso.core
   (:require [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]
-            [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as reply #?@(:cljs (:refer [replace]))]
-            [strojure.parsesso.impl.state :as state])
+            [strojure.parsesso.impl.state :as state]
+            [strojure.parsesso.parser.pos :as pos]
+            [strojure.parsesso.parser.render :as render])
   #?(:clj  (:import (clojure.lang ISeq))
-     :cljs (:require-macros [strojure.parsesso.parser :refer [bind-let do-parser]])))
+     :cljs (:require-macros [strojure.parsesso.core :refer [bind-let do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -329,7 +330,7 @@
          (let [tok (#?(:clj .first :cljs -first) input)]
            (if (pred tok)
              (reply/c-ok context (state/next-state state tok) tok)
-             (reply/e-err context (-> (error/sys-unexpected state (delay (parser/render tok)))
+             (reply/e-err context (-> (error/sys-unexpected state (delay (render/render tok)))
                                       (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
          (reply/e-err context (-> (error/sys-unexpected-eof state)
                                   (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
@@ -355,7 +356,7 @@
                (reply/c-ok context new-state tokens))
              (not input)
              (reply-err context (-> (error/sys-unexpected-eof state)
-                                    (error/expecting (delay (parser/render tokens)))))
+                                    (error/expecting (delay (render/render tokens)))))
              :else
              (let [t (#?(:clj .first :cljs -first) ts)
                    tok (#?(:clj .first :cljs -first) input)]
@@ -363,8 +364,8 @@
                  (recur (#?(:clj .next :cljs -next) ts)
                         (#?(:clj .next :cljs -next) input)
                         reply/c-err)
-                 (reply-err context (-> (error/sys-unexpected state (delay (parser/render tok)))
-                                        (error/expecting (delay (parser/render tokens)))))))))
+                 (reply-err context (-> (error/sys-unexpected state (delay (render/render tok)))
+                                        (error/expecting (delay (render/render tokens)))))))))
          (reply/e-ok context state tokens))))))
 
 (def any-token

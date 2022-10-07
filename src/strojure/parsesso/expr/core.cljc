@@ -1,5 +1,5 @@
-(ns strojure.parsesso.expr
-  (:require [strojure.parsesso.parser :as p]))
+(ns strojure.parsesso.expr.core
+  (:require [strojure.parsesso.core :as p]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))

@@ -1,7 +1,7 @@
-(ns strojure.parsesso.parser-t
+(ns strojure.parsesso.core-test
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest testing]]
-            [strojure.parsesso.parser :as p]))
+            [strojure.parsesso.core :as p]))
 
 #_(test/run-tests)
 
@@ -331,7 +331,7 @@
                           p/eof)
        [])
     {:consumed false, :error ["error at index 0:"
-                              "unexpected :strojure.parsesso.parser/eof"]}
+                              "unexpected :strojure.parsesso.core/eof"]}
 
     (p (p/not-followed-by (tok :X)
                           (tok :A))
@@ -365,7 +365,7 @@
                           p/eof)
        [:X])
     {:consumed true, :error ["error at index 1:"
-                             "unexpected :strojure.parsesso.parser/eof"]}
+                             "unexpected :strojure.parsesso.core/eof"]}
 
     ))
 

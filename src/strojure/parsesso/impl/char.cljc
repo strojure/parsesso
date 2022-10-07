@@ -1,4 +1,4 @@
-(ns strojure.parsesso.impl.text
+(ns strojure.parsesso.impl.char
   #?(:cljs (:import [goog.string StringBuffer])))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -6,15 +6,15 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn join-chars
+(defn deep-join
   "Builds string from (possibly nested) collections of parsed characters and
   strings."
   ([x] (-> #?(:clj (StringBuilder.) :cljs (StringBuffer.))
-           (join-chars x)
+           (deep-join x)
            (str)))
   ([sb x]
    (if (sequential? x)
-     (reduce join-chars sb x)
+     (reduce deep-join sb x)
      #?(:clj  (.append ^StringBuilder sb (str x))
         :cljs (.append ^StringBuffer sb (str x))))))
 

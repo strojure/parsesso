@@ -1,7 +1,7 @@
 (ns perf.bench
   (:require [blancas.kern.core :as krn]
-            [strojure.parsesso.parser :as p]
-            [strojure.parsesso.text :as t]
+            [strojure.parsesso.char.core :as char]
+            [strojure.parsesso.core :as p]
             [the.parsatron :as ptr]))
 
 (set! *warn-on-reflection* true)
@@ -82,7 +82,7 @@
 
 ;;; Parse letters
 
-(p/parse (p/many-zero (p/token t/alpha?)) "abc")
+(p/parse (p/many-zero (p/token char/alpha?)) "abc")
 ;             Execution time mean : 906,599211 ns
 ;    Execution time std-deviation : 185,143135 ns
 ;   Execution time lower quantile : 690,083851 ns ( 2,5%)
@@ -104,7 +104,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (t/++ (p/many-zero (p/token t/alpha?))) "abc")
+(p/parse (char/++ (p/many-zero (p/token char/alpha?))) "abc")
 ;             Execution time mean : 1,466334 µs
 ;    Execution time std-deviation : 338,852792 ns
 ;   Execution time lower quantile : 1,217230 µs ( 2,5%)

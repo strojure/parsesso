@@ -37,27 +37,6 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defprotocol IRender
-  (render [obj]))
-
-#?(:clj
-   (extend-protocol IRender
-     nil
-     (render [x] (pr-str x))
-     Object
-     (render [x] (pr-str x))
-     Character
-     (render [c] (pr-str (str c))))
-
-   :cljs
-   (extend-protocol IRender
-     nil
-     (render [x] (pr-str x))
-     object
-     (render [x] (pr-str x))))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
 (defn e-ok-throw-empty-input
   [_ _]
   (throw (ex-info (str "Combinator is applied to a parser that accepts an empty input.") {})))

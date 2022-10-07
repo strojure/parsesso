@@ -1,5 +1,5 @@
 (ns strojure.parsesso.impl.state
-  (:require [strojure.parsesso.impl.pos :as pos])
+  (:require [strojure.parsesso.parser.pos :as pos])
   #?(:clj (:import (clojure.lang ISeq))))
 
 #?(:clj  (set! *warn-on-reflection* true)

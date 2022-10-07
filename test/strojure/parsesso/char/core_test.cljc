@@ -1,8 +1,8 @@
-(ns strojure.parsesso.text-t
+(ns strojure.parsesso.char.core-test
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest]]
-            [strojure.parsesso.parser :as p]
-            [strojure.parsesso.text :as t]))
+            [strojure.parsesso.char.core :as char]
+            [strojure.parsesso.core :as p]))
 
 #_(test/run-tests)
 
@@ -24,40 +24,40 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest one-of-t
+(deftest one-of?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/token (t/one-of? "abc"))
+    (p (p/token (char/one-of? "abc"))
        "a")
     {:consumed true, :value (c "a")}
 
-    (p (p/token (t/one-of? "abc"))
+    (p (p/token (char/one-of? "abc"))
        "b")
     {:consumed true, :value (c "b")}
 
-    (p (p/token (t/one-of? "abc"))
+    (p (p/token (char/one-of? "abc"))
        "c")
     {:consumed true, :value (c "c")}
 
-    (p (p/token (t/one-of? "abc"))
+    (p (p/token (char/one-of? "abc"))
        "d")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"d\""
                               "expecting character of \"abc\""]}
 
-    (p (p/token (t/one-of? "abc"))
+    (p (p/token (char/one-of? "abc"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
                               "expecting character of \"abc\""]}
 
-    (p (p/token (t/one-of? "a"))
+    (p (p/token (char/one-of? "a"))
        "d")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"d\""
                               "expecting \"a\""]}
 
-    (p (p/token (t/one-of? "a"))
+    (p (p/token (char/one-of? "a"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -65,32 +65,32 @@
 
     ))
 
-(deftest not-of-t
+(deftest not-of?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/token (t/not-of? "abc"))
+    (p (p/token (char/not-of? "abc"))
        "x")
     {:consumed true, :value (c "x")}
 
-    (p (p/token (t/not-of? "abc"))
+    (p (p/token (char/not-of? "abc"))
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting character not of \"abc\""]}
 
-    (p (p/token (t/not-of? "abc"))
+    (p (p/token (char/not-of? "abc"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
                               "expecting character not of \"abc\""]}
 
-    (p (p/token (t/not-of? "a"))
+    (p (p/token (char/not-of? "a"))
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting not \"a\" character"]}
 
-    (p (p/token (t/not-of? "a"))
+    (p (p/token (char/not-of? "a"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -98,20 +98,20 @@
 
     ))
 
-(deftest match-t
+(deftest re-match?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token (t/match? #"[a-z]")))
+    (p (p/many-zero (p/token (char/re-match? #"[a-z]")))
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p (p/token (t/match? #"[a-z]"))
+    (p (p/token (char/re-match? #"[a-z]"))
        "A")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"A\""
                               "expecting character matching pattern #\"[a-z]\""]}
 
-    (p (p/token (t/match? #"[a-z]"))
+    (p (p/token (char/re-match? #"[a-z]"))
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -121,20 +121,20 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest alpha-t
+(deftest alpha?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/token t/alpha?)
+    (p (p/token char/alpha?)
        "a")
     {:consumed true, :value (c "a")}
 
-    (p (p/token t/alpha?)
+    (p (p/token char/alpha?)
        "1")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""
                               "expecting alphabetic character"]}
 
-    (p (p/token t/alpha?)
+    (p (p/token char/alpha?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -142,20 +142,20 @@
 
     ))
 
-(deftest upper-t
+(deftest upper?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token t/upper?))
+    (p (p/many-zero (p/token char/upper?))
        "ABC")
     {:consumed true, :value (seq "ABC")}
 
-    (p (p/token t/upper?)
+    (p (p/token char/upper?)
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting upper case character"]}
 
-    (p (p/token t/upper?)
+    (p (p/token char/upper?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -163,20 +163,20 @@
 
     ))
 
-(deftest lower-t
+(deftest lower?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token t/lower?))
+    (p (p/many-zero (p/token char/lower?))
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p (p/token t/lower?)
+    (p (p/token char/lower?)
        "A")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"A\""
                               "expecting lower case character"]}
 
-    (p (p/token t/lower?)
+    (p (p/token char/lower?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -184,20 +184,20 @@
 
     ))
 
-(deftest numeric-t
+(deftest numeric?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token t/numeric?))
+    (p (p/many-zero (p/token char/numeric?))
        "01234567890")
     {:consumed true, :value (seq "01234567890")}
 
-    (p (p/token t/numeric?)
+    (p (p/token char/numeric?)
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting numeric character"]}
 
-    (p (p/token t/numeric?)
+    (p (p/token char/numeric?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -205,20 +205,20 @@
 
     ))
 
-(deftest alpha-numeric-t
+(deftest alpha-numeric?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token t/alpha-numeric?))
+    (p (p/many-zero (p/token char/alpha-numeric?))
        "12345abcABC")
     {:consumed true, :value (seq "12345abcABC")}
 
-    (p (p/token t/alpha-numeric?)
+    (p (p/token char/alpha-numeric?)
        "-")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"-\""
                               "expecting alphanumeric character"]}
 
-    (p (p/token t/alpha-numeric?)
+    (p (p/token char/alpha-numeric?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -226,20 +226,20 @@
 
     ))
 
-(deftest whitespace-t
+(deftest whitespace?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (p/token t/whitespace?))
+    (p (p/many-zero (p/token char/whitespace?))
        " \t\r\n")
     {:consumed true, :value (seq " \t\r\n")}
 
-    (p (p/token t/whitespace?)
+    (p (p/token char/whitespace?)
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting whitespace character"]}
 
-    (p (p/token t/whitespace?)
+    (p (p/token char/whitespace?)
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -250,33 +250,33 @@
 (deftest newline-t
   (test/are [expr result] (= result expr)
 
-    (p t/newline
+    (p char/newline
        "\n")
     {:consumed true, :value (c "\n")}
 
-    (p t/newline
+    (p char/newline
        "\r\n")
     {:consumed true, :value (c "\n")}
 
-    (p t/newline
+    (p char/newline
        "\ra")
     {:consumed true, :error ["error at line 1, column 2:"
                              "unexpected \"a\""
                              "expecting \"\\n\""]}
 
-    (p t/newline
+    (p char/newline
        "\r")
     {:consumed true, :error ["error at line 1, column 2:"
                              "unexpected end of input"
                              "expecting \"\\n\""]}
 
-    (p t/newline
+    (p char/newline
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
                               "expecting \"\\n\" or \"\\r\""]}
 
-    (p t/newline
+    (p char/newline
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
@@ -286,23 +286,23 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest plus-plus-t
+(deftest ++-t
   (test/are [expr result] (= result expr)
 
-    (p (t/++ (p/token (t/one-of? "abc")))
+    (p (char/++ (p/token (char/one-of? "abc")))
        "abc")
     {:consumed true, :value "a"}
 
-    (p (t/++ (p/each [(p/many-some (p/token (t/one-of? "abc")))
-                      (p/many-some (p/token (t/one-of? "123")))]))
+    (p (char/++ (p/each [(p/many-some (p/token (char/one-of? "abc")))
+                         (p/many-some (p/token (char/one-of? "123")))]))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (t/++ (p/many-zero (p/token (t/one-of? "abc"))))
+    (p (char/++ (p/many-zero (p/token (char/one-of? "abc"))))
        "123")
     {:consumed false, :value ""}
 
-    (p (t/++ (p/token (t/one-of? "abc")))
+    (p (char/++ (p/token (char/one-of? "abc")))
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""

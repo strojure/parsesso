@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ClojureProjectResolveSettings">
-    <item key="strojure.parsesso.parser/bind-let" resolves-as="clojure.core/let" />
+    <item key="strojure.parsesso.core/bind-let" resolves-as="clojure.core/let" />
     <item key="cljs.core/defprotocol" resolves-as="clojure.core/defprotocol" />
     <currentScheme>PROJECT</currentScheme>
   </component>

@@ -1,9 +1,9 @@
-(ns strojure.parsesso.text
+(ns strojure.parsesso.char.core
   (:refer-clojure :exclude [newline])
   (:require #?(:cljs [clojure.string :as string])
-            [strojure.parsesso.impl.parser :as parser]
-            [strojure.parsesso.impl.text :as impl]
-            [strojure.parsesso.parser :as p]))
+            [strojure.parsesso.core :as p]
+            [strojure.parsesso.impl.char :as impl]
+            [strojure.parsesso.parser.render :as render]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -15,7 +15,7 @@
   string of characters `cs`."
   [cs]
   ^{::p/expecting (delay (if (second cs) (str "character of " (pr-str cs))
-                                         (parser/render cs)))}
+                                         (render/render cs)))}
   (fn [c]
     #?(:clj
        (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
@@ -29,9 +29,9 @@
   (-> (complement (one-of? cs))
       (p/expecting-meta (delay (if (second cs)
                                  (str "character not of " (pr-str cs))
-                                 (str "not " (parser/render cs) " character"))))))
+                                 (str "not " (render/render cs) " character"))))))
 
-(defn match?
+(defn re-match?
   "Predicate function returning true if the character `c` is matching regex
   pattern `re`."
   [re]
@@ -113,15 +113,15 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn join-chars
+(defn deep-join
   "Builds string from (possibly nested) collections of parsed characters and
   strings."
   [x]
-  (impl/join-chars x))
+  (impl/deep-join x))
 
 (defn ++
   "This parser joins all characters parsed by `p` to single string."
   [p]
-  (p/fmap join-chars p))
+  (p/fmap deep-join p))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
