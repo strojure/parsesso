@@ -349,6 +349,7 @@
   - Fails: when `(pred token)` return logical false.
   - Consumes: when succeeds.
   "
+  {:inline (fn [pred] `(token ~pred nil)) :inline-arities #{1}}
   ([pred] (token pred nil))
   ([pred msg]
    (parser
@@ -370,6 +371,7 @@
   - Fails: when any of tokens don't match the input.
   - Consumes: when at least first token matches the input.
   "
+  {:inline (fn [tokens] `(word ~tokens =)) :inline-arities #{1}}
   ([tokens] (word tokens =))
   ([tokens, test-fn]
    (parser
