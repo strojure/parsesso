@@ -637,7 +637,7 @@
   "Executes parser `p` given `input` sequence of tokens, returns reply record.
   See `parse` for available options."
   {:arglists '([p input]
-               [p input {:keys [initial-pos, tab-size, user-state] :as options}])}
+               [p input {:keys [pos, tab, user-state] :as options}])}
   ([p input]
    (parser/run p (state/init-state input (pos/init-pos nil input) nil)))
   ([p input opts]
@@ -649,16 +649,16 @@
 
   Options:
 
-  **`:initial-pos`** The instance of InputPos or keyword for `pos/init-pos` to
+  **`:pos`** The instance of InputPos or keyword for `pos/init-pos` to
   init parser pos. By default pos is initialized to TextPos for string input or
   first token of char type, or IndexPos otherwise.
 
-  **`:tab-size`** Tab size for TextPos, which is 8 by default.
+  **`:tab`** Tab size for TextPos, which is 8 by default.
 
   **`:user-state`** Initial value of user state.
   "
   {:arglists '([p input]
-               [p input {:keys [initial-pos, tab-size, user-state] :as options}])}
+               [p input {:keys [pos, tab, user-state] :as options}])}
   ([p input]
    (-> (parse* p input) (reply/value)))
   ([p input opts]

@@ -13,10 +13,10 @@
 
 (defmulti init-pos
   "Returns initial InputPos for given options and input."
-  (fn [opts _input] (:initial-pos opts)))
+  (fn [opts _input] (:pos opts)))
 
 (defmethod init-pos :default
-  [{pos :initial-pos} _]
+  [{:keys [pos]} _]
   (when (keyword? pos)
     (throw (ex-info (str "Cannot init input position for: " pos) {}))
     pos))
@@ -89,6 +89,6 @@
 
 (defmethod init-pos :text
   [opts _]
-  (TextPos. (or (:tab-size opts) 8) 1 1))
+  (TextPos. (or (:tab opts) 8) 1 1))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
