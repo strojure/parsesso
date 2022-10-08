@@ -12,10 +12,16 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^{:arglists '([f])}
+(defn ^{:arglists '([f])}
   parser
-  "Returns instance of parser for the function `(fn [state context])`."
-  parser/->Parser)
+  "Returns instance of parser for the function `(fn f [state context])`.
+  Optional `(fn f1 [arg] parser)` defines function `(p arg)`, this can be used
+  to define `eof` and `(eof x)` simultaneously."
+  {:inline (fn [f] `(parser/->Parser ~f nil)) :inline-arities #{1}}
+  ([f]
+   (parser/->Parser f nil))
+  ([f f1]
+   (parser/->Parser f f1)))
 
 (def ^{:arglists '([p])}
   parser?
@@ -407,18 +413,22 @@
   "
   (token any?))
 
-(def eof
-  "This parser only succeeds with value `::eof` at the end of the input.
+(def ^{:arglists '([] [x])}
+  eof
+  "This parser only succeeds with value `x` at the end of the input.
 
   - Fails: when input is not completely consumed.
   - Consumes: never.
   "
-  (parser
-    (fn [state context]
-      (if-let [input (seq (state/input state))]
-        (reply/e-err context (-> (error/unexpected state (delay (pr-str (first input))))
-                                 (error/expecting "end of input")))
-        (reply/e-ok context state ::eof)))))
+  (letfn [(eof* [x]
+            (parser
+              (fn [state context]
+                (if-let [input (seq (state/input state))]
+                  (reply/e-err context (-> (error/unexpected state (delay (pr-str (first input))))
+                                           (error/expecting "end of input")))
+                  (reply/e-ok context state x)))
+              eof*))]
+    (eof* nil)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

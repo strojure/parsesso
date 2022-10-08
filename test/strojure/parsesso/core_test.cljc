@@ -377,13 +377,13 @@
                                "unexpected :A"]}
 
       (p (p/not-followed-by (p/result :X)
-                            p/eof)
+                            (p/eof))
          [])
       {:consumed false, :error ["error at index 0:"
                                 "unexpected end of input"]}
 
       (p (p/not-followed-by (tok :X)
-                            p/eof)
+                            (p/eof))
          [:X])
       {:consumed true, :error ["error at index 1:"
                                "unexpected end of input"]}
@@ -615,7 +615,11 @@
 
     (p p/eof
        [])
-    {:consumed false, :value ::p/eof}
+    {:consumed false, :value nil}
+
+    (p (p/eof :ok)
+       [])
+    {:consumed false, :value :ok}
 
     (p p/eof
        [:A])
