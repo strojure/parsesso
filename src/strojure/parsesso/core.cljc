@@ -639,11 +639,9 @@
   {:arglists '([p input]
                [p input {:keys [initial-pos, tab-size, user-state] :as options}])}
   ([p input]
-   (assert (parser? p) (str "Requires parser argument: " (pr-str p)))
-   (p (state/init-state input (pos/init-pos nil input) nil)))
+   (parser/run p (state/init-state input (pos/init-pos nil input) nil)))
   ([p input opts]
-   (assert (parser? p) (str "Requires parser argument: " (pr-str p)))
-   (p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
+   (parser/run p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
 
 (defn parse
   "Executes parser `p` given `input` sequence of tokens, returns result value or

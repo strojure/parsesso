@@ -7,34 +7,31 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-#?(:clj
-   (deftype Continue [f] IFn (invoke [_] (f)))
-   :cljs
-   (deftype Continue [f] IFn (-invoke [_] (f))))
+#?(:clj  (deftype Continue [f]
+           IFn (invoke [_] (f)))
 
-(defn- run
-  "Executes continuation loop."
-  [f state]
-  (loop [ret (f state (r/new-context))]
-    (if (instance? Continue ret)
-      (recur (ret))
-      ret)))
+   :cljs (deftype Continue [f]
+           IFn (-invoke [_] (f))))
 
-#?(:clj
-   (deftype Parser [f]
-     IFn
-     (invoke [_p state] (run f state))
-     (invoke [_p state context] (Continue. (fn [] (f state context)))))
-   :cljs
-   (deftype Parser [f]
-     IFn
-     (-invoke [_p state] (run f state))
-     (-invoke [_p state context] (Continue. (fn [] (f state context))))))
+#?(:clj  (deftype Parser [f]
+           IFn (invoke [_p state context] (Continue. (fn [] (f state context)))))
+
+   :cljs (deftype Parser [f]
+           IFn (-invoke [_p state context] (Continue. (fn [] (f state context))))))
 
 (defn parser?
   "True if `p` is instance of parser."
   [p]
   (instance? Parser p))
+
+(defn run
+  "Executes continuation loop over the parser `p`."
+  [p state]
+  (assert (parser? p) (str "Cannot run as parser: " (pr-str p)))
+  (loop [ret (p state (r/new-context))]
+    (if (instance? Continue ret)
+      (recur (ret))
+      ret)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
