@@ -297,81 +297,139 @@
     ))
 
 (deftest not-followed-by-t
-  (test/are [expr result] (= result expr)
+  (testing "not-followed-by [p q]"
+    (test/are [expr result] (= result expr)
 
-    (p (p/not-followed-by (p/result :X)
-                          (tok :A))
-       [:B])
-    {:consumed false, :value :X}
+      (p (p/not-followed-by (p/result :X)
+                            (tok :A))
+         [:B])
+      {:consumed false, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          (p/each [(tok :A) (tok :B)]))
-       [:A :A])
-    {:consumed false, :value :X}
+      (p (p/not-followed-by (tok :X)
+                            (tok :A))
+         [:X :B])
+      {:consumed true, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          (tok :A))
-       [])
-    {:consumed false, :value :X}
+      (p (p/not-followed-by (p/result :X)
+                            (p/after (tok :A) (tok :B)))
+         [:A :A])
+      {:consumed false, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          p/any-token)
-       [])
-    {:consumed false, :value :X}
+      (p (p/not-followed-by (tok :X)
+                            (p/after (tok :A) (tok :B)))
+         [:X :A :A])
+      {:consumed true, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          (tok :A))
-       [:A])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected :A"]}
+      (p (p/not-followed-by (p/result :X)
+                            (tok :A))
+         [])
+      {:consumed false, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          (p/each [(tok :A) (tok :B)]))
-       [:A :B])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected (:A :B)"]}
+      (p (p/not-followed-by (tok :X)
+                            (tok :A))
+         [:X])
+      {:consumed true, :value :X}
 
-    (p (p/not-followed-by (p/result :X)
-                          p/eof)
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected :strojure.parsesso.core/eof"]}
+      (p (p/not-followed-by (p/result :X)
+                            p/any-token)
+         [])
+      {:consumed false, :value :X}
 
-    (p (p/not-followed-by (tok :X)
-                          (tok :A))
-       [:X :B])
-    {:consumed true, :value :X}
+      (p (p/not-followed-by (tok :X)
+                            p/any-token)
+         [:X])
+      {:consumed true, :value :X}
 
-    (p (p/not-followed-by (tok :X)
-                          (p/each [(tok :A) (tok :B)]))
-       [:X :A :A])
-    {:consumed true, :value :X}
+      (p (p/not-followed-by (p/result :X)
+                            (tok :A))
+         [:A])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
 
-    (p (p/not-followed-by (tok :X)
-                          (tok :A))
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected end of input"]}
+      (p (p/not-followed-by (tok :X)
+                            (tok :A))
+         [:X :A])
+      {:consumed true, :error ["error at index 1:"
+                               "unexpected :A"]}
 
-    (p (p/not-followed-by (tok :X)
-                          (tok :A))
-       [:X :A])
-    {:consumed true, :error ["error at index 1:"
-                             "unexpected :A"]}
+      (p (p/not-followed-by (p/result :X)
+                            (p/after (tok :A) (tok :B)))
+         [:A :B])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
 
-    (p (p/not-followed-by (tok :X)
-                          (p/each [(tok :A) (tok :B)]))
-       [:X :A :B])
-    {:consumed true, :error ["error at index 1:"
-                             "unexpected (:A :B)"]}
+      (p (p/not-followed-by (tok :X)
+                            (p/after (tok :A) (tok :B)))
+         [:X :A :B])
+      {:consumed true, :error ["error at index 1:"
+                               "unexpected :A"]}
 
-    (p (p/not-followed-by (tok :X)
-                          p/eof)
-       [:X])
-    {:consumed true, :error ["error at index 1:"
-                             "unexpected :strojure.parsesso.core/eof"]}
+      (p (p/not-followed-by (p/result :X)
+                            p/any-token)
+         [:A])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
 
-    ))
+      (p (p/not-followed-by (tok :X)
+                            p/any-token)
+         [:X :A])
+      {:consumed true, :error ["error at index 1:"
+                               "unexpected :A"]}
+
+      (p (p/not-followed-by (p/result :X)
+                            p/eof)
+         [])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected end of input"]}
+
+      (p (p/not-followed-by (tok :X)
+                            p/eof)
+         [:X])
+      {:consumed true, :error ["error at index 1:"
+                               "unexpected end of input"]}
+
+      ))
+
+  (testing "not-followed-by [q]"
+    (test/are [expr result] (= result expr)
+
+      (p (p/not-followed-by (tok :A))
+         [:B])
+      {:consumed false, :value nil}
+
+      (p (p/not-followed-by (p/after (tok :A) (tok :B)))
+         [:A :A])
+      {:consumed false, :value nil}
+
+      (p (p/not-followed-by (tok :A))
+         [])
+      {:consumed false, :value nil}
+
+      (p (p/not-followed-by p/any-token)
+         [])
+      {:consumed false, :value nil}
+
+      (p (p/not-followed-by (tok :A))
+         [:A])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
+
+      (p (p/not-followed-by (p/after (tok :A) (tok :B)))
+         [:A :B])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
+
+      (p (p/not-followed-by p/any-token)
+         [:A])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :A"]}
+
+      (p (p/not-followed-by p/eof)
+         [])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected end of input"]}
+
+      )))
 
 (deftest many-zero-t
   (test/are [expr result] (= result expr)

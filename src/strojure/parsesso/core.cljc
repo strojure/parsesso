@@ -232,34 +232,40 @@
         (p state (reply/assign context {reply/c-ok e-ok,
                                         reply/e-ok e-ok}))))))
 
-(defn not-followed-by
-  "This parser behaves like parser `p`, except that it only succeeds when parser
-  `q` fails. This parser can be used to implement the 'longest match' rule. For
-  example, when recognizing keywords (for example `let`), we want to make sure
-  that a keyword is not followed by a legal identifier character, in which case
-  the keyword is actually an identifier (for example `lets`). We can write this
-  behaviour as follows:
+(letfn
+  [(not-followed-by* [q]
+     (fn [x]
+       (parser
+         (fn [state context]
+           (letfn [(e-ok [_ _] (reply/e-err context (if-let [input (seq (state/input state))]
+                                                      (error/unexpected state (delay (error/render-object (first input))))
+                                                      (error/sys-unexpected-eof state))))
+                   (e-err [_] (reply/e-ok context state x))]
+             (q state (reply/assign context {reply/c-ok e-ok
+                                             reply/e-ok e-ok
+                                             reply/c-err e-err
+                                             reply/e-err e-err})))))))]
+  (defn not-followed-by
+    "This parser behaves like parser `p`, except that it only succeeds when parser
+    `q` fails. This parser can be used to implement the 'longest match' rule. For
+    example, when recognizing keywords (for example `let`), we want to make sure
+    that a keyword is not followed by a legal identifier character, in which case
+    the keyword is actually an identifier (for example `lets`). We can write this
+    behaviour as follows:
 
-      (-> (word \"let\")
-          (not-followed-by (token t/alpha-numeric?)))
+        (-> (word \"let\")
+            (not-followed-by (token t/alpha-numeric?)))
 
-  - Fails:
-      - when `p` fails.
-      - when `q` succeeds.
-  - Consumes:
-      - when `p` consumes some input.
-  "
-  [p q]
-  (->> (fn [xp]
-         (parser
-           (fn [state context]
-             (letfn [(e-ok [_ xq] (reply/e-err context (error/unexpected state (delay (pr-str xq)))))
-                     (e-err [_] (reply/e-ok context state xp))]
-               (q state (reply/assign context {reply/c-ok e-ok
-                                               reply/e-ok e-ok
-                                               reply/c-err e-err
-                                               reply/e-err e-err}))))))
-       (bind p)))
+    - Fails:
+        - when `p` fails.
+        - when `q` succeeds.
+    - Consumes:
+        - when `p` consumes some input.
+    "
+    ([p q]
+     (bind p (not-followed-by* q)))
+    ([q]
+     ((not-followed-by* q) nil))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
