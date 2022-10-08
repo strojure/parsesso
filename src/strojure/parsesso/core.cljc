@@ -12,8 +12,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn ^{:arglists '([f])}
-  parser
+(defn parser
   "Returns instance of parser for the function `(fn f [state context])`.
   Optional `(fn f1 [arg] parser)` defines function `(p arg)`, this can be used
   to define `eof` and `(eof x)` simultaneously."

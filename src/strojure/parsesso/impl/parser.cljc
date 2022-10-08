@@ -21,19 +21,23 @@
            ;; Returns parser instance for `arg`.
            ;; Allows to define `eof` and `(eof :result)` simultaneously.
            (invoke [p arg]
-             (if f1 (f1 arg)
-                    (throw (ex-info (str "1-arity is not defined for parser " p) {}))))
+             (when-not f1 (throw (ex-info (str "1-arity fn is not defined for the parser " p) {})))
+             (f1 arg))
            ;; Invokes parser function.
            (invoke [_p state context]
-             (Continue. (fn [] (f state context)))))
+             (Continue. (fn [] (f state context))))
+           Object
+           (toString [_] (str f)))
 
    :cljs (deftype Parser [f f1]
            IFn
            (-invoke [this] this)
            (-invoke [p arg]
-             (if f1 (f1 arg)
-                    (throw (ex-info (str "1-arity is not defined for parser " p) {}))))
-           (-invoke [_p state context] (Continue. (fn [] (f state context))))))
+             (when-not f1 (throw (ex-info (str "1-arity fn is not defined for the parser " p) {})))
+             (f1 arg))
+           (-invoke [_p state context] (Continue. (fn [] (f state context))))
+           Object
+           (toString [_] (str f))))
 
 (defn parser?
   "True if `p` is instance of parser."
