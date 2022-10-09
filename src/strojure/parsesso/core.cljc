@@ -69,7 +69,7 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'offer'
+  all possible characters. For example, if the `expr` parser from the 'maybe'
   example would fail, the error message is: '...: expecting expression'. Without
   the `expecting` combinator, the message would be like '...: expecting \"let\"
   or alphabetic character', which is less friendly.
@@ -159,7 +159,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn offer
+(defn maybe
   "This parser behaves like parser `p`, except that it pretends that it hasn't
   consumed any input when an error occurs.
 
@@ -171,10 +171,10 @@
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
-  The `offer` combinator can for example be used to distinguish identifiers and
+  The `maybe` combinator can for example be used to distinguish identifiers and
   reserved words. Both reserved words and identifiers are a sequence of letters.
   Whenever we expect a certain reserved word where we can also expect an
-  identifier we have to use the `offer` combinator. Suppose we write:
+  identifier we have to use the `maybe` combinator. Suppose we write:
 
       (def identifier
         (some-many char/alpha))
@@ -193,10 +193,10 @@
   only tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(word
   \"let\")` parser is already consumed). The right behaviour can be obtained by
-  adding the `offer` combinator:
+  adding the `maybe` combinator:
 
       (def let-expr
-        (after (offer (word \"let\"))
+        (after (maybe (word \"let\"))
                ...))
   "
   [p]
@@ -205,7 +205,7 @@
 
 (defn look-ahead
   "Parses `p` without consuming any input. If `p` fails and consumes some input,
-  so does `look-ahead`. Combine with `offer` if this is undesirable.
+  so does `look-ahead`. Combine with `maybe` if this is undesirable.
 
   - Fails: when `p` fails.
   - Consumes: when `p` fails and consumes some input.
@@ -514,10 +514,10 @@
 
       (def simple-comment
         (after (word \"<!--\")
-               (many-till any-token (offer (word \"-->\")))))
+               (many-till any-token (maybe (word \"-->\")))))
 
   Note the overlapping parsers `any-token` and `(word \"-->\")`, and
-  therefore the use of the `offer` combinator.
+  therefore the use of the `maybe` combinator.
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))
@@ -590,7 +590,7 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (offer (bind-let [x (many-some any-token)]
+  (choice (maybe (bind-let [x (many-some any-token)]
                    (println (str label ": " x))
                    (fail)))
           (result nil)))

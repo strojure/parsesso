@@ -269,7 +269,7 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (p/parse (p/after (p/word "<!--")
-                  (p/many-till p/any-token (p/offer (p/word "-->"))))
+                  (p/many-till p/any-token (p/maybe (p/word "-->"))))
          "<!-- comment -->")
 ;             Execution time mean : 7,944766 µs
 ;    Execution time std-deviation : 658,037391 ns

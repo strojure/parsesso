@@ -224,34 +224,34 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest offer-t
+(deftest maybe-t
   (test/are [expr result] (= result expr)
 
-    (p (p/offer (tok :A))
+    (p (p/maybe (tok :A))
        [:A])
     {:consumed true, :value :A}
 
-    (p (p/offer (tok :A))
+    (p (p/maybe (tok :A))
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/offer (tok :A))
+    (p (p/maybe (tok :A))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/offer (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [:A])
     {:consumed false, :error ["error at index 1:"
                               "Test failure after parsing :A"]}
 
-    (p (p/offer (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/offer (fail-consumed (tok :A)))
+    (p (p/maybe (fail-consumed (tok :A)))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
