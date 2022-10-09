@@ -50,13 +50,17 @@
 
 (defrecord Failure [consumed error])
 
-(def ^{:arglists '([reply])} result?
+(defn result?
   "True if `reply` is parsing result with value."
-  (partial instance? Result))
+  {:inline (fn [reply] `(instance? Result ~reply))}
+  [reply]
+  (instance? Result reply))
 
-(def ^{:arglists '([reply])} error?
+(defn error?
   "True if `reply` is parser error."
-  (partial instance? Failure))
+  {:inline (fn [reply] `(instance? Failure ~reply))}
+  [reply]
+  (instance? Failure reply))
 
 (defn value
   "Returns value for Result reply or throws exception otherwise."

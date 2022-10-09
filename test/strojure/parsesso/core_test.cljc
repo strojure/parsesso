@@ -1296,3 +1296,18 @@
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(deftest parse-t
+  (test/are [expr result] (= result expr)
+
+    (p/parse (p/result :ok) [])
+    :ok
+
+    (try (p/parse (p/fail "Error") [])
+         (catch #?@(:clj [Exception e] :cljs [:default e])
+                (ex-message e)))
+    "error at index 0:\nError"
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

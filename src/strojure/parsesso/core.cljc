@@ -632,6 +632,7 @@
    (parser/run p (state/init-state input (pos/init-pos nil input) nil)))
   ([p input opts]
    (parser/run p (state/init-state input (pos/init-pos opts input) (:user-state opts)))))
+
 (defn parse
   "Executes parser `p` given `input` sequence of tokens, returns result value or
   throws exception on parsing error.
