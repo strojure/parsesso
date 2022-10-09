@@ -10,15 +10,15 @@
 #?(:clj  (deftype Continue [f] IFn (invoke [_] (f)))
    :cljs (deftype Continue [f] IFn (-invoke [_] (f))))
 
-(defn run
+(defn go
   "Returns continuation for the parser `p`."
   [p state context]
   (Continue. (fn [] (p state context))))
 
-(defn execute
+(defn run
   "Executes parser `p` in continuation loop."
   [p state]
-  (loop [ret (run p state (r/new-context))]
+  (loop [ret (go p state (r/new-context))]
     (if (instance? Continue ret)
       (recur (ret))
       ret)))
