@@ -11,10 +11,9 @@
 (defn do-update-state
   "This parser applies function `f` to the parser state and returns `nil`."
   ([f]
-   (p/parser
-     (fn [state context]
-       (let [s (f state)]
-         (reply/e-ok context s nil)))))
+   (fn [state context]
+     (let [s (f state)]
+       (reply/e-ok context s nil))))
   ([f arg]
    (do-update-state #(f % arg))))
 
@@ -22,10 +21,9 @@
   "This parser applies function `f` to the parser state and returns modified
   parser state."
   ([f]
-   (p/parser
-     (fn [state context]
-       (let [s (f state)]
-         (reply/e-ok context s s)))))
+   (fn [state context]
+     (let [s (f state)]
+       (reply/e-ok context s s))))
   ([f arg]
    (update-parser-state #(f % arg)))
   ([f arg & args]

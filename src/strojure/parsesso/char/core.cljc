@@ -10,106 +10,92 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn one-of?
-  "Predicate function returning true if the character `c` is in the supplied
+(defn one-of
+  "Returns parser and predicate for the character `c` which is in the supplied
   string of characters `cs`."
   [cs]
-  ^{::p/expecting (delay (if (second cs) (str "character of " (pr-str cs))
-                                         (error/render-object cs)))}
-  (fn [c]
-    #?(:clj
-       (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
-       :cljs
-       (string/index-of cs c))))
+  (p/token (fn [c] #?(:clj
+                      (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
+                      :cljs
+                      (string/index-of cs c)))
+           (delay (if (second cs) (str "character of " (pr-str cs))
+                                  (error/render-object cs)))))
 
-(defn not-of?
-  "Predicate function returning true if the character `c` is _not_ in the
+(defn not-of
+  "Returns parser and predicate for the character `c` which is _not_ in the
   supplied string of characters `cs`."
   [cs]
-  (-> (complement (one-of? cs))
-      (p/expecting-meta (delay (if (second cs)
-                                 (str "character not of " (pr-str cs))
-                                 (str "not " (error/render-object cs) " character"))))))
+  (p/token (complement (one-of cs))
+           (delay (if (second cs)
+                    (str "character not of " (pr-str cs))
+                    (str "not " (error/render-object cs) " character")))))
 
-(defn re-match?
-  "Predicate function returning true if the character `c` is matching regex
-  pattern `re`."
+(defn re-match
+  "Returns parser and predicate for the character `c` matching regex pattern
+  `re`."
   [re]
-  ^{::p/expecting (delay (str "character matching pattern " (pr-str re)))}
-  (fn [c]
-    (re-find re (str c))))
+  (p/token (fn [c] (re-find re (str c)))
+           (delay (str "character matching pattern " (pr-str re)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^{:arglists '([c])}
-  upper?
-  "True if the character is ASCII 7 bit alphabetic upper case."
-  ^{::p/expecting "upper case character"}
-  (fn [c]
-    #?(:clj
-       (let [c (unchecked-int (.charValue ^Character c))]
-         (and (<= 65 c) (<= c 90)))
-       :cljs
-       (re-find #"[A-Z]" c))))
+(def upper
+  "Parser and predicate for ASCII 7 bit alphabetic upper case character."
+  (p/token (fn [c] #?(:clj
+                      (let [c (unchecked-int (.charValue ^Character c))]
+                        (and (<= 65 c) (<= c 90)))
+                      :cljs
+                      (re-find #"[A-Z]" c)))
+           "upper case character"))
 
-(def ^{:arglists '([c])}
-  lower?
-  "True if the character is ASCII 7 bit alphabetic upper case."
-  ^{::p/expecting "lower case character"}
-  (fn [c]
-    #?(:clj
-       (let [c (unchecked-int (.charValue ^Character c))]
-         (and (<= 97 c) (<= c 122)))
-       :cljs
-       (re-find #"[a-z]" c))))
+(def lower
+  "Parser and predicate for ASCII 7 bit alphabetic upper case character."
+  (p/token (fn [c] #?(:clj
+                      (let [c (unchecked-int (.charValue ^Character c))]
+                        (and (<= 97 c) (<= c 122)))
+                      :cljs
+                      (re-find #"[a-z]" c)))
+           "lower case character"))
 
-(def ^{:arglists '([c])}
-  alpha?
-  "True if the character is ASCII 7 bit alphabetic."
-  ^{::p/expecting "alphabetic character"}
-  (fn [c]
-    #?(:clj
-       (or (upper? c) (lower? c))
-       :cljs
-       (re-find #"[a-zA-Z]" c))))
+(def alpha
+  "Parser and predicate for ASCII 7 bit alphabetic character."
+  (p/token (fn [c] #?(:clj
+                      (or (upper c) (lower c))
+                      :cljs
+                      (re-find #"[a-zA-Z]" c)))
+           "alphabetic character"))
 
-(def ^{:arglists '([c])}
-  numeric?
-  "True if the character is ASCII 7 bit numeric."
-  ^{::p/expecting "numeric character"}
-  (fn [c]
-    #?(:clj
-       (let [c (unchecked-int (.charValue ^Character c))]
-         (and (<= 48 c) (<= c 57)))
-       :cljs
-       (re-find #"[0-9]" c))))
+(def numeric
+  "Parser and predicate for ASCII 7 bit numeric character."
+  (p/token (fn [c] #?(:clj
+                      (let [c (unchecked-int (.charValue ^Character c))]
+                        (and (<= 48 c) (<= c 57)))
+                      :cljs
+                      (re-find #"[0-9]" c)))
+           "numeric character"))
 
-(def ^{:arglists '([c])}
-  alpha-numeric?
-  "True if the character is ASCII 7 bit alphabetic or numeric."
-  ^{::p/expecting "alphanumeric character"}
-  (fn [c]
-    #?(:clj
-       (or (alpha? c) (numeric? c))
-       :cljs
-       (re-find #"[a-zA-Z0-9]" c))))
+(def alpha-numeric
+  "Parser and predicate for ASCII 7 bit alphabetic or numeric character."
+  (p/token (fn [c] #?(:clj
+                      (or (alpha c) (numeric c))
+                      :cljs
+                      (re-find #"[a-zA-Z0-9]" c)))
+           "alphanumeric character"))
 
-(def ^{:arglists '([c])}
-  whitespace?
-  "True if the character is ASCII 7 bit whitespace."
-  ^{::p/expecting "whitespace character"}
-  (fn [c]
-    #?(:clj
-       (Character/isSpace c)
-       :cljs
-       (string/index-of " \n\r\t\f" c))))
+(def whitespace
+  "Parser and predicate for ASCII 7 bit whitespace character."
+  (p/token (fn [c] #?(:clj
+                      (Character/isSpace c)
+                      :cljs
+                      (string/index-of " \n\r\t\f" c)))
+           "whitespace character"))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
-  (p/choice (p/token (one-of? "\n"))
-            (p/after (p/token (one-of? "\r")) (p/token (one-of? "\n")))))
+  (p/choice (one-of "\n")
+            (p/after (one-of "\r") (one-of "\n"))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

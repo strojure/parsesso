@@ -128,7 +128,7 @@
 
 ;;; Parse letters
 
-(p/parse (p/many-zero (p/token char/alpha?)) "abc")
+(p/parse (p/many-zero char/alpha) "abc")
 ;             Execution time mean : 991,422786 ns
 ;    Execution time std-deviation : 97,855368 ns
 ;   Execution time lower quantile : 894,100039 ns ( 2,5%)
@@ -150,7 +150,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (char/++ (p/many-zero (p/token char/alpha?))) "abc")
+(p/parse (char/++ (p/many-zero char/alpha)) "abc")
 ;             Execution time mean : 1,647100 µs
 ;    Execution time std-deviation : 417,012141 ns
 ;   Execution time lower quantile : 1,375958 µs ( 2,5%)
