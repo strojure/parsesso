@@ -121,12 +121,12 @@
                           ...
                           (result (f x y ...))))))
 
-   can be more conveniently be written as:
+  can be more conveniently be written as:
 
-       (bind-let [x p
-                  y q
-                  ...]
-         (result (f x y ...)))
+      (bind-let [x p
+                 y q
+                 ...]
+        (result (f x y ...)))
   "
   [[& bindings] & body]
   (let [[sym p :as pair] (take 2 bindings)]
