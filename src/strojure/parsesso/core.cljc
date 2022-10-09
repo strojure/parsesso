@@ -177,7 +177,7 @@
   identifier we have to use the `maybe` combinator. Suppose we write:
 
       (def identifier
-        (some-many char/alpha))
+        (many-some char/alpha))
 
       (def let-expr
         (after (word \"let\")
