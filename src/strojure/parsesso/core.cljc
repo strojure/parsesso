@@ -154,10 +154,8 @@
 
 (defn update-value
   "This parser applies function `f` to the value returned by the parser `p`."
-  ([p f]
-   (bind p (comp result f)))
-  ([p f & args]
-   (update-value p #(apply f % args))))
+  [p f]
+  (bind p (comp result f)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

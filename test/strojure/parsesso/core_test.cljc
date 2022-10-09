@@ -123,10 +123,6 @@
        [:A])
     {:consumed true, :value "A"}
 
-    (p (p/update-value (tok :A) cons '(:B))
-       [:A])
-    {:consumed true, :value '(:A :B)}
-
     (p (p/update-value (tok :A) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
