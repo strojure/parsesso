@@ -32,10 +32,6 @@
         :state)
     '(:A)
 
-    (-> (p/parse* (state/update-parser-state assoc ::x :X) [:A])
-        ((juxt (comp ::x :value) (comp ::x :state))))
-    [:X :X]
-
     ))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -84,10 +80,6 @@
     (-> (p/parse* (state/update-user-state (constantly ::state)) [:A])
         :state :user)
     ::state
-
-    (-> (p/parse* (state/update-user-state assoc ::x :X) [:A])
-        :state :user)
-    {::x :X}
 
     ))
 

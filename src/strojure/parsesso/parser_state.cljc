@@ -20,14 +20,10 @@
 (defn update-parser-state
   "This parser applies function `f` to the parser state and returns modified
   parser state."
-  ([f]
-   (fn [state context]
-     (let [s (f state)]
-       (reply/e-ok context s s))))
-  ([f arg]
-   (update-parser-state #(f % arg)))
-  ([f arg & args]
-   (update-parser-state #(apply f % arg args))))
+  [f]
+  (fn [state context]
+    (let [s (f state)]
+      (reply/e-ok context s s))))
 
 (def get-parser-state
   "This parser returns the full parser state as a 'State' record."
@@ -68,9 +64,7 @@
                  _ (update-user-state inc)]
         (result x))
   "
-  ([f]
-   (do-update-state state/update-user-state f))
-  ([f & args]
-   (do-update-state state/update-user-state #(apply f % args))))
+  [f]
+  (do-update-state state/update-user-state f))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
