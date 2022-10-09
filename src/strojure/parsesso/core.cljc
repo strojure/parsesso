@@ -12,6 +12,11 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(def ^{:arglists '([obj])}
+  render
+  "Returns string representation of the `obj` in parser error messages."
+  error/render-object)
+
 (defmacro do-parser
   "Delays the evaluation of a parser that was forward (declare)d and
   it has not been defined yet. For use in (def)s of no-arg parsers,
@@ -55,7 +60,7 @@
   "
   [msg]
   (fn [state context]
-    (reply/e-err context (error/unexpected state (or msg (delay (pr-str msg)))))))
+    (reply/e-err context (error/unexpected state (or msg (delay (render msg)))))))
 
 (defn expecting
   "This parser behaves as parser `p`, but whenever the parser `p` fails _without
@@ -218,7 +223,7 @@
      (fn [x]
        (fn [state context]
          (letfn [(e-ok [_ _] (reply/e-err context (if-let [input (seq (state/input state))]
-                                                    (error/unexpected state (delay (error/render-object (first input))))
+                                                    (error/unexpected state (delay (render (first input))))
                                                     (error/sys-unexpected-eof state))))
                  (e-err [_] (reply/e-ok context state x))]
            (parser/go q state (reply/assign context {reply/c-ok e-ok
@@ -340,7 +345,7 @@
         (let [tok (#?(:clj .first :cljs -first) input)]
           (if (pred tok)
             (reply/c-ok context (state/next-state state tok) tok)
-            (reply/e-err context (-> (error/sys-unexpected state (delay (error/render-object tok)))
+            (reply/e-err context (-> (error/sys-unexpected state (delay (render tok)))
                                      (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
         (reply/e-err context (-> (error/sys-unexpected-eof state)
                                  (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
@@ -368,7 +373,7 @@
              (reply/c-ok context new-state tokens))
            (not input)
            (reply-err context (-> (error/sys-unexpected-eof state)
-                                  (error/expecting (delay (error/render-object tokens)))))
+                                  (error/expecting (delay (render tokens)))))
            :else
            (let [w (#?(:clj .first :cljs -first) ws)
                  t (#?(:clj .first :cljs -first) input)]
@@ -376,8 +381,8 @@
                (recur (#?(:clj .next :cljs -next) ws)
                       (#?(:clj .next :cljs -next) input)
                       reply/c-err)
-               (reply-err context (-> (error/sys-unexpected state (delay (error/render-object t)))
-                                      (error/expecting (delay (error/render-object tokens)))))))))
+               (reply-err context (-> (error/sys-unexpected state (delay (render t)))
+                                      (error/expecting (delay (render tokens)))))))))
        (reply/e-ok context state tokens)))))
 
 (def any-token
@@ -401,7 +406,7 @@
               ([x] (eof* x))
               ([state context]
                (if-let [input (seq (state/input state))]
-                 (reply/e-err context (-> (error/unexpected state (delay (pr-str (first input))))
+                 (reply/e-err context (-> (error/unexpected state (delay (render (first input))))
                                           (error/expecting "end of input")))
                  (reply/e-ok context state x)))))]
     (eof* nil)))

@@ -2,8 +2,7 @@
   (:refer-clojure :exclude [newline])
   (:require #?(:cljs [clojure.string :as string])
             [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.char :as impl]
-            [strojure.parsesso.impl.error :as error]))
+            [strojure.parsesso.impl.char :as impl]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -18,8 +17,8 @@
                       (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
                       :cljs
                       (string/index-of cs c)))
-           (delay (if (second cs) (str "character of " (pr-str cs))
-                                  (error/render-object cs)))))
+           (delay (if (second cs) (str "character of " (p/render cs))
+                                  (p/render cs)))))
 
 (defn not-of
   "Returns parser and predicate for the character `c` which is _not_ in the
@@ -27,15 +26,15 @@
   [cs]
   (p/token (complement (one-of cs))
            (delay (if (second cs)
-                    (str "character not of " (pr-str cs))
-                    (str "not " (error/render-object cs) " character")))))
+                    (str "character not of " (p/render cs))
+                    (str "not " (p/render cs) " character")))))
 
 (defn re-match
   "Returns parser and predicate for the character `c` matching regex pattern
   `re`."
   [re]
   (p/token (fn [c] (re-find re (str c)))
-           (delay (str "character matching pattern " (pr-str re)))))
+           (delay (str "character matching pattern " (p/render re)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

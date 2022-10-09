@@ -45,7 +45,7 @@
                              (tok + - * /))
        [+])
     {:consumed false, :error ["error at index 0:"
-                              (str "unexpected " (pr-str +))]}
+                              (str "unexpected " (p/render +))]}
 
     (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
                              (tok + - * /))
@@ -126,7 +126,7 @@
                               (tok + - * /))
        [+])
     {:consumed false, :error ["error at index 0:"
-                              (str "unexpected " (pr-str +))]}
+                              (str "unexpected " (p/render +))]}
 
     (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
                               (tok + - * /))
