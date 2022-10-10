@@ -26,7 +26,7 @@ Parser combinators for Clojure(Script).
 | `label`, `<?>`     | `expecting`       | `<?>`             |                    |
 | `do`               | `bind-let`        | `bind`            | `let->>`           |
 | `>>`               | `after`           | `>>`              | `>>`, `nxt`        |
-| `fmap`             | `with`            | `<?>`             |                    |
+| `fmap`             | `with`            | `<$>`             |                    |
 | `try`              | `maybe`           | `<:>`             | `attempt`          |
 | `lookAhead`        | `look-ahead`      | `look-ahead`      | `lookahead`        |
 | `notFollowedBy`    | `not-followed-by` | `not-followed-by` |                    |
