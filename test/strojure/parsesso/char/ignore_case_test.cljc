@@ -1,7 +1,7 @@
-(ns strojure.parsesso.char.insensitive-test
+(ns strojure.parsesso.char.ignore-case-test
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest]]
-            [strojure.parsesso.char.insensitive :as char*]
+            [strojure.parsesso.char.ignore-case :as char*]
             [strojure.parsesso.core :as p]))
 
 #_(test/run-tests)

@@ -3,7 +3,7 @@
   here because it is very slow."
   (:require [blancas.kern.core :as krn]
             [strojure.parsesso.char.core :as char]
-            [strojure.parsesso.char.insensitive :as char*]
+            [strojure.parsesso.char.ignore-case :as char*]
             [strojure.parsesso.core :as p]
             [the.parsatron :as prt]))
 
