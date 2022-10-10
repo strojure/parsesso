@@ -98,15 +98,10 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn deep-join
+(defn ++
   "Builds string from (possibly nested) collections of parsed characters and
-  strings."
+  strings. To be used with `p/with`."
   [x]
   (impl/deep-join x))
-
-(defn ++
-  "This parser joins all characters parsed by `p` to single string."
-  [p]
-  (-> p (p/update-value deep-join)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

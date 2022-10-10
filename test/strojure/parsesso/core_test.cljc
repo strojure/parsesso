@@ -28,6 +28,95 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest result-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/result :A)
+       [])
+    {:consumed false, :value :A}
+
+    (p (p/result :A)
+       [:B])
+    {:consumed false, :value :A}
+
+    (p (fail-consumed (p/result :A))
+       [])
+    {:consumed false, :value :A}
+
+    ))
+
+(deftest fail-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/fail "Test failure")
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "Test failure"]}
+
+    (p (p/fail "Test failure")
+       [:A])
+    {:consumed false, :error ["error at index 0:"
+                              "Test failure"]}
+
+    (p (p/fail nil)
+       [])
+    {:consumed false, :error ["error at index 0:"]}
+
+    (p (p/fail)
+       [])
+    {:consumed false, :error ["error at index 0:"]}
+
+    ))
+
+(deftest fail-unexpected-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/fail-unexpected "Boom")
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected Boom"]}
+
+    (p (-> (p/fail-unexpected "Boom")
+           (p/expecting "description"))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected Boom"
+                              "expecting description"]}
+
+    (p (p/fail-unexpected nil)
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected nil"]}
+
+    ))
+
+(deftest expecting-t
+  (test/are [expr result] (= result expr)
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting "expectation"))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting expectation"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting (delay "expectation")))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting expectation"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting nil))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "Test failure"]}
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (deftest bind-t
   (test/are [expr result] (= result expr)
 
@@ -99,126 +188,45 @@
 
     ))
 
-(deftest result-t
+(deftest with-t
   (test/are [expr result] (= result expr)
 
-    (p (p/result :A)
-       [])
-    {:consumed false, :value :A}
-
-    (p (p/result :A)
-       [:B])
-    {:consumed false, :value :A}
-
-    (p (fail-consumed (p/result :A))
-       [])
-    {:consumed false, :value :A}
-
-    ))
-
-(deftest update-value-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/update-value (tok :A) name)
+    (p (p/with (tok :A) name)
        [:A])
     {:consumed true, :value "A"}
 
-    (p (p/update-value (tok :A) name)
+    (p (p/with (p/token number?) inc inc)
+       [1])
+    {:consumed true, :value 3}
+
+    (p (p/with (p/token number?) inc inc inc str)
+       [1])
+    {:consumed true, :value "4"}
+
+    (p (p/with (tok :A) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/update-value (tok :A) name)
+    (p (p/with (tok :A) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/update-value (fail-consumed (tok :A)) name)
+    (p (p/with (fail-consumed (tok :A)) name)
        [:A])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/update-value (fail-consumed (tok :A)) name)
+    (p (p/with (fail-consumed (tok :A)) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/update-value (fail-consumed (tok :A)) name)
+    (p (p/with (fail-consumed (tok :A)) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
-
-    ))
-
-;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-(deftest fail-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/fail "Test failure")
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "Test failure"]}
-
-    (p (p/fail "Test failure")
-       [:A])
-    {:consumed false, :error ["error at index 0:"
-                              "Test failure"]}
-
-    (p (p/fail nil)
-       [])
-    {:consumed false, :error ["error at index 0:"]}
-
-    (p (p/fail)
-       [])
-    {:consumed false, :error ["error at index 0:"]}
-
-    ))
-
-(deftest fail-unexpected-t
-  (test/are [expr result] (= result expr)
-
-    (p (p/fail-unexpected "Boom")
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected Boom"]}
-
-    (p (-> (p/fail-unexpected "Boom")
-           (p/expecting "description"))
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected Boom"
-                              "expecting description"]}
-
-    (p (p/fail-unexpected nil)
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected nil"]}
-
-    ))
-
-(deftest expecting-t
-  (test/are [expr result] (= result expr)
-
-    (p (-> (p/fail "Test failure")
-           (p/expecting "expectation"))
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "expecting expectation"
-                              "Test failure"]}
-
-    (p (-> (p/fail "Test failure")
-           (p/expecting (delay "expectation")))
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "expecting expectation"
-                              "Test failure"]}
-
-    (p (-> (p/fail "Test failure")
-           (p/expecting nil))
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "Test failure"]}
 
     ))
 
@@ -426,6 +434,8 @@
                                 "unexpected end of input"]}
 
       )))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest many-zero-t
   (test/are [expr result] (= result expr)
@@ -972,6 +982,8 @@
     {:consumed true, :value (take 10000 (cycle [:A1 :A2 :A3]))}
 
     ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest sep-by-t
 

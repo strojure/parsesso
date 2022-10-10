@@ -150,7 +150,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (char/++ (p/many-zero char/alpha)) "abc")
+(p/parse (p/with (p/many-zero char/alpha) char/++) "abc")
 ;             Execution time mean : 1,647100 µs
 ;    Execution time std-deviation : 417,012141 ns
 ;   Execution time lower quantile : 1,375958 µs ( 2,5%)

@@ -289,20 +289,24 @@
 (deftest ++-t
   (test/are [expr result] (= result expr)
 
-    (p (char/++ (char/one-of "abc"))
+    (p (-> (char/one-of "abc")
+           (p/with char/++))
        "abc")
     {:consumed true, :value "a"}
 
-    (p (char/++ (p/each [(p/many-some (char/one-of "abc"))
-                         (p/many-some (char/one-of "123"))]))
+    (p (-> (p/each [(p/many-some (char/one-of "abc"))
+                    (p/many-some (char/one-of "123"))])
+           (p/with char/++))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (char/++ (p/many-zero (char/one-of "abc")))
+    (p (-> (p/many-zero (char/one-of "abc"))
+           (p/with char/++))
        "123")
     {:consumed false, :value ""}
 
-    (p (char/++ (char/one-of "abc"))
+    (p (-> (char/one-of "abc")
+           (p/with char/++))
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""

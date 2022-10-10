@@ -152,10 +152,20 @@
   ([q qq qqq & more]
    (reduce after (list* q qq qqq more))))
 
-(defn update-value
-  "This parser applies function `f` to the value returned by the parser `p`."
-  [p f]
-  (bind p (comp result f)))
+(defn with
+  "This parser applies series of functions to the result value of the parser `p`.
+
+  - Fails: when `p` fails.
+  - Consumes: when `p` consumes some input.
+  "
+  ([p f]
+   (bind p (fn [x] (result (f x)))))
+  ([p f g]
+   (bind p (fn [x] (result (g (f x))))))
+  ([p f g h]
+   (bind p (fn [x] (result (h (g (f x)))))))
+  ([p f g h & more]
+   (bind p (fn [x] (result (reduce #(%2 %1) x (list* f g h more)))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
