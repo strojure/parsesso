@@ -43,10 +43,10 @@
 ;;; Fail immediately without parsing
 
 (p/parse* (p/fail :x) [])
-;             Execution time mean : 209,345385 ns
-;    Execution time std-deviation : 73,822934 ns
-;   Execution time lower quantile : 155,783672 ns ( 2,5%)
-;   Execution time upper quantile : 298,985303 ns (97,5%)
+;             Execution time mean : 188,952263 ns
+;    Execution time std-deviation : 17,000877 ns
+;   Execution time lower quantile : 172,453755 ns ( 2,5%)
+;   Execution time upper quantile : 210,153699 ns (97,5%)
 
 (krn/parse (krn/fail :x) [])
 ;             Execution time mean : 386,590746 ns
@@ -87,10 +87,10 @@
 ;;; Parse word
 
 (p/parse (p/word "abc") "abc")
-;             Execution time mean : 487,794555 ns
-;    Execution time std-deviation : 125,625337 ns
-;   Execution time lower quantile : 428,076023 ns ( 2,5%)
-;   Execution time upper quantile : 705,007717 ns (97,5%)
+;             Execution time mean : 446,571212 ns
+;    Execution time std-deviation : 23,084230 ns
+;   Execution time lower quantile : 422,298186 ns ( 2,5%)
+;   Execution time upper quantile : 480,017410 ns (97,5%)
 
 (krn/parse (krn/token* "abc") "abc")
 ;             Execution time mean : 4,020720 µs
@@ -109,10 +109,10 @@
 ;;; Parse long word
 
 (p/parse (p/word -input-10000) -input-10000)
-;             Execution time mean : 218,488272 µs
-;    Execution time std-deviation : 17,378108 µs
-;   Execution time lower quantile : 201,064298 µs ( 2,5%)
-;   Execution time upper quantile : 245,166269 µs (97,5%)
+;             Execution time mean : 174,605539 µs
+;    Execution time std-deviation : 12,055341 µs
+;   Execution time lower quantile : 159,804203 µs ( 2,5%)
+;   Execution time upper quantile : 187,098021 µs (97,5%)
 
 (comment
   (krn/parse (krn/token* -input-10000) -input-10000))
@@ -129,10 +129,10 @@
 ;;; Parse letters
 
 (p/parse (p/many-zero char/alpha?) "abc")
-;             Execution time mean : 991,422786 ns
-;    Execution time std-deviation : 97,855368 ns
-;   Execution time lower quantile : 894,100039 ns ( 2,5%)
-;   Execution time upper quantile : 1,133213 µs (97,5%)
+;             Execution time mean : 975,326535 ns
+;    Execution time std-deviation : 65,828611 ns
+;   Execution time lower quantile : 915,594047 ns ( 2,5%)
+;   Execution time upper quantile : 1,059000 µs (97,5%)
 
 (krn/parse (krn/many krn/letter) "abc")
 ;             Execution time mean : 1,911586 µs
@@ -151,39 +151,38 @@
 ;;; Parse letters as string
 
 (p/parse (p/with (p/many-zero char/alpha?) char/++) "abc")
-;             Execution time mean : 1,647100 µs
-;    Execution time std-deviation : 417,012141 ns
-;   Execution time lower quantile : 1,375958 µs ( 2,5%)
-;   Execution time upper quantile : 2,186531 µs (97,5%)
+;             Execution time mean : 1,514160 µs
+;    Execution time std-deviation : 104,898493 ns
+;   Execution time lower quantile : 1,439323 µs ( 2,5%)
+;   Execution time upper quantile : 1,680704 µs (97,5%)
 
 (krn/parse (krn/<+> (krn/many krn/letter)) "abc")
-;             Execution time mean : 5,938304 µs
-;    Execution time std-deviation : 251,680720 ns
-;   Execution time lower quantile : 5,598434 µs ( 2,5%)
-;   Execution time upper quantile : 6,200668 µs (97,5%)
+;             Execution time mean : 5,568215 µs
+;    Execution time std-deviation : 145,037838 ns
+;   Execution time lower quantile : 5,459951 µs ( 2,5%)
+;   Execution time upper quantile : 5,810555 µs (97,5%)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; Parse `many` for long input
 
 (p/parse (p/many-zero (p/token #(= :a %))) -input-10000)
-;             Execution time mean : 1,137599 ms
-;    Execution time std-deviation : 67,330944 µs
-;   Execution time lower quantile : 1,082947 ms ( 2,5%)
-;   Execution time upper quantile : 1,221789 ms (97,5%)
+;             Execution time mean : 1,311809 ms
+;    Execution time std-deviation : 96,377398 µs
+;   Execution time lower quantile : 1,223376 ms ( 2,5%)
+;   Execution time upper quantile : 1,426319 ms (97,5%)
 
 (krn/parse (krn/many (krn/satisfy #(= :a %))) -input-10000)
-;             Execution time mean : 2,011457 ms
-;    Execution time std-deviation : 438,573991 µs
-;   Execution time lower quantile : 1,681130 ms ( 2,5%)
-;   Execution time upper quantile : 2,734318 ms (97,5%)
+;             Execution time mean : 1,928105 ms
+;    Execution time std-deviation : 62,373984 µs
+;   Execution time lower quantile : 1,868339 ms ( 2,5%)
+;   Execution time upper quantile : 2,024112 ms (97,5%)
 
 (prt/run (prt/many (prt/token #(= :a %))) -input-10000)
-;             Execution time mean : 1,306567 sec
-;    Execution time std-deviation : 131,786272 ms
-;   Execution time lower quantile : 1,177467 sec ( 2,5%)
-;   Execution time upper quantile : 1,476126 sec (97,5%)
-
+;             Execution time mean : 1,066323 sec
+;    Execution time std-deviation : 159,363140 ms
+;   Execution time lower quantile : 984,876092 ms ( 2,5%)
+;   Execution time upper quantile : 1,341844 sec (97,5%)
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 ;;; Skip `many` for long input
@@ -233,16 +232,16 @@
 ;;; Wrap with `expecting`
 
 (p/parse (-> (p/result :x) (p/expecting "x")) [])
-;             Execution time mean : 205,228035 ns
-;    Execution time std-deviation : 25,200636 ns
-;   Execution time lower quantile : 178,989629 ns ( 2,5%)
-;   Execution time upper quantile : 241,378676 ns (97,5%)
+;             Execution time mean : 212,033445 ns
+;    Execution time std-deviation : 20,071125 ns
+;   Execution time lower quantile : 196,685023 ns ( 2,5%)
+;   Execution time upper quantile : 238,117212 ns (97,5%)
 
 (krn/parse (krn/<?> (krn/return :x) "x") [])
-;             Execution time mean : 273,629608 ns
-;    Execution time std-deviation : 30,460944 ns
-;   Execution time lower quantile : 243,746902 ns ( 2,5%)
-;   Execution time upper quantile : 320,003770 ns (97,5%)
+;             Execution time mean : 222,587325 ns
+;    Execution time std-deviation : 16,924812 ns
+;   Execution time lower quantile : 205,615791 ns ( 2,5%)
+;   Execution time upper quantile : 240,220579 ns (97,5%)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
