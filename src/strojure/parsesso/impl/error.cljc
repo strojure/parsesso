@@ -19,8 +19,11 @@
 
    :cljs
    (extend-protocol IRenderObject
-     nil,,, (render-object [x] (pr-str x))
-     object (render-object [x] (pr-str x))))
+     nil,,,,, (render-object [x] (pr-str x))
+     object,, (render-object [x] (pr-str x))
+     string,, (render-object [x] (pr-str x))
+     function (render-object [x] (pr-str x))
+     number,, (render-object [x] (str x))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
