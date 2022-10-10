@@ -35,7 +35,7 @@ Parser combinators for Clojure(Script).
 | `skipMany1`        | `skip-some`       | `skip-many1`      |                    |
 | `token`, `satisfy` | `token`           | `satisfy`         | `token`            |
 | `tokens`, `string` | `word`            | `token*`          | `string`           |
-| `<*>`              | `each`            | `<*>`             |                    |
+| `<*>`              | `each`,`tuple`    | `<*>`             |                    |
 | `<!>`, `choice`    | `choice`          | `<!>`             | `either`, `choice` |
 | `option`           | `optional`        | `optional`        |                    |
 | `optional`         | `optional`        | `option`          |                    |
