@@ -1,5 +1,6 @@
 (ns strojure.parsesso.impl.error
   (:require [clojure.string :as string]
+            [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.state :as state]))
 
 #?(:clj  (set! *warn-on-reflection* true)
@@ -78,7 +79,7 @@
           (and m2 (nil? m1)) e2
           :else (let [pos1 (:pos e1)]
                   ;; select the longest match
-                  (case (compare pos1 (:pos e2))
+                  (case (int (pos/compare-pos pos1 (:pos e2)))
                     1 e1, -1 e2, (ParseError. pos1 (reduce conj m1 m2)))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

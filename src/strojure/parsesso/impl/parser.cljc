@@ -1,14 +1,12 @@
 (ns strojure.parsesso.impl.parser
-  (:require [strojure.parsesso.impl.reply :as r])
-  #?(:clj (:import (clojure.lang IFn))))
+  (:require [strojure.parsesso.impl.reply :as r]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-#?(:clj  (deftype Continue [f] IFn (invoke [_] (f)))
-   :cljs (deftype Continue [f] IFn (-invoke [_] (f))))
+(deftype Continue [f])
 
 (defn go
   "Returns continuation for the parser `p`."
@@ -20,7 +18,7 @@
   [p state]
   (loop [ret (go p state (r/new-context))]
     (if (instance? Continue ret)
-      (recur (ret))
+      (recur ((.-f ^Continue ret)))
       ret)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

@@ -7,7 +7,9 @@
 
 (defprotocol InputPos
   (next-pos [pos token]
-    "Returns new source pos for the current token."))
+    "Returns new source pos for the current token.")
+  (compare-pos [pos1 pos2]
+    "Comparator. Returns -1/0/1 like `compare`."))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -34,22 +36,20 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-#?(:clj
-   (extend-protocol InputPos
-     nil,,, (next-pos [_ _])
-     Number (next-pos [pos _] (inc pos)))
-   :cljs
-   (extend-protocol InputPos
-     nil,,, (next-pos [_ _])
-     number (next-pos [pos _] (inc pos))))
+(extend-protocol InputPos
+  nil
+  (next-pos [_ _])
+  (compare-pos [_ _] 0)
+  #?(:clj Number :cljs number)
+  (next-pos [pos _] (inc pos))
+  (compare-pos [a b] (compare a b)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defrecord IndexPos [^long i]
   InputPos
   (next-pos [_ _] (IndexPos. (unchecked-inc i)))
-  #?@(:clj  (Comparable (compareTo [_ pos] (compare i (:i pos))))
-      :cljs (IComparable (-compare [_ pos] (compare i (:i pos)))))
+  (compare-pos [_ pos] (compare i (:i pos)))
   Object
   (toString [_] (str "index " i)))
 
@@ -74,16 +74,10 @@
             (TextPos. tab (unchecked-inc line) 1)
             ;; default
             (TextPos. tab line (unchecked-inc col))))
-  #?@(:clj
-      [Comparable
-       (compareTo [_ pos] (or (compare* line (:line pos))
-                              (compare* col (:col pos))
-                              0))]
-      :cljs
-      [IComparable
-       (-compare [_ pos] (or (compare* line (:line pos))
-                             (compare* col (:col pos))
-                             0))])
+  (compare-pos [_ pos]
+    (or (compare* line (:line pos))
+        (compare* col (:col pos))
+        0))
   Object
   (toString [_] (str "line " line ", column " col)))
 
