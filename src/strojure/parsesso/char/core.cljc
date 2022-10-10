@@ -9,7 +9,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn one-of
+(defn one-of?
   "Returns parser and predicate for the character `c` which is in the supplied
   string of characters `cs`."
   [cs]
@@ -20,16 +20,16 @@
            (delay (if (second cs) (str "character of " (p/render cs))
                                   (p/render cs)))))
 
-(defn not-of
+(defn not-of?
   "Returns parser and predicate for the character `c` which is _not_ in the
   supplied string of characters `cs`."
   [cs]
-  (p/token (complement (one-of cs))
+  (p/token (complement (one-of? cs))
            (delay (if (second cs)
                     (str "character not of " (p/render cs))
                     (str "not " (p/render cs) " character")))))
 
-(defn re-match
+(defn re-match?
   "Returns parser and predicate for the character `c` matching regex pattern
   `re`."
   [re]
@@ -38,7 +38,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def upper
+(def upper?
   "Parser and predicate for ASCII 7 bit alphabetic upper case character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
@@ -47,7 +47,7 @@
                       (re-find #"[A-Z]" c)))
            "upper case character"))
 
-(def lower
+(def lower?
   "Parser and predicate for ASCII 7 bit alphabetic upper case character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
@@ -56,15 +56,15 @@
                       (re-find #"[a-z]" c)))
            "lower case character"))
 
-(def alpha
+(def alpha?
   "Parser and predicate for ASCII 7 bit alphabetic character."
   (p/token (fn [c] #?(:clj
-                      (or (upper c) (lower c))
+                      (or (upper? c) (lower? c))
                       :cljs
                       (re-find #"[a-zA-Z]" c)))
            "alphabetic character"))
 
-(def numeric
+(def numeric?
   "Parser and predicate for ASCII 7 bit numeric character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
@@ -73,15 +73,15 @@
                       (re-find #"[0-9]" c)))
            "numeric character"))
 
-(def alpha-numeric
+(def alpha-numeric?
   "Parser and predicate for ASCII 7 bit alphabetic or numeric character."
   (p/token (fn [c] #?(:clj
-                      (or (alpha c) (numeric c))
+                      (or (alpha? c) (numeric? c))
                       :cljs
                       (re-find #"[a-zA-Z0-9]" c)))
            "alphanumeric character"))
 
-(def whitespace
+(def whitespace?
   "Parser and predicate for ASCII 7 bit whitespace character."
   (p/token (fn [c] #?(:clj
                       (Character/isSpace c)
@@ -93,8 +93,8 @@
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
-  (p/choice (one-of "\n")
-            (p/after (one-of "\r") (one-of "\n"))))
+  (p/choice (one-of? "\n")
+            (p/after (one-of? "\r") (one-of? "\n"))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
