@@ -3,6 +3,7 @@
   here because it is very slow."
   (:require [blancas.kern.core :as krn]
             [strojure.parsesso.char.core :as char]
+            [strojure.parsesso.char.insensitive :as char*]
             [strojure.parsesso.core :as p]
             [the.parsatron :as prt]))
 
@@ -103,6 +104,22 @@
 ;    Execution time std-deviation : 91,094400 ns
 ;   Execution time lower quantile : 2,126279 µs ( 2,5%)
 ;   Execution time upper quantile : 2,342896 µs (97,5%)
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+;;; Parse word, case insensitive
+
+(p/parse (char*/word "abc") "ABC")
+;             Execution time mean : 541,114209 ns
+;    Execution time std-deviation : 31,339030 ns
+;   Execution time lower quantile : 510,632271 ns ( 2,5%)
+;   Execution time upper quantile : 589,369099 ns (97,5%)
+
+(krn/parse (krn/token- "abc") "ABC")
+;             Execution time mean : 5,063223 µs
+;    Execution time std-deviation : 212,754488 ns
+;   Execution time lower quantile : 4,915983 µs ( 2,5%)
+;   Execution time upper quantile : 5,412170 µs (97,5%)
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
