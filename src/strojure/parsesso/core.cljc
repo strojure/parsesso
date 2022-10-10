@@ -187,7 +187,7 @@
   identifier we have to use the `maybe` combinator. Suppose we write:
 
       (def identifier
-        (many-some char/alpha))
+        (many-some char/alpha?))
 
       (def let-expr
         (after (word \"let\")
@@ -247,7 +247,7 @@
     behaviour as follows:
 
         (-> (word \"let\")
-            (not-followed-by char/alpha-numeric))
+            (not-followed-by char/alpha-numeric?))
 
     - Fails:
         - when `p` fails.
@@ -270,9 +270,9 @@
   - Consumes: when `p` consumes some input.
 
       (def identifier
-        (bind-let [c char/alpha
-                   cs (many-zero (choice char/alpha-numeric
-                                         (char/one-of \"_\")))]
+        (bind-let [c char/alpha?
+                   cs (many-zero (choice char/alpha-numeric?
+                                         (char/one-of? \"_\")))]
           (result (cons c cs))))
   "
   [p]
@@ -295,7 +295,7 @@
   - Consumes: when `p` consumes some input.
 
      (def word
-       (many-some char/alpha)
+       (many-some char/alpha?)
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
@@ -308,7 +308,7 @@
   - Consumes: when `p` consumes some input.
 
       (def spaces
-        (skip-zero char/whitespace))
+        (skip-zero char/whitespace?))
   "
   [p]
   (fn [state context]
@@ -498,8 +498,8 @@
   - Consumes: in all cases except when `open` fails without consuming any input.
 
       (defn braces [p]
-        (-> p (between (char/one-of \"{\")
-                       (char/one-of \"}\"))))
+        (-> p (between (char/one-of? \"{\")
+                       (char/one-of? \"}\"))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -549,8 +549,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (char/one-of \",\")
-                              (skip-zero char/whitespace))))
+        (sep-by-zero p (after (char/one-of? \",\")
+                              (skip-zero char/whitespace?))))
   "
   [p sep]
   (optional (sep-by-some p sep)))
@@ -593,7 +593,7 @@
   - Fails: never.
   - Consumes: never.
 
-      (parse (after (char/one-of \"aeiou\")
+      (parse (after (char/one-of? \"aeiou\")
                     (debug-state \"label\"))
              \"atest\")
 
@@ -614,8 +614,8 @@
   - Fails: when `p` fails.
   - Consumes: when `p` consumes some input.
 
-      (parse (after (char/one-of \"aeiou\")
-                    (-> (char/one-of \"nope\")
+      (parse (after (char/one-of? \"aeiou\")
+                    (-> (char/one-of? \"nope\")
                         (debug-parser \"one-of-nope\")))
              \"atest\")
 
