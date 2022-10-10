@@ -38,28 +38,28 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def upper?
-  "Parser and predicate for ASCII 7 bit alphabetic upper case character."
+(def upper-case?
+  "Parser and predicate for ASCII 7 bit upper-case alphabetic character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 65 c) (<= c 90)))
                       :cljs
                       (re-find #"[A-Z]" c)))
-           "upper case character"))
+           "upper-case alphabetic character"))
 
-(def lower?
-  "Parser and predicate for ASCII 7 bit alphabetic upper case character."
+(def lower-case?
+  "Parser and predicate for ASCII 7 bit lower-case alphabetic character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 97 c) (<= c 122)))
                       :cljs
                       (re-find #"[a-z]" c)))
-           "lower case character"))
+           "lower-case alphabetic character"))
 
 (def alpha?
   "Parser and predicate for ASCII 7 bit alphabetic character."
   (p/token (fn [c] #?(:clj
-                      (or (upper? c) (lower? c))
+                      (or (upper-case? c) (lower-case? c))
                       :cljs
                       (re-find #"[a-zA-Z]" c)))
            "alphabetic character"))

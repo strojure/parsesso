@@ -1,5 +1,5 @@
 (ns strojure.parsesso.char.ignore-case
-  "Case insensitive char functions."
+  "Case insensitive char parsers."
   (:require [clojure.string :as string]
             [strojure.parsesso.core :as p]))
 

@@ -142,45 +142,45 @@
 
     ))
 
-(deftest upper?-t
+(deftest upper-case?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/upper?)
+    (p (p/many-zero char/upper-case?)
        "ABC")
     {:consumed true, :value (seq "ABC")}
 
-    (p char/upper?
+    (p char/upper-case?
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting upper case character"]}
+                              "expecting upper-case alphabetic character"]}
 
-    (p char/upper?
+    (p char/upper-case?
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting upper case character"]}
+                              "expecting upper-case alphabetic character"]}
 
     ))
 
-(deftest lower?-t
+(deftest lower-case?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/lower?)
+    (p (p/many-zero char/lower-case?)
        "abc")
     {:consumed true, :value (seq "abc")}
 
-    (p char/lower?
+    (p char/lower-case?
        "A")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"A\""
-                              "expecting lower case character"]}
+                              "expecting lower-case alphabetic character"]}
 
-    (p char/lower?
+    (p char/lower-case?
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting lower case character"]}
+                              "expecting lower-case alphabetic character"]}
 
     ))
 
