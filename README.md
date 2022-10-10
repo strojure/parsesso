@@ -37,8 +37,8 @@ Parser combinators for Clojure(Script).
 | `tokens`, `string` | `word`            | `token*`          | `string`           |
 | `<*>`              | `each`,`tuple`    | `<*>`             |                    |
 | `<!>`, `choice`    | `choice`          | `<!>`             | `either`, `choice` |
-| `option`           | `optional`        | `optional`        |                    |
-| `optional`         | `optional`        | `option`          |                    |
+| `option`           | `optional`        | `option`          |                    |
+| `optional`         | `optional`        | `optional`        |                    |
 | `count`            | `times`           | `times`           | `times`            |
 
 ## Performance
