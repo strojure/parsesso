@@ -9,25 +9,50 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(defn register-one-of-pred
+  "Associates keyword `k` with predicate function of the `one-of?` and `not-of?`
+  parser."
+  [k, f]
+  (impl/register-one-of-pred-fn k f))
+
+(register-one-of-pred :default impl/one-of-pred-default)
+(register-one-of-pred :i impl/one-of-pred-ignorecase)
+
 (defn one-of?
   "Returns parser and predicate for the character `c` which is in the supplied
-  string of characters `cs`."
-  [cs]
-  (p/token (fn [c] #?(:clj
-                      (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
-                      :cljs
-                      (string/index-of cs c)))
-           (delay (if (second cs) (str "character of " (p/render cs))
-                                  (p/render cs)))))
+  string of characters `cs`. Optional `pred-k` keyword refers to function
+  `(fn [pred-k cs] (fn [c] ...))` which returns custom predicate for chars
+  against `cs`. The new `pred-k` should be registered using
+  `register-one-of-pred`, predefined values are `:default` for default and `:i`
+  for case insensitive matching.
+
+      (def control-char (one-of? \"EX\"))
+
+      (def control-char-ignorecase (one-of? \"ex\" :i))
+  "
+  ([cs]
+   (p/token (impl/one-of-pred-default cs)
+            (delay (if (second cs) (str "character of " (p/render cs))
+                                   (p/render cs)))))
+  ([cs, pred-k]
+   (p/token (impl/one-of-pred-fn pred-k cs)
+            (delay (if (second cs) (str "character of " (p/render cs))
+                                   (p/render cs))))))
 
 (defn not-of?
   "Returns parser and predicate for the character `c` which is _not_ in the
-  supplied string of characters `cs`."
-  [cs]
-  (p/token (complement (one-of? cs))
-           (delay (if (second cs)
-                    (str "character not of " (p/render cs))
-                    (str "not " (p/render cs) " character")))))
+  supplied string of characters `cs`. See also `one-of?` about optional
+  `pred-k` argument."
+  ([cs]
+   (p/token (complement (one-of? cs))
+            (delay (if (second cs)
+                     (str "character not of " (p/render cs))
+                     (str "not " (p/render cs) " character")))))
+  ([cs, pred-k]
+   (p/token (complement (one-of? cs pred-k))
+            (delay (if (second cs)
+                     (str "character not of " (p/render cs))
+                     (str "not " (p/render cs) " character"))))))
 
 (defn re-match?
   "Returns parser and predicate for the character `c` matching regex pattern

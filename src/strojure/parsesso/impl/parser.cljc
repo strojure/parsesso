@@ -29,3 +29,20 @@
   (throw (ex-info (str "Combinator is applied to a parser that accepts an empty input.") {})))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+(def ^:private word-test-fn!
+  (atom {}))
+
+(defn register-word-test-fn
+  "Associates keyword `k` with test-fn of the `word` parser."
+  [k, f]
+  (assert (keyword k) "Requires keyword as word test-fn ID")
+  (swap! word-test-fn! assoc k f))
+
+(defn word-test-fn
+  "Returns registered test-fn for the keyword `k`."
+  [k]
+  (or (@word-test-fn! k)
+      (throw (ex-info (str "The word test-fn is not registered:" k) {}))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

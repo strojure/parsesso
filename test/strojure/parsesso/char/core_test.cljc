@@ -1,6 +1,6 @@
 (ns strojure.parsesso.char.core-test
   (:require [clojure.string :as string]
-            [clojure.test :as test :refer [deftest]]
+            [clojure.test :as test :refer [deftest testing]]
             [strojure.parsesso.char.core :as char]
             [strojure.parsesso.core :as p]))
 
@@ -25,78 +25,136 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (deftest one-of?-t
-  (test/are [expr result] (= result expr)
+  (testing "default matching"
+    (test/are [expr result] (= result expr)
 
-    (p (char/one-of? "abc")
-       "a")
-    {:consumed true, :value (c "a")}
+      (p (char/one-of? "abc")
+         "a")
+      {:consumed true, :value (c "a")}
 
-    (p (char/one-of? "abc")
-       "b")
-    {:consumed true, :value (c "b")}
+      (p (char/one-of? "abc")
+         "b")
+      {:consumed true, :value (c "b")}
 
-    (p (char/one-of? "abc")
-       "c")
-    {:consumed true, :value (c "c")}
+      (p (char/one-of? "abc")
+         "c")
+      {:consumed true, :value (c "c")}
 
-    (p (char/one-of? "abc")
-       "d")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"d\""
-                              "expecting character of \"abc\""]}
+      (p (char/one-of? "abc")
+         "d")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"d\""
+                                "expecting character of \"abc\""]}
 
-    (p (char/one-of? "abc")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting character of \"abc\""]}
+      (p (char/one-of? "abc")
+         "")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected end of input"
+                                "expecting character of \"abc\""]}
 
-    (p (char/one-of? "a")
-       "d")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"d\""
-                              "expecting \"a\""]}
+      (p (char/one-of? "a")
+         "d")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"d\""
+                                "expecting \"a\""]}
 
-    (p (char/one-of? "a")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting \"a\""]}
+      (p (char/one-of? "a")
+         "")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected end of input"
+                                "expecting \"a\""]}
 
-    ))
+      ))
+
+  (testing "case insensitive matching"
+    (test/are [expr result] (= result expr)
+
+      (p (char/one-of? "abc" :i)
+         "a")
+      {:consumed true, :value (c "a")}
+
+      (p (char/one-of? "abc" :i)
+         "A")
+      {:consumed true, :value (c "A")}
+
+      (p (char/one-of? "ABC" :i)
+         "a")
+      {:consumed true, :value (c "a")}
+
+      (p (char/one-of? "abc" :i)
+         "d")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"d\""
+                                "expecting character of \"abc\""]}
+
+      )))
 
 (deftest not-of?-t
-  (test/are [expr result] (= result expr)
+  (testing "default matching"
+    (test/are [expr result] (= result expr)
 
-    (p (char/not-of? "abc")
-       "x")
-    {:consumed true, :value (c "x")}
+      (p (char/not-of? "abc")
+         "x")
+      {:consumed true, :value (c "x")}
 
-    (p (char/not-of? "abc")
-       "a")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"a\""
-                              "expecting character not of \"abc\""]}
+      (p (char/not-of? "abc")
+         "a")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"a\""
+                                "expecting character not of \"abc\""]}
 
-    (p (char/not-of? "abc")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting character not of \"abc\""]}
+      (p (char/not-of? "abc")
+         "")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected end of input"
+                                "expecting character not of \"abc\""]}
 
-    (p (char/not-of? "a")
-       "a")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected \"a\""
-                              "expecting not \"a\" character"]}
+      (p (char/not-of? "a")
+         "a")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"a\""
+                                "expecting not \"a\" character"]}
 
-    (p (char/not-of? "a")
-       "")
-    {:consumed false, :error ["error at line 1, column 1:"
-                              "unexpected end of input"
-                              "expecting not \"a\" character"]}
+      (p (char/not-of? "a")
+         "")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected end of input"
+                                "expecting not \"a\" character"]}
 
-    ))
+      ))
+
+  (testing "case insensitive matching"
+    (test/are [expr result] (= result expr)
+
+      (p (char/not-of? "abc" :i)
+         "x")
+      {:consumed true, :value (c "x")}
+
+      (p (char/not-of? "abc" :i)
+         "a")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"a\""
+                                "expecting character not of \"abc\""]}
+
+      (p (char/not-of? "abc" :i)
+         "A")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"A\""
+                                "expecting character not of \"abc\""]}
+
+      (p (char/not-of? "a" :i)
+         "a")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"a\""
+                                "expecting not \"a\" character"]}
+
+      (p (char/not-of? "a" :i)
+         "A")
+      {:consumed false, :error ["error at line 1, column 1:"
+                                "unexpected \"A\""
+                                "expecting not \"a\" character"]}
+
+      )))
 
 (deftest re-match?-t
   (test/are [expr result] (= result expr)

@@ -565,42 +565,72 @@
     ))
 
 (deftest word-t
-  (test/are [expr result] (= result expr)
+  (testing "default matching"
+    (test/are [expr result] (= result expr)
 
-    (p (p/word [:A :B :C])
-       [:A :B :C])
-    {:consumed true, :value [:A :B :C]}
+      (p (p/word [:A :B :C])
+         [:A :B :C])
+      {:consumed true, :value [:A :B :C]}
 
-    (p (p/word [:A :B :C])
-       [:A :B])
-    {:consumed true, :error ["error at index 0:"
-                             "unexpected end of input"
-                             "expecting [:A :B :C]"]}
+      (p (p/word [:A :B :C])
+         [:A :B])
+      {:consumed true, :error ["error at index 0:"
+                               "unexpected end of input"
+                               "expecting [:A :B :C]"]}
 
-    (p (p/word [:A :B :C])
-       [])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected end of input"
-                              "expecting [:A :B :C]"]}
+      (p (p/word [:A :B :C])
+         [])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected end of input"
+                                "expecting [:A :B :C]"]}
 
-    (p (p/word [:A :B :C])
-       [:A :B :X])
-    {:consumed true, :error ["error at index 0:"
-                             "unexpected :X"
-                             "expecting [:A :B :C]"]}
+      (p (p/word [:A :B :C])
+         [:A :B :X])
+      {:consumed true, :error ["error at index 0:"
+                               "unexpected :X"
+                               "expecting [:A :B :C]"]}
 
-    (p (p/word [:A :B :C])
-       [:X :Y :Z])
-    {:consumed false, :error ["error at index 0:"
-                              "unexpected :X"
-                              "expecting [:A :B :C]"]}
+      (p (p/word [:A :B :C])
+         [:X :Y :Z])
+      {:consumed false, :error ["error at index 0:"
+                                "unexpected :X"
+                                "expecting [:A :B :C]"]}
 
-    (p (p/word [:ns/A :ns/B :ns/C]
-               (fn [w t] (= (name w) (name t))))
-       [:A :B :C])
-    {:consumed true, :value [:ns/A :ns/B :ns/C]}
+      (p (p/word [:ns/A :ns/B :ns/C]
+                 (fn [w t] (= (name w) (name t))))
+         [:A :B :C])
+      {:consumed true, :value [:ns/A :ns/B :ns/C]}
 
-    ))
+      ))
+
+  (testing "case insensitive matching"
+    (test/are [expr result] (= result expr)
+
+      (p (p/word "abc" :i)
+         "abc")
+      {:consumed true, :value "abc"}
+
+      (p (p/word "abc" :i)
+         "ABC")
+      {:consumed true, :value "abc"}
+
+      (p (p/word "ABC" :i)
+         "abc")
+      {:consumed true, :value "ABC"}
+
+      (p (p/word "abc" :i)
+         "abd")
+      {:consumed true, :error ["error at line 1, column 1:"
+                               "unexpected \"d\""
+                               "expecting \"abc\""]}
+
+      (p (p/word "abc" :i)
+         "ab")
+      {:consumed true, :error ["error at line 1, column 1:"
+                               "unexpected end of input"
+                               "expecting \"abc\""]}
+
+      )))
 
 (deftest any-token-t
   (test/are [expr result] (= result expr)

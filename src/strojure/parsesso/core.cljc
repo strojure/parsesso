@@ -1,5 +1,6 @@
 (ns strojure.parsesso.core
-  (:require [strojure.parsesso.impl.error :as error]
+  (:require [strojure.parsesso.impl.char :as char]
+            [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.reply :as reply :include-macros true]
@@ -364,40 +365,57 @@
         (reply/e-err context (-> (error/sys-unexpected-eof state)
                                  (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
 
+(defn register-word-test
+  "Associates keyword `k` with test-fn of the `word` parser."
+  [k, f]
+  (parser/register-word-test-fn k f))
+
+(register-word-test :default =)
+(register-word-test :i char/equals-ignorecase)
+
 (defn word
   "Parses a sequence of tokens given by `ts` and returns `ts`. The optional
   function `(test-fn word-token input-token)` is used to match tokens
-  differently than simple equality.
+  differently than simple equality. The `test-fn` can be referred by keyword
+  registered using `register-word-test-fn`. There are two predefined keywords
+  registered: `:default` for `=` and `:i` for case insensitive char comparison.
 
   - Fails: when any of tokens don't match the input.
   - Consumes: when at least first token matches the input.
+
+  Example:
+
+      (def let-keyword (word \"let\"))
+
+      (def let-keyword-ignorecase (word \"select\" :i))
   "
   {:inline (fn [tokens] `(word ~tokens =)) :inline-arities #{1}}
   ([tokens] (word tokens =))
   ([tokens, test-fn]
-   (fn [state context]
-     (if-let [ws (seq tokens)]
-       (loop [^ISeq ws ws
-              ^ISeq input (seq (state/input state))
-              reply-err reply/e-err]
-         (cond
-           (not ws)
-           (let [new-pos (reduce pos/next-pos (state/pos state) tokens)
-                 new-state (state/set-input-pos state input new-pos)]
-             (reply/c-ok context new-state tokens))
-           (not input)
-           (reply-err context (-> (error/sys-unexpected-eof state)
-                                  (error/expecting (delay (render tokens)))))
-           :else
-           (let [w (#?(:clj .first :cljs -first) ws)
-                 t (#?(:clj .first :cljs -first) input)]
-             (if (test-fn w t)
-               (recur (#?(:clj .next :cljs -next) ws)
-                      (#?(:clj .next :cljs -next) input)
-                      reply/c-err)
-               (reply-err context (-> (error/sys-unexpected state (delay (render t)))
-                                      (error/expecting (delay (render tokens)))))))))
-       (reply/e-ok context state tokens)))))
+   (let [test-fn (cond-> test-fn (keyword? test-fn) (parser/word-test-fn))]
+     (fn [state context]
+       (if-let [ws (seq tokens)]
+         (loop [^ISeq ws ws
+                ^ISeq input (seq (state/input state))
+                reply-err reply/e-err]
+           (cond
+             (not ws)
+             (let [new-pos (reduce pos/next-pos (state/pos state) tokens)
+                   new-state (state/set-input-pos state input new-pos)]
+               (reply/c-ok context new-state tokens))
+             (not input)
+             (reply-err context (-> (error/sys-unexpected-eof state)
+                                    (error/expecting (delay (render tokens)))))
+             :else
+             (let [w (#?(:clj .first :cljs -first) ws)
+                   t (#?(:clj .first :cljs -first) input)]
+               (if (test-fn w t)
+                 (recur (#?(:clj .next :cljs -next) ws)
+                        (#?(:clj .next :cljs -next) input)
+                        reply/c-err)
+                 (reply-err context (-> (error/sys-unexpected state (delay (render t)))
+                                        (error/expecting (delay (render tokens)))))))))
+         (reply/e-ok context state tokens))))))
 
 (def any-token
   "This parser accepts any kind of token. Returns the accepted token.

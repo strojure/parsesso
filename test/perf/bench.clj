@@ -3,7 +3,6 @@
   here because it is very slow."
   (:require [blancas.kern.core :as krn]
             [strojure.parsesso.char.core :as char]
-            [strojure.parsesso.char.ignore-case :as char*]
             [strojure.parsesso.core :as p]
             [the.parsatron :as prt]))
 
@@ -88,10 +87,10 @@
 ;;; Parse word
 
 (p/parse (p/word "abc") "abc")
-;             Execution time mean : 446,571212 ns
-;    Execution time std-deviation : 23,084230 ns
-;   Execution time lower quantile : 422,298186 ns ( 2,5%)
-;   Execution time upper quantile : 480,017410 ns (97,5%)
+;             Execution time mean : 492,578323 ns
+;    Execution time std-deviation : 23,516467 ns
+;   Execution time lower quantile : 471,832427 ns ( 2,5%)
+;   Execution time upper quantile : 531,601202 ns (97,5%)
 
 (krn/parse (krn/token* "abc") "abc")
 ;             Execution time mean : 4,020720 µs
@@ -109,11 +108,11 @@
 
 ;;; Parse word, case insensitive
 
-(p/parse (char*/word "abc") "ABC")
-;             Execution time mean : 541,114209 ns
-;    Execution time std-deviation : 31,339030 ns
-;   Execution time lower quantile : 510,632271 ns ( 2,5%)
-;   Execution time upper quantile : 589,369099 ns (97,5%)
+(p/parse (p/word "abc" :i) "ABC")
+;             Execution time mean : 631,199580 ns
+;    Execution time std-deviation : 9,939793 ns
+;   Execution time lower quantile : 618,951019 ns ( 2,5%)
+;   Execution time upper quantile : 641,954344 ns (97,5%)
 
 (krn/parse (krn/token- "abc") "ABC")
 ;             Execution time mean : 5,063223 µs
@@ -126,10 +125,10 @@
 ;;; Parse long word
 
 (p/parse (p/word -input-10000) -input-10000)
-;             Execution time mean : 174,605539 µs
-;    Execution time std-deviation : 12,055341 µs
-;   Execution time lower quantile : 159,804203 µs ( 2,5%)
-;   Execution time upper quantile : 187,098021 µs (97,5%)
+;             Execution time mean : 190,951777 µs
+;    Execution time std-deviation : 15,767078 µs
+;   Execution time lower quantile : 177,441117 µs ( 2,5%)
+;   Execution time upper quantile : 209,664373 µs (97,5%)
 
 (comment
   (krn/parse (krn/token* -input-10000) -input-10000))
@@ -287,10 +286,10 @@
 (p/parse (p/after (p/word "<!--")
                   (p/many-till p/any-token (p/maybe (p/word "-->"))))
          "<!-- comment -->")
-;             Execution time mean : 7,944766 µs
-;    Execution time std-deviation : 658,037391 ns
-;   Execution time lower quantile : 7,133724 µs ( 2,5%)
-;   Execution time upper quantile : 8,732943 µs (97,5%)
+;             Execution time mean : 7,450434 µs
+;    Execution time std-deviation : 607,080144 ns
+;   Execution time lower quantile : 6,900613 µs ( 2,5%)
+;   Execution time upper quantile : 8,221736 µs (97,5%)
 
 (krn/parse (krn/>> (krn/token* "<!--")
                    (krn/many-till krn/any-char (krn/<:> (krn/token* "-->"))))
