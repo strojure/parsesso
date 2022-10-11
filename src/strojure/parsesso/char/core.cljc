@@ -10,8 +10,8 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn register-one-of-pred
-  "Associates keyword `k` with predicate function of the `one-of?` and `not-of?`
-  parser."
+  "Associates keyword `k` with predicate function of the [[one-of?]] and
+  [[not-of?]] parsers."
   [k, f]
   (impl/register-one-of-pred-fn k f))
 
@@ -23,8 +23,8 @@
   string of characters `cs`. Optional `pred-k` keyword refers to function
   `(fn [pred-k cs] (fn [c] ...))` which returns custom predicate for chars
   against `cs`. The new `pred-k` should be registered using
-  `register-one-of-pred`, predefined values are `:default` for default and `:ic`
-  for case insensitive matching.
+  [[register-one-of-pred]], predefined values are `:default` for default and
+  `:ic` for case insensitive matching.
 
       (def control-char (one-of? \"EX\"))
 
@@ -41,7 +41,7 @@
 
 (defn not-of?
   "Returns parser and predicate for the character `c` which is _not_ in the
-  supplied string of characters `cs`. See also `one-of?` about optional
+  supplied string of characters `cs`. See also [[one-of?]] about optional
   `pred-k` argument."
   ([cs]
    (p/token (complement (one-of? cs))
@@ -125,7 +125,7 @@
 
 (defn ++
   "Builds string from (possibly nested) collections of parsed characters and
-  strings. To be used with `p/with`."
+  strings. To be used with [[p/with]]."
   [x]
   (impl/deep-join x))
 

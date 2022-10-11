@@ -34,7 +34,7 @@
   (atom {}))
 
 (defn register-word-test-fn
-  "Associates keyword `k` with test-fn of the `word` parser."
+  "Associates keyword `k` with test-fn of the [[word]] parser."
   [k, f]
   (assert (keyword k) "Requires keyword as word test-fn ID")
   (swap! word-test-fn! assoc k f))

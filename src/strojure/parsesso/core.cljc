@@ -70,13 +70,14 @@
 
   This is normally used at the end of a set alternatives where we want to return
   an error message in terms of a higher level construct rather than returning
-  all possible characters. For example, if the `expr` parser from the 'maybe'
+  all possible characters. For example, if the `expr` parser from the [[maybe]]
   example would fail, the error message is: '...: expecting expression'. Without
-  the `expecting` combinator, the message would be like '...: expecting \"let\"
-  or alphabetic character', which is less friendly.
+  the [[expecting]] combinator, the message would be like '...: expecting
+  \"let\" or alphabetic character', which is less friendly.
 
-  The parsers `fail`, `fail-unexpected` and `expecting` are the three parsers
-  used to generate error messages. Of these, only `expecting` is commonly used.
+  The parsers [[fail]], [[fail-unexpected]] and [[expecting]] are the three
+  parsers used to generate error messages. Of these, only [[expecting]] is
+  commonly used.
   "
   [p msg]
   (fn [state context]
@@ -178,14 +179,14 @@
   - Consumes: when `p` succeeds and consumes some input.
 
   This combinator is used whenever arbitrary look ahead is needed. Since it
-  pretends that it hasn't consumed any input when `p` fails, the `choice`
+  pretends that it hasn't consumed any input when `p` fails, the [[choice]]
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
-  The `maybe` combinator can for example be used to distinguish identifiers and
-  reserved words. Both reserved words and identifiers are a sequence of letters.
-  Whenever we expect a certain reserved word where we can also expect an
-  identifier we have to use the `maybe` combinator. Suppose we write:
+  The [[maybe]] combinator can for example be used to distinguish identifiers
+  and reserved words. Both reserved words and identifiers are a sequence of
+  letters. Whenever we expect a certain reserved word where we can also expect
+  an identifier we have to use the [[maybe]] combinator. Suppose we write:
 
       (def identifier
         (many-some char/alpha?))
@@ -200,11 +201,11 @@
             (expecting \"expression\"))
 
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
-  expecting \"t\" of (word \"let\")`. Indeed, since the `choice` combinator
+  expecting \"t\" of (word \"let\")`. Indeed, since the [[choice]] combinator
   only tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(word
   \"let\")` parser is already consumed). The right behaviour can be obtained by
-  adding the `maybe` combinator:
+  adding the [[maybe]] combinator:
 
       (def let-expr
         (after (maybe (word \"let\"))
@@ -216,7 +217,7 @@
 
 (defn look-ahead
   "Parses `p` without consuming any input. If `p` fails and consumes some input,
-  so does `look-ahead`. Combine with `maybe` if this is undesirable.
+  so does [[look-ahead]]. Combine with [[maybe]] if this is undesirable.
 
   - Fails: when `p` fails.
   - Consumes: when `p` fails and consumes some input.
@@ -366,7 +367,7 @@
                                  (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
 
 (defn register-word-test
-  "Associates keyword `k` with test-fn of the `word` parser."
+  "Associates keyword `k` with test-fn of the [[word]] parser."
   [k, f]
   (parser/register-word-test-fn k f))
 
@@ -377,7 +378,7 @@
   "Parses a sequence of tokens given by `ts` and returns `ts`. The optional
   function `(test-fn word-token input-token)` is used to match tokens
   differently than simple equality. The `test-fn` can be referred by keyword
-  registered using `register-word-test-fn`. There are two predefined keywords
+  registered using [[register-word-test]]. There are two predefined keywords
   registered: `:default` for `=` and `:ic` for case insensitive char comparison.
 
   - Fails: when any of tokens don't match the input.
@@ -463,7 +464,7 @@
 (defn tuple
   "This parser tries to apply argument parsers in order until all of them
   succeeds. Returns a sequence of values returned by every parser. It is a 2+
-  arity version of the `each` parser.
+  arity version of the [[each]] parser.
 
   - Fails: when any of tried parsers fails.
   - Consumes: when any of tried parsers consumes some input.
@@ -554,8 +555,8 @@
         (after (word \"<!--\")
                (many-till any-token (maybe (word \"-->\")))))
 
-  Note the overlapping parsers `any-token` and `(word \"-->\")`, and
-  therefore the use of the `maybe` combinator.
+  Note the overlapping parsers [[any-token]] and `(word \"-->\")`, and
+  therefore the use of the [[maybe]] combinator.
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))
@@ -681,7 +682,7 @@
 
   Options:
 
-  **`:pos`** The instance of InputPos or keyword for `pos/init-pos` to
+  **`:pos`** The instance of InputPos or keyword for [[pos/init-pos]] to
   init parser pos. By default pos is initialized to TextPos for string input or
   first token of char type, or IndexPos otherwise.
 
