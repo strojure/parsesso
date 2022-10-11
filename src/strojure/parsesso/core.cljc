@@ -269,6 +269,7 @@
   - Fails: when `p` fails and consumes some input.
   - Consumes: when `p` consumes some input.
 
+  Example:
 
       (def identifier
         (bind-let [c char/alpha?
@@ -295,6 +296,7 @@
   - Fails: when `p` does not succeed at least once.
   - Consumes: when `p` consumes some input.
 
+  Example:
 
      (def word
        (many-some char/alpha?)
@@ -309,6 +311,7 @@
   - Fails: when `p` fails and consumes some input.
   - Consumes: when `p` consumes some input.
 
+  Example:
 
       (def spaces
         (skip-zero char/whitespace?))
@@ -500,6 +503,7 @@
   - Fails: when any of parses fail.
   - Consumes: in all cases except when `open` fails without consuming any input.
 
+  Example:
 
       (defn braces [p]
         (-> p (between (char/one-of? \"{\")
@@ -526,6 +530,7 @@
   - Consumes:
       - when `p` or `end` consumes some input.
 
+  Example:
 
       (def simple-comment
         (after (word \"<!--\")
@@ -598,6 +603,7 @@
   - Fails: never.
   - Consumes: never.
 
+  Example:
 
       (parse (after (char/one-of? \"aeiou\")
                     (debug-state \"label\"))
@@ -620,6 +626,7 @@
   - Fails: when `p` fails.
   - Consumes: when `p` consumes some input.
 
+  Example:
 
       (parse (after (char/one-of? \"aeiou\")
                     (-> (char/one-of? \"nope\")
