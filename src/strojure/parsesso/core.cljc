@@ -299,8 +299,8 @@
 
   Example:
 
-     (def word
-       (many-some char/alpha?)
+      (def word
+        (many-some char/alpha?)
   "
   [p]
   (bind-let [x p, xs (many-zero p)]
