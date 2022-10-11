@@ -1,4 +1,5 @@
 (ns strojure.parsesso.impl.parser
+  {:no-doc true}
   (:require [strojure.parsesso.impl.reply :as r]))
 
 #?(:clj  (set! *warn-on-reflection* true)

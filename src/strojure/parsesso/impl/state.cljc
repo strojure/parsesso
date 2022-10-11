@@ -1,4 +1,5 @@
 (ns strojure.parsesso.impl.state
+  {:no-doc true}
   (:require [strojure.parsesso.impl.pos :as pos])
   #?(:clj (:import (clojure.lang ISeq))))
 

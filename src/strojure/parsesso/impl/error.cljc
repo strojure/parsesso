@@ -1,4 +1,5 @@
 (ns strojure.parsesso.impl.error
+  {:no-doc true}
   (:require [clojure.string :as string]
             [strojure.parsesso.impl.pos :as pos]
             [strojure.parsesso.impl.state :as state]))

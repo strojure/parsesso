@@ -1,4 +1,5 @@
 (ns strojure.parsesso.impl.char
+  {:no-doc true}
   (:require [clojure.string :as string])
   #?(:cljs (:import [goog.string StringBuffer])))
 
