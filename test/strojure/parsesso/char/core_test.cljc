@@ -69,19 +69,19 @@
   (testing "case insensitive matching"
     (test/are [expr result] (= result expr)
 
-      (p (char/one-of? "abc" :i)
+      (p (char/one-of? "abc" :ic)
          "a")
       {:consumed true, :value (c "a")}
 
-      (p (char/one-of? "abc" :i)
+      (p (char/one-of? "abc" :ic)
          "A")
       {:consumed true, :value (c "A")}
 
-      (p (char/one-of? "ABC" :i)
+      (p (char/one-of? "ABC" :ic)
          "a")
       {:consumed true, :value (c "a")}
 
-      (p (char/one-of? "abc" :i)
+      (p (char/one-of? "abc" :ic)
          "d")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"d\""
@@ -126,29 +126,29 @@
   (testing "case insensitive matching"
     (test/are [expr result] (= result expr)
 
-      (p (char/not-of? "abc" :i)
+      (p (char/not-of? "abc" :ic)
          "x")
       {:consumed true, :value (c "x")}
 
-      (p (char/not-of? "abc" :i)
+      (p (char/not-of? "abc" :ic)
          "a")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"a\""
                                 "expecting character not of \"abc\""]}
 
-      (p (char/not-of? "abc" :i)
+      (p (char/not-of? "abc" :ic)
          "A")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"A\""
                                 "expecting character not of \"abc\""]}
 
-      (p (char/not-of? "a" :i)
+      (p (char/not-of? "a" :ic)
          "a")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"a\""
                                 "expecting not \"a\" character"]}
 
-      (p (char/not-of? "a" :i)
+      (p (char/not-of? "a" :ic)
          "A")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"A\""

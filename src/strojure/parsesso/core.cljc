@@ -371,14 +371,14 @@
   (parser/register-word-test-fn k f))
 
 (register-word-test :default =)
-(register-word-test :i char/equals-ignorecase)
+(register-word-test :ic char/equals-ignorecase)
 
 (defn word
   "Parses a sequence of tokens given by `ts` and returns `ts`. The optional
   function `(test-fn word-token input-token)` is used to match tokens
   differently than simple equality. The `test-fn` can be referred by keyword
   registered using `register-word-test-fn`. There are two predefined keywords
-  registered: `:default` for `=` and `:i` for case insensitive char comparison.
+  registered: `:default` for `=` and `:ic` for case insensitive char comparison.
 
   - Fails: when any of tokens don't match the input.
   - Consumes: when at least first token matches the input.
@@ -387,7 +387,7 @@
 
       (def let-keyword (word \"let\"))
 
-      (def let-keyword-ignorecase (word \"select\" :i))
+      (def let-keyword-ignorecase (word \"select\" :ic))
   "
   {:inline (fn [tokens] `(word ~tokens =)) :inline-arities #{1}}
   ([tokens] (word tokens =))

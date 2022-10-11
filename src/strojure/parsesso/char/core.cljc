@@ -16,19 +16,19 @@
   (impl/register-one-of-pred-fn k f))
 
 (register-one-of-pred :default impl/one-of-pred-default)
-(register-one-of-pred :i impl/one-of-pred-ignorecase)
+(register-one-of-pred :ic impl/one-of-pred-ignorecase)
 
 (defn one-of?
   "Returns parser and predicate for the character `c` which is in the supplied
   string of characters `cs`. Optional `pred-k` keyword refers to function
   `(fn [pred-k cs] (fn [c] ...))` which returns custom predicate for chars
   against `cs`. The new `pred-k` should be registered using
-  `register-one-of-pred`, predefined values are `:default` for default and `:i`
+  `register-one-of-pred`, predefined values are `:default` for default and `:ic`
   for case insensitive matching.
 
       (def control-char (one-of? \"EX\"))
 
-      (def control-char-ignorecase (one-of? \"ex\" :i))
+      (def control-char-ignorecase (one-of? \"ex\" :ic))
   "
   ([cs]
    (p/token (impl/one-of-pred-default cs)

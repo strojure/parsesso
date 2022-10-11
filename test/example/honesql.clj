@@ -53,7 +53,7 @@
       (p/with char/++ keyword)))
 
 (def as-expr
-  (->> alias-id (p/after (p/maybe (-> (p/word "as" :i)
+  (->> alias-id (p/after (p/maybe (-> (p/word "as" :ic)
                                       (p/between skip-some-ws))))))
 
 (def column-alias
@@ -63,9 +63,9 @@
 
 (def select-statement
   "Parses SQL SELECT statement to `{:select [...] :from [...] ...}`."
-  (p/bind-let [_ (p/maybe (p/after (p/word "select" :i) skip-some-ws))
+  (p/bind-let [_ (p/maybe (p/after (p/word "select" :ic) skip-some-ws))
                select (sep-by-comma column-alias)
-               _ (-> (p/word "from" :i) (p/between skip-some-ws))
+               _ (-> (p/word "from" :ic) (p/between skip-some-ws))
                from (sep-by-comma table-name)]
     (p/result
       {:select (vec select)

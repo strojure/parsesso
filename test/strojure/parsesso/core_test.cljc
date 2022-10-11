@@ -606,25 +606,25 @@
   (testing "case insensitive matching"
     (test/are [expr result] (= result expr)
 
-      (p (p/word "abc" :i)
+      (p (p/word "abc" :ic)
          "abc")
       {:consumed true, :value "abc"}
 
-      (p (p/word "abc" :i)
+      (p (p/word "abc" :ic)
          "ABC")
       {:consumed true, :value "abc"}
 
-      (p (p/word "ABC" :i)
+      (p (p/word "ABC" :ic)
          "abc")
       {:consumed true, :value "ABC"}
 
-      (p (p/word "abc" :i)
+      (p (p/word "abc" :ic)
          "abd")
       {:consumed true, :error ["error at line 1, column 1:"
                                "unexpected \"d\""
                                "expecting \"abc\""]}
 
-      (p (p/word "abc" :i)
+      (p (p/word "abc" :ic)
          "ab")
       {:consumed true, :error ["error at line 1, column 1:"
                                "unexpected end of input"

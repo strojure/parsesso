@@ -108,7 +108,7 @@
 
 ;;; Parse word, case insensitive
 
-(p/parse (p/word "abc" :i) "ABC")
+(p/parse (p/word "abc" :ic) "ABC")
 ;             Execution time mean : 631,199580 ns
 ;    Execution time std-deviation : 9,939793 ns
 ;   Execution time lower quantile : 618,951019 ns ( 2,5%)
