@@ -1,4 +1,5 @@
 (ns strojure.parsesso.expr.core
+  "Parser combinators for expressions."
   (:require [strojure.parsesso.core :as p]))
 
 #?(:clj  (set! *warn-on-reflection* true)

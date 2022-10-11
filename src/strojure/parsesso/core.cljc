@@ -1,4 +1,5 @@
 (ns strojure.parsesso.core
+  "Main namespace with parsers and their combinators."
   (:require [strojure.parsesso.impl.char :as char]
             [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]

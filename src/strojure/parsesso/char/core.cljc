@@ -1,4 +1,5 @@
 (ns strojure.parsesso.char.core
+  "Basic function for parsing sequences of characters."
   (:refer-clojure :exclude [newline])
   (:require #?(:cljs [clojure.string :as string])
             [strojure.parsesso.core :as p]

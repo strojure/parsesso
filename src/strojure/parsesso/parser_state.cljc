@@ -1,4 +1,5 @@
 (ns strojure.parsesso.parser-state
+  "Parser combinators to work with parser state."
   (:require [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.reply :as reply]
             [strojure.parsesso.impl.state :as state]))
