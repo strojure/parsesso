@@ -44,8 +44,8 @@
   (p/skip-some char/whitespace?))
 
 (def comma-sep
-  (p/maybe (p/bind-let [_ skip-opt-ws, c (char/one-of? ","), _ skip-opt-ws]
-             (p/result c))))
+  (p/maybe (-> (char/one-of? ",")
+               (p/between skip-opt-ws))))
 
 (defn sep-by-comma
   [p]
