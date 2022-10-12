@@ -606,55 +606,49 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn debug-state
-  "This parser prints the remaining parser state at the time it is invoked. It
-  is intended to be used for debugging parsers by inspecting their intermediate
-  states.
-
-  - Fails: never.
-  - Consumes: never.
-
-  Example:
-
-      (parse (after (char/is \"aeiou\")
-                    (debug-state \"label\"))
-             \"atest\")
-
-      > label: (\\t \\e \\s \\t)
-  "
-  [label]
-  (choice (maybe (bind-let [x (many1 any-token)]
-                   (println (str label ": " x))
-                   (fail)))
-          (result nil)))
-
-(defn debug-parser
-  "This parser prints to the console the remaining parser state at the time it
-  is invoked. It then continues to apply parser `p`, and if `p` fails will
-  indicate that the label has been backtracked. It is intended to be used for
-  debugging parsers by inspecting their intermediate states.
+(defn trace
+  "This parser prints the parser state (position, remaining input and user
+  state) at the time it is invoked. When `p` is provided it then continues to
+  apply parser `p`, and if `p` fails will indicate that the label has been
+  backtracked. It is intended to be used for debugging parsers by inspecting
+  their intermediate states.
 
   - Fails: when `p` fails.
   - Consumes: when `p` consumes some input.
 
-  Example:
+  Examples:
 
       (parse (after (char/is \"aeiou\")
-                    (-> (char/is \"nope\")
-                        (debug-parser \"one-of-nope\")))
+                    (trace \"test-label\"))
              \"atest\")
 
-      > one-of-nope: (\\t \\e \\s \\t)
-      > one-of-nope backtracked
+      > test-label: at line 1, column 2
+      >  - input: (\\t \\e \\s \\t)
+      >  - user: nil
+
+      (parse (after (char/is \"aeiou\")
+                    (trace \"test-label\" (char/is \"nope\")))
+             \"atest\")
+
+      > test-label: at line 1, column 2
+      >  - input: (\\t \\e \\s \\t)
+      >  - user: nil
+      > test-label: backtracked
 
       > error at line 1, column 2:
       > unexpected \"t\"
       > expecting character of \"nope\"
   "
-  [p label]
-  (after (debug-state label)
-         (choice p, (do-parser (println (str label " backtracked"))
-                               (fail)))))
+  ([label]
+   (fn [state context]
+     (println (str label ": at " (state/pos state)
+                   "\n - input: " (pr-str (take 20 (state/input state)))
+                   "\n - user: " (pr-str (state/user state))))
+     (reply/e-ok context state nil)))
+  ([label p]
+   (after (trace label)
+          (choice p, (do-parser (println (str label ": backtracked"))
+                                (fail))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

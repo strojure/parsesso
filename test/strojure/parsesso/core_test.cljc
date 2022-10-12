@@ -1259,78 +1259,112 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest debug-state-t
-  (test/are [expr result] (= result expr)
+(deftest trace-t
+  (testing "trace state"
+    (test/are [expr result] (= result expr)
 
-    (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
-                        _ (p/debug-state "b") b (tok :B)]
-             (p/result [a b]))
-           [:A :B :C])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:A :B :C)"
-     "b: (:B :C)"]
+      (-> (p (p/bind-let [_ (p/trace "a")
+                          a (tok :A)
+                          _ (p/trace "b")
+                          b (tok :B)]
+               (p/result [a b]))
+             [:A :B :C])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:A :B :C)"
+       " - user: nil"
+       "b: at index 1"
+       " - input: (:B :C)"
+       " - user: nil"]
 
-    (-> (p (p/bind-let [_ (p/debug-state "a") a (tok :A)
-                        _ (p/debug-state "b") b (tok :B)]
-             (p/result [a b]))
-           [:A :B])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:A :B)"
-     "b: (:B)"]
+      (-> (p (p/bind-let [_ (p/trace "a")
+                          a (tok :A)
+                          _ (p/trace "b")
+                          b (tok :B)]
+               (p/result [a b]))
+             [:A :B])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:A :B)"
+       " - user: nil"
+       "b: at index 1"
+       " - input: (:B)"
+       " - user: nil"]
 
-    (-> (p (p/bind-let [a (tok :A) _ (p/debug-state "a")
-                        b (tok :B) _ (p/debug-state "b")]
-             (p/result [a b]))
-           [:A :B])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:B)"]
+      (-> (p (p/bind-let [a (tok :A)
+                          _ (p/trace "a")
+                          b (tok :B)
+                          _ (p/trace "b")]
+               (p/result [a b]))
+             [:A :B])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 1"
+       " - input: (:B)"
+       " - user: nil"
+       "b: at index 2"
+       " - input: ()"
+       " - user: nil"]
 
-    ))
+      ))
 
-(deftest debug-parser-t
-  (test/are [expr result] (= result expr)
+  (testing "trace parser"
+    (test/are [expr result] (= result expr)
 
-    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
-                        b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
-           [:A :B :C])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:A :B :C)"
-     "b: (:B :C)"]
+      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
+                          b (p/trace "b" (tok :B))]
+               (p/result [a b]))
+             [:A :B :C])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:A :B :C)"
+       " - user: nil"
+       "b: at index 1"
+       " - input: (:B :C)"
+       " - user: nil"]
 
-    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
-                        b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
-           [:A :B])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:A :B)"
-     "b: (:B)"]
+      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
+                          b (p/trace "b" (tok :B))]
+               (p/result [a b]))
+             [:A :B])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:A :B)"
+       " - user: nil"
+       "b: at index 1"
+       " - input: (:B)"
+       " - user: nil"]
 
-    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
-                        b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
-           [:B :C])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:B :C)"
-     "a backtracked"]
+      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
+                          b (p/trace "b" (tok :B))]
+               (p/result [a b]))
+             [:B :C])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:B :C)"
+       " - user: nil"
+       "a: backtracked"]
 
-    (-> (p (p/bind-let [a (p/debug-parser (tok :A) "a")
-                        b (p/debug-parser (tok :B) "b")]
-             (p/result [a b]))
-           [:A :C])
-        (with-out-str)
-        (string/split-lines))
-    ["a: (:A :C)"
-     "b: (:C)"
-     "b backtracked"]
+      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
+                          b (p/trace "b" (tok :B))]
+               (p/result [a b]))
+             [:A :C])
+          (with-out-str)
+          (string/split-lines))
+      ["a: at index 0"
+       " - input: (:A :C)"
+       " - user: nil"
+       "b: at index 1"
+       " - input: (:C)"
+       " - user: nil"
+       "b: backtracked"]
 
-    ))
+      )))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
