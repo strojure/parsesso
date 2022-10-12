@@ -85,11 +85,6 @@
     (letfn [(e-err [e] (reply/e-err context (error/expecting e msg)))]
       (parser/go p state (reply/assign context {reply/e-err e-err})))))
 
-(defn expecting-meta
-  "Attaches expecting error message to `obj`, i.e. to token predicate function."
-  [obj msg]
-  (with-meta obj {::expecting msg}))
-
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn bind
@@ -342,9 +337,8 @@
 
 (defn token
   "This parser accepts a token when `(pred token)` returns logical true, and
-  optional expecting `msg`. The `pred` can carry expecting error message in
-  `::expecting` metadata. 1-arity behaves as `pred` and can be used in predicate
-  composition.
+  optional expecting `msg`. 1-arity behaves as `pred` and can be used in
+  predicate composition.
 
   - Fails: when `(pred token)` return logical false.
   - Consumes: when succeeds.
@@ -352,7 +346,6 @@
   {:inline (fn [pred] `(token ~pred nil)) :inline-arities #{1}}
   ([pred] (token pred nil))
   ([pred msg]
-   ^{::expecting msg}
    (fn
      ;; Predicate behaviour.
      ([tok] (pred tok))
@@ -362,10 +355,10 @@
         (let [tok (#?(:clj .first :cljs -first) input)]
           (if (pred tok)
             (reply/c-ok context (state/next-state state tok) tok)
-            (reply/e-err context (-> (error/sys-unexpected state (delay (render tok)))
-                                     (error/expecting (or msg (some-> (meta pred) ::expecting)))))))
-        (reply/e-err context (-> (error/sys-unexpected-eof state)
-                                 (error/expecting (or msg (some-> (meta pred) ::expecting))))))))))
+            (reply/e-err context (cond-> (error/sys-unexpected state (delay (render tok)))
+                                   msg (error/expecting msg)))))
+        (reply/e-err context (cond-> (error/sys-unexpected-eof state)
+                               msg (error/expecting msg))))))))
 
 (defn register-word-test
   "Associates keyword `k` with test-fn of the [[word]] parser."
