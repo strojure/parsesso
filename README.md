@@ -19,28 +19,35 @@ Parser combinators for Clojure(Script).
 
 ## Cheat sheet
 
-| Parsesso          | Parsec                          | Kern                  | Parsatron          |
-|-------------------|---------------------------------|-----------------------|--------------------|
-| `result`          | `return`                        | `return`              | `always`           |
-| `fail`            | `fail`                          | `fail`                | `never`            |
-| `expecting`       | `label`, `<?>`                  | `<?>`                 |                    |
-| `bind-let`        | `do`                            | `bind`                | `let->>`           |
-| `after`           | `>>`                            | `>>`                  | `>>`, `nxt`        |
-| `using`           | `fmap`                          | `<$>`                 |                    |
-| `maybe`           | `try`                           | `<:>`                 | `attempt`          |
-| `look-ahead`      | `lookAhead`                     | `look-ahead`          | `lookahead`        |
-| `not-followed-by` | `notFollowedBy`                 | `not-followed-by`     |                    |
-| `many0`           | `many`                          | `many`                | `many`             |
-| `many1`           | `many1`                         | `many1`               | `many1`            |
-| `skip0`           | `skipMany`                      | `skip-many`           |                    |
-| `skip1`           | `skipMany1`                     | `skip-many1`          |                    |
-| `token`           | `token`, `satisfy`              | `satisfy`             | `token`            |
-| `word`            | `tokens`, `string`              | `token*`              | `string`           |
-| `each`,`tuple`    | `<*>`                           | `<*>`                 |                    |
-| `choice`          | <code><&#124;></code>, `choice` | <code><&#124;></code> | `either`, `choice` |
-| `option`          | `option`                        | `option`              |                    |
-| `option`          | `optional`                      | `optional`            |                    |
-| `times`           | `count`                         | `times`               | `times`            |
+| Parsesso          | Parsec<sup>[1], [2]</sup>       | Kern<sup>[3]</sup>    | Parsatron<sup>[4]</sup> |
+|-------------------|---------------------------------|-----------------------|-------------------------|
+| `result`          | `return`                        | `return`              | `always`                |
+| `fail`            | `fail`                          | `fail`                | `never`                 |
+| `expecting`       | `label`, `<?>`                  | `<?>`                 |                         |
+| `bind-let`        | `do`                            | `bind`                | `let->>`                |
+| `after`           | `>>`                            | `>>`                  | `>>`, `nxt`             |
+| `using`           | `fmap`                          | `<$>`                 |                         |
+| `maybe`           | `try`                           | `<:>`                 | `attempt`               |
+| `look-ahead`      | `lookAhead`                     | `look-ahead`          | `lookahead`             |
+| `not-followed-by` | `notFollowedBy`                 | `not-followed-by`     |                         |
+| `many0`           | `many`                          | `many`                | `many`                  |
+| `many1`           | `many1`                         | `many1`               | `many1`                 |
+| `skip0`           | `skipMany`                      | `skip-many`           |                         |
+| `skip1`           | `skipMany1`                     | `skip-many1`          |                         |
+| `token`           | `token`, `satisfy`              | `satisfy`             | `token`                 |
+| `word`            | `tokens`, `string`              | `token*`              | `string`                |
+| `tuple`           | `<*>`                           | `<*>`                 |                         |
+| `choice`          | <code><&#124;></code>, `choice` | <code><&#124;></code> | `choice`                |
+| `option`          | `option`, `optional`            | `option`, `optional`  |                         |
+| `times`           | `count`                         | `times`               | `times`                 |
+
+[1]: https://github.com/haskell/parsec/blob/master/src/Text/Parsec/Prim.hs
+
+[2]: https://github.com/haskell/parsec/blob/master/src/Text/Parsec/Combinator.hs
+
+[3]: https://github.com/blancas/kern/blob/master/src/main/clojure/blancas/kern/core.clj
+
+[4]: https://github.com/youngnh/parsatron/blob/master/src/clj/the/parsatron.clj
 
 ## Examples
 
