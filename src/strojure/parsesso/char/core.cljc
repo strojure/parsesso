@@ -118,7 +118,7 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (def newline
-  "Parses a CRLF or LF end of line. Returns a `\newline` character."
+  "Parses a CRLF or LF end of line. Returns a `\\newline` character."
   (p/choice (is "\n")
             (p/after (is "\r") (is "\n"))))
 
