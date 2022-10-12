@@ -577,8 +577,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (char/is \",\")
-                              (skip0 char/white?))))
+        (sep0 p (after (char/is \",\")
+                       (skip0 char/white?))))
   "
   [p sep]
   (option (sep1 p sep)))
