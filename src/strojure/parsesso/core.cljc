@@ -389,7 +389,7 @@
 
       (def let-keyword (word \"let\"))
 
-      (def let-keyword-ignorecase (word \"select\" :ic))
+      (def let-keyword-ignorecase (word \"let\" :ic))
   "
   {:inline (fn [tokens] `(word ~tokens =)) :inline-arities #{1}}
   ([tokens] (word tokens =))
