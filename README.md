@@ -17,7 +17,7 @@ Parser combinators for Clojure(Script).
 * [youngnh/parsatron](https://github.com/youngnh/parsatron)
 * [rm-hull/jasentaa](https://github.com/rm-hull/jasentaa)
 
-## Correspondence of function names
+## Cheat sheet
 
 | Parsec                          | Parsesso          | Kern                  | Parsatron          |
 |---------------------------------|-------------------|-----------------------|--------------------|
@@ -30,16 +30,16 @@ Parser combinators for Clojure(Script).
 | `try`                           | `maybe`           | `<:>`                 | `attempt`          |
 | `lookAhead`                     | `look-ahead`      | `look-ahead`          | `lookahead`        |
 | `notFollowedBy`                 | `not-followed-by` | `not-followed-by`     |                    |
-| `many`                          | `many-zero`       | `many`                | `many`             |
-| `many1`                         | `many-some`       | `many1`               | `many1`            |
-| `skipMany`                      | `skip-zero`       | `skip-many`           |                    |
-| `skipMany1`                     | `skip-some`       | `skip-many1`          |                    |
+| `many`                          | `many0`           | `many`                | `many`             |
+| `many1`                         | `many1`           | `many1`               | `many1`            |
+| `skipMany`                      | `skip0`           | `skip-many`           |                    |
+| `skipMany1`                     | `skip1`           | `skip-many1`          |                    |
 | `token`, `satisfy`              | `token`           | `satisfy`             | `token`            |
 | `tokens`, `string`              | `word`            | `token*`              | `string`           |
 | `<*>`                           | `each`,`tuple`    | `<*>`                 |                    |
 | <code><&#124;></code>, `choice` | `choice`          | <code><&#124;></code> | `either`, `choice` |
-| `option`                        | `optional`        | `option`              |                    |
-| `optional`                      | `optional`        | `optional`            |                    |
+| `option`                        | `option`          | `option`              |                    |
+| `optional`                      | `option`          | `optional`            |                    |
 | `count`                         | `times`           | `times`               | `times`            |
 
 ## Performance

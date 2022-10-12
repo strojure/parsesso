@@ -155,7 +155,7 @@
   ([q qq qqq & more]
    (reduce after (list* q qq qqq more))))
 
-(defn with
+(defn using
   "This parser applies series of functions to the result value of the parser `p`.
 
   - Fails: when `p` fails.
@@ -190,7 +190,7 @@
   an identifier we have to use the [[maybe]] combinator. Suppose we write:
 
       (def identifier
-        (many-some char/alpha?))
+        (many1 char/alpha?))
 
       (def let-expr
         (after (word \"let\")
@@ -265,7 +265,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn many-zero
+(defn many0
   "This parser applies the parser `p` zero or more times. Returns a sequence of
   the returned values or `p`.
 
@@ -276,8 +276,8 @@
 
       (def identifier
         (bind-let [c char/alpha?
-                   cs (many-zero (choice char/alpha-numeric?
-                                         (char/one-of? \"_\")))]
+                   cs (many0 (choice char/alpha-numeric?
+                             (char/one-of? \"_\")))]
           (result (cons c cs))))
   "
   [p]
@@ -292,7 +292,7 @@
                                                 reply/e-ok parser/e-ok-throw-empty-input
                                                 reply/e-err (fn [_] (reply/e-ok context state nil))})))))
 
-(defn many-some
+(defn many1
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
   the returned values of `p`.
 
@@ -302,13 +302,13 @@
   Example:
 
       (def word
-        (many-some char/alpha?)
+        (many1 char/alpha?)
   "
   [p]
-  (bind-let [x p, xs (many-zero p)]
+  (bind-let [x p, xs (many0 p)]
     (result (cons x xs))))
 
-(defn skip-zero
+(defn skip0
   "This parser applies the parser `p` zero or more times, skipping its result.
 
   - Fails: when `p` fails and consumes some input.
@@ -317,7 +317,7 @@
   Example:
 
       (def spaces
-        (skip-zero char/whitespace?))
+        (skip0 char/whitespace?))
   "
   [p]
   (fn [state context]
@@ -329,14 +329,14 @@
                                                 reply/e-ok parser/e-ok-throw-empty-input
                                                 reply/e-err (fn [_] (reply/e-ok context state nil))})))))
 
-(defn skip-some
+(defn skip1
   "This parser applies the parser `p` _one_ or more times, skipping its result.
 
   - Fails: when `p` does not succeed at least once.
   - Consumes: when `p` consumes some input.
   "
   [p]
-  (after p (skip-zero p)))
+  (after p (skip0 p)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -504,16 +504,14 @@
   ([p q qq & more]
    (reduce choice (list* p q qq more))))
 
-(defn optional
+(defn option
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
   it returns the value `x` (or `nil`), otherwise the value returned by `p`.
-  Unlike Haskell's `optional` combinator it does not discard the result of `p`
-  and behaves like `option` combinator.
 
   - Fails: when `p` fails and consumes come input.
   - Consumes: when `p` consumes some input.
   "
-  ([p] (optional p nil))
+  ([p] (option p nil))
   ([p x]
    (choice p (result x))))
 
@@ -567,51 +565,51 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn sep-by-some
+(defn sep1
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`."
   [p sep]
-  (bind-let [x p, xs (many-zero (after sep p))]
+  (bind-let [x p, xs (many0 (after sep p))]
     (result (cons x xs))))
 
-(defn sep-by-zero
+(defn sep0
   "Parses _zero_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
         (sep-by-zero p (after (char/one-of? \",\")
-                              (skip-zero char/whitespace?))))
+                              (skip0 char/whitespace?))))
   "
   [p sep]
-  (optional (sep-by-some p sep)))
+  (option (sep1 p sep)))
 
-(defn sep-by-end-some
+(defn sep1-end
   "Parses _one_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (many-some (bind-let [x p, _ sep]
-               (result x))))
+  (many1 (bind-let [x p, _ sep]
+           (result x))))
 
-(defn sep-by-end-zero
+(defn sep0-end
   "Parses _zero_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (sep-by-end-some p sep)))
+  (option (sep1-end p sep)))
 
-(defn sep-by-opt-end-some
+(defn sep1-opt
   "Parses _one_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (bind-let [x p]
-    (choice (bind-let [_ sep, xs (optional (sep-by-opt-end-some p sep))]
+    (choice (bind-let [_ sep, xs (option (sep1-opt p sep))]
               (result (cons x xs)))
             (result [x]))))
 
-(defn sep-by-opt-end-zero
+(defn sep0-opt
   "Parses _zero_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (optional (sep-by-opt-end-some p sep)))
+  (option (sep1-opt p sep)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -632,7 +630,7 @@
       > label: (\\t \\e \\s \\t)
   "
   [label]
-  (choice (maybe (bind-let [x (many-some any-token)]
+  (choice (maybe (bind-let [x (many1 any-token)]
                    (println (str label ": " x))
                    (fail)))
           (result nil)))

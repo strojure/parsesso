@@ -39,7 +39,7 @@
 
 (def get-input
   "This parser returns the current input."
-  (p/with get-parser-state state/input))
+  (p/using get-parser-state state/input))
 
 (def ^{:arglists '([input])}
   set-input
@@ -50,7 +50,7 @@
 
 (def get-user-state
   "This parser returns the current user state."
-  (p/with get-parser-state state/user))
+  (p/using get-parser-state state/user))
 
 (def ^{:arglists '([u])}
   set-user-state

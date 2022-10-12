@@ -25,48 +25,48 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def skip-opt-ws (p/skip-zero char/whitespace?))
+(def space0 (p/skip0 char/whitespace?))
 
-(def skip-some-ws (p/skip-some char/whitespace?))
+(def space1 (p/skip1 char/whitespace?))
 
-(defn sep-by-comma
+(defn comma-sep
   "Parses `p` separated by commas."
   [p]
-  (p/sep-by-some p (p/maybe (-> (char/one-of? ",")
-                                (p/between skip-opt-ws)))))
+  (p/sep1 p (p/maybe (-> (char/one-of? ",")
+                         (p/between space0)))))
 
 (def table-name
   "Parses table name as `:table`."
-  (-> (p/many-some char/alpha?)
-      (p/with char/++ keyword)))
+  (-> (p/many1 char/alpha?)
+      (p/using char/++ keyword)))
 
 (def column-name
   "Parses column as `:column` or `:table.column`."
-  (-> (p/tuple (p/optional (p/maybe (p/tuple (p/many-some char/alpha?)
-                                             (char/one-of? "."))))
-               (p/many-some char/alpha?))
-      (p/with char/++ keyword)))
+  (-> (p/tuple (p/option (p/maybe (p/tuple (p/many1 char/alpha?)
+                                           (char/one-of? "."))))
+               (p/many1 char/alpha?))
+      (p/using char/++ keyword)))
 
 (def alias-id
   "Parses alias keyword as `:alias`."
-  (-> (p/many-some char/alpha?)
-      (p/with char/++ keyword)))
+  (-> (p/many1 char/alpha?)
+      (p/using char/++ keyword)))
 
 (def as-expr
   (->> alias-id (p/after (p/maybe (-> (p/word "as" :ic)
-                                      (p/between skip-some-ws))))))
+                                      (p/between space1))))))
 
 (def column-alias
   "Parses column ID with optional alias like `:column` or `[:column :alias]`."
-  (-> (p/tuple column-name (p/optional as-expr))
-      (p/with (fn [[col as]] (if as [col as] col)))))
+  (-> (p/tuple column-name (p/option as-expr))
+      (p/using (fn [[col as]] (if as [col as] col)))))
 
 (def select-statement
   "Parses SQL SELECT statement to `{:select [...] :from [...] ...}`."
-  (p/bind-let [_ (p/maybe (p/after (p/word "select" :ic) skip-some-ws))
-               select (sep-by-comma column-alias)
-               _ (-> (p/word "from" :ic) (p/between skip-some-ws))
-               from (sep-by-comma table-name)]
+  (p/bind-let [_ (p/maybe (p/after (p/word "select" :ic) space1))
+               select (comma-sep column-alias)
+               _ (-> (p/word "from" :ic) (p/between space1))
+               from (comma-sep table-name)]
     (p/result
       {:select (vec select)
        :from (vec from)})))

@@ -159,7 +159,7 @@
 (deftest re-match?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero (char/re-match? #"[a-z]"))
+    (p (p/many0 (char/re-match? #"[a-z]"))
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -203,7 +203,7 @@
 (deftest upper-case?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/upper-case?)
+    (p (p/many0 char/upper-case?)
        "ABC")
     {:consumed true, :value (seq "ABC")}
 
@@ -224,7 +224,7 @@
 (deftest lower-case?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/lower-case?)
+    (p (p/many0 char/lower-case?)
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -245,7 +245,7 @@
 (deftest numeric?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/numeric?)
+    (p (p/many0 char/numeric?)
        "01234567890")
     {:consumed true, :value (seq "01234567890")}
 
@@ -266,7 +266,7 @@
 (deftest alpha-numeric?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/alpha-numeric?)
+    (p (p/many0 char/alpha-numeric?)
        "12345abcABC")
     {:consumed true, :value (seq "12345abcABC")}
 
@@ -287,7 +287,7 @@
 (deftest whitespace?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-zero char/whitespace?)
+    (p (p/many0 char/whitespace?)
        " \t\r\n")
     {:consumed true, :value (seq " \t\r\n")}
 
@@ -348,23 +348,23 @@
   (test/are [expr result] (= result expr)
 
     (p (-> (char/one-of? "abc")
-           (p/with char/++))
+           (p/using char/++))
        "abc")
     {:consumed true, :value "a"}
 
-    (p (-> (p/each [(p/many-some (char/one-of? "abc"))
-                    (p/many-some (char/one-of? "123"))])
-           (p/with char/++))
+    (p (-> (p/tuple (p/many1 (char/one-of? "abc"))
+                    (p/many1 (char/one-of? "123")))
+           (p/using char/++))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (-> (p/many-zero (char/one-of? "abc"))
-           (p/with char/++))
+    (p (-> (p/many0 (char/one-of? "abc"))
+           (p/using char/++))
        "123")
     {:consumed false, :value ""}
 
     (p (-> (char/one-of? "abc")
-           (p/with char/++))
+           (p/using char/++))
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""

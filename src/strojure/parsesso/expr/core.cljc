@@ -7,7 +7,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn chain-left-some
+(defn chain1-left
   ;; TODO: Code example from haskell
   "This parser parses _one_ or more occurrences of `p`, separated by `op`
   Returns a value obtained by a _left_ associative application of all functions
@@ -22,17 +22,17 @@
     (p/bind-let [x p]
       (more x))))
 
-(defn chain-left-zero
+(defn chain0-left
   "This parser parses _zero_ or more occurrences of `p`, separated by `op`.
   Returns a value obtained by a _left_ associative application of all functions
   returned by `op` to the values returned by `p`. If there are zero occurrences
   of `p`, the value `x` is returned."
   [p op x]
-  (p/optional (chain-left-some p op) x))
+  (p/option (chain1-left p op) x))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn chain-right-some
+(defn chain1-right
   "This parser parses _one_ or more occurrences of `p`, separated by `op`.
   Returns a value obtained by a _right_ associative application of all functions
   returned by `op` to the values returned by `p`."
@@ -46,12 +46,12 @@
                       (p/result x)))]
     (scan)))
 
-(defn chain-right-zero
+(defn chain0-right
   "Parses _zero_ or more occurrences of `p`, separated by `op`. Returns a value
   obtained by a _right_ associative application of all functions returned by
   `op` to the values returned by `p`. If there are no occurrences of `p`, the
   value `x` is returned."
   [p op x]
-  (p/optional (chain-right-some p op) x))
+  (p/option (chain1-right p op) x))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

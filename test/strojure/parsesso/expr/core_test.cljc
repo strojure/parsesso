@@ -23,80 +23,80 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest chain-left-some-t
+(deftest chain1-left-t
   (test/are [expr result] (= result expr)
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [8 - 2 / 2])
     {:consumed true, :value 3}
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [8 - 2 2])
     {:consumed true, :value 6}
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [1])
     {:consumed true, :value 1}
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [+])
     {:consumed false, :error ["error at index 0:"
                               (str "unexpected " (p/render +))]}
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [0])
     {:consumed false, :error ["error at index 0:"
                               "unexpected 0"]}
 
-    (p (expr/chain-left-some (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /))
+    (p (expr/chain1-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
     ))
 
-(deftest chain-left-zero-t
+(deftest chain0-left-t
   (test/are [expr result] (= result expr)
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [8 - 2 / 2])
     {:consumed true, :value 3}
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [8 - 2 2])
     {:consumed true, :value 6}
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [1])
     {:consumed true, :value 1}
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [+])
     {:consumed false, :value 0}
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [0])
     {:consumed false, :value 0}
 
-    (p (expr/chain-left-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                             (tok + - * /)
-                             0)
+    (p (expr/chain0-left (tok 1 2 3 3 4 5 6 7 8 9)
+                         (tok + - * /)
+                         0)
        [])
     {:consumed false, :value 0}
 
@@ -104,80 +104,80 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest chain-right-some-t
+(deftest chain1-right-t
   (test/are [expr result] (= result expr)
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [8 - 2 / 2])
     {:consumed true, :value 7}
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [8 - 2 2])
     {:consumed true, :value 6}
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [1])
     {:consumed true, :value 1}
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [+])
     {:consumed false, :error ["error at index 0:"
                               (str "unexpected " (p/render +))]}
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [0])
     {:consumed false, :error ["error at index 0:"
                               "unexpected 0"]}
 
-    (p (expr/chain-right-some (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /))
+    (p (expr/chain1-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
     ))
 
-(deftest chain-right-zero-t
+(deftest chain0-right-t
   (test/are [expr result] (= result expr)
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [8 - 2 / 2])
     {:consumed true, :value 7}
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [8 - 2 2])
     {:consumed true, :value 6}
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [1])
     {:consumed true, :value 1}
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [+])
     {:consumed false, :value 0}
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [0])
     {:consumed false, :value 0}
 
-    (p (expr/chain-right-zero (tok 1 2 3 3 4 5 6 7 8 9)
-                              (tok + - * /)
-                              0)
+    (p (expr/chain0-right (tok 1 2 3 3 4 5 6 7 8 9)
+                          (tok + - * /)
+                          0)
        [])
     {:consumed false, :value 0}
 
