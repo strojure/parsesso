@@ -126,7 +126,7 @@
 
 (defn str*
   "Builds string from (possibly nested) collections of parsed characters and
-  strings. To be used with [[core/using]]."
+  strings. To be used with [[strojure.parsesso.core/using]]."
   [x]
   (impl/str* x))
 

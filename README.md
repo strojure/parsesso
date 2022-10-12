@@ -19,28 +19,32 @@ Parser combinators for Clojure(Script).
 
 ## Cheat sheet
 
-| Parsec                          | Parsesso          | Kern                  | Parsatron          |
-|---------------------------------|-------------------|-----------------------|--------------------|
-| `return`                        | `result`          | `return`              | `always`           |
-| `fail`                          | `fail`            | `fail`                | `never`            |
-| `label`, `<?>`                  | `expecting`       | `<?>`                 |                    |
-| `do`                            | `bind-let`        | `bind`                | `let->>`           |
-| `>>`                            | `after`           | `>>`                  | `>>`, `nxt`        |
-| `fmap`                          | `using`           | `<$>`                 |                    |
-| `try`                           | `maybe`           | `<:>`                 | `attempt`          |
-| `lookAhead`                     | `look-ahead`      | `look-ahead`          | `lookahead`        |
-| `notFollowedBy`                 | `not-followed-by` | `not-followed-by`     |                    |
-| `many`                          | `many0`           | `many`                | `many`             |
-| `many1`                         | `many1`           | `many1`               | `many1`            |
-| `skipMany`                      | `skip0`           | `skip-many`           |                    |
-| `skipMany1`                     | `skip1`           | `skip-many1`          |                    |
-| `token`, `satisfy`              | `token`           | `satisfy`             | `token`            |
-| `tokens`, `string`              | `word`            | `token*`              | `string`           |
-| `<*>`                           | `each`,`tuple`    | `<*>`                 |                    |
-| <code><&#124;></code>, `choice` | `choice`          | <code><&#124;></code> | `either`, `choice` |
-| `option`                        | `option`          | `option`              |                    |
-| `optional`                      | `option`          | `optional`            |                    |
-| `count`                         | `times`           | `times`               | `times`            |
+| Parsesso          | Parsec                          | Kern                  | Parsatron          |
+|-------------------|---------------------------------|-----------------------|--------------------|
+| `result`          | `return`                        | `return`              | `always`           |
+| `fail`            | `fail`                          | `fail`                | `never`            |
+| `expecting`       | `label`, `<?>`                  | `<?>`                 |                    |
+| `bind-let`        | `do`                            | `bind`                | `let->>`           |
+| `after`           | `>>`                            | `>>`                  | `>>`, `nxt`        |
+| `using`           | `fmap`                          | `<$>`                 |                    |
+| `maybe`           | `try`                           | `<:>`                 | `attempt`          |
+| `look-ahead`      | `lookAhead`                     | `look-ahead`          | `lookahead`        |
+| `not-followed-by` | `notFollowedBy`                 | `not-followed-by`     |                    |
+| `many0`           | `many`                          | `many`                | `many`             |
+| `many1`           | `many1`                         | `many1`               | `many1`            |
+| `skip0`           | `skipMany`                      | `skip-many`           |                    |
+| `skip1`           | `skipMany1`                     | `skip-many1`          |                    |
+| `token`           | `token`, `satisfy`              | `satisfy`             | `token`            |
+| `word`            | `tokens`, `string`              | `token*`              | `string`           |
+| `each`,`tuple`    | `<*>`                           | `<*>`                 |                    |
+| `choice`          | <code><&#124;></code>, `choice` | <code><&#124;></code> | `either`, `choice` |
+| `option`          | `option`                        | `option`              |                    |
+| `option`          | `optional`                      | `optional`            |                    |
+| `times`           | `count`                         | `times`               | `times`            |
+
+## Examples
+
+* [HoneySQL SELECT](test/demo/honeysql_select.clj)
 
 ## Performance
 

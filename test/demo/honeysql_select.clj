@@ -1,4 +1,4 @@
-(ns example.honesql
+(ns demo.honeysql-select
   "Demo: Parse SQL SELECT query to HoneySQL data structures."
   {:clj-kondo/config '{:linters {:missing-docstring {:level :off}}}}
   (:require [strojure.parsesso.char.core :as char]
@@ -47,34 +47,50 @@
                (p/many1 char/letter?))
       (p/using char/str* keyword)))
 
-(def alias-id
-  "Parses alias keyword as `:alias`."
-  (-> (p/many1 char/letter?)
-      (p/using char/str* keyword)))
+(comment
+  (p/parse column-name "username") #_=> :username
+  (p/parse column-name "u.username") #_=> :u.username
+  (p/parse column-name "u.u.username") #_=> :u.u
+  )
 
 (def as-expr
-  (->> alias-id (p/after (p/maybe (-> (p/word "as" :ic)
-                                      (p/between space1))))))
+  "Parses alias keyword like `:alias` after AS."
+  (p/after (p/maybe (-> (p/word "as" :ic) (p/between space1)))
+           (-> (p/many1 char/letter?)
+               (p/using char/str* keyword))))
 
-(def column-alias
-  "Parses column ID with optional alias like `:column` or `[:column :alias]`."
-  (-> (p/tuple column-name (p/option as-expr))
-      (p/using (fn [[col as]] (if as [col as] col)))))
+(comment
+  (p/parse as-expr " AS name") #_=> :name
+  )
+
+(defn with-as
+  "Parses `p` with optional alias like `:name` or `[:name :alias]`."
+  [p]
+  (-> (p/tuple p (p/option as-expr))
+      (p/using (fn [[x as]] (if as [x as] x)))))
+
+(comment
+  (p/parse (with-as column-name) "u.username") #_=> :u.username
+  (p/parse (with-as column-name) "u.username AS name") #_=> [:u.username :name]
+  )
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (def select-statement
   "Parses SQL SELECT statement to `{:select [...] :from [...] ...}`."
   (p/bind-let [_ (p/maybe (p/after (p/word "select" :ic) space1))
-               select (comma-sep column-alias)
+               select (comma-sep (with-as column-name))
                _ (-> (p/word "from" :ic) (p/between space1))
-               from (comma-sep table-name)]
+               from (comma-sep (with-as table-name))]
     (p/result
       {:select (vec select)
        :from (vec from)})))
 
 (comment
-  (def -q "SELECT username, u.name AS x FROM user, status")
+  (def -q "SELECT username, u.name AS x FROM user AS u, status")
   (p/parse select-statement -q)
-  #_{:select [:username [:u.name :x]], :from [:user :status]}
+  #_=> {:select [:username [:u.name :x]],
+        :from [[:user :u] :status]}
   )
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
