@@ -18,51 +18,51 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def ^:private one-of-pred-fn!
+(def ^:private string-pred-fn!
   (atom {}))
 
-(defn register-one-of-pred-fn
-  "Associates keyword `k` with predicate function of the `one-of?` and `not-of?`
+(defn register-string-pred-fn
+  "Associates keyword `k` with predicate function of the `is` and `is-not`
   parsers."
   [k, f]
-  (assert (keyword k) "Requires keyword as `one-of?` test-fn ID")
-  (swap! one-of-pred-fn! assoc k f))
+  (assert (keyword k) "Requires keyword as `is` test-fn ID")
+  (swap! string-pred-fn! assoc k f))
 
-(defn one-of-pred-fn
-  "Returns predicate for the keyword `k` and string of characters `cs`."
-  [k cs]
-  (if-let [f (@one-of-pred-fn! k)]
-    (f cs)
-    (throw (ex-info (str "The `one-of?` predicate function is not registered:" k) {}))))
+(defn string-pred-fn
+  "Returns predicate for the keyword `k` and string of characters `s`."
+  [k s]
+  (if-let [f (@string-pred-fn! k)]
+    (f s)
+    (throw (ex-info (str "The `is` predicate function is not registered:" k) {}))))
 
-(defn one-of-pred-default
-  "Default predicate for `one-of?` and `not-of?` parsers."
-  [cs]
+(defn string-pred-default
+  "Default predicate for `is` and `is-not` parsers."
+  [s]
   (fn [c] #?(:clj
-             (<= 0 (.indexOf ^String cs ^int (.charValue ^Character c)))
+             (<= 0 (.indexOf ^String s ^int (.charValue ^Character c)))
              :cljs
-             (string/index-of cs c))))
+             (string/index-of s c))))
 
-(defn one-of-pred-ignorecase
-  "Default predicate for `one-of?` and `not-of?` parsers."
-  [cs]
-  (let [cs (string/lower-case cs)]
+(defn string-pred-ignorecase
+  "Default predicate for `is` and `is-not` parsers."
+  [s]
+  (let [s (string/lower-case s)]
     (fn [c] #?(:clj
-               (<= 0 (.indexOf ^String cs ^int (Character/toLowerCase ^char c)))
+               (<= 0 (.indexOf ^String s ^int (Character/toLowerCase ^char c)))
                :cljs
-               (string/index-of cs (string/lower-case c))))))
+               (string/index-of s (string/lower-case c))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn deep-join
+(defn str*
   "Builds string from (possibly nested) collections of parsed characters and
   strings."
   ([x] (-> #?(:clj (StringBuilder.) :cljs (StringBuffer.))
-           (deep-join x)
+           (str* x)
            (str)))
   ([sb x]
    (if (sequential? x)
-     (reduce deep-join sb x)
+     (reduce str* sb x)
      #?(:clj  (.append ^StringBuilder sb (str x))
         :cljs (.append ^StringBuffer sb (str x))))))
 

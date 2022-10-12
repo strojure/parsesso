@@ -6,19 +6,19 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def lower-case?
+(def lower?
   "Parser and predicate for the lower-case letter character according to
   `Character/isLowerCase`."
   (p/token #(Character/isLowerCase ^char %)
            "lower-case letter"))
 
-(def upper-case?
+(def upper?
   "Parser and predicate for the upper-case letter character according to
   `Character/isUpperCase`."
   (p/token #(Character/isUpperCase ^char %)
            "upper-case letter"))
 
-(def title-case?
+(def title?
   "Parser and predicate for the title-case letter character according to
   `Character/isTitleCase`."
   (p/token #(Character/isTitleCase ^char %)
@@ -50,13 +50,13 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def space-char?
+(def space?
   "Parser and predicate for the Unicode space character according to
   `Character/isSpaceChar`."
   (p/token #(Character/isSpaceChar ^char %)
            "space character"))
 
-(def whitespace?
+(def white?
   "Parser and predicate for the white space character according to
   `Character/isWhitespace`."
   (p/token #(Character/isWhitespace ^char %)

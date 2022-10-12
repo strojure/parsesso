@@ -1,6 +1,6 @@
 (ns strojure.parsesso.char.core
   "Basic function for parsing sequences of characters."
-  (:refer-clojure :exclude [newline])
+  (:refer-clojure :exclude [newline number?])
   (:require #?(:cljs [clojure.string :as string])
             [strojure.parsesso.core :as p]
             [strojure.parsesso.impl.char :as impl]))
@@ -10,104 +10,104 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn register-one-of-pred
-  "Associates keyword `k` with predicate function of the [[one-of?]] and
-  [[not-of?]] parsers."
+(defn register-string-pred
+  "Associates keyword `k` with predicate function of the [[is]] and
+  [[is-not]] parsers."
   [k, f]
-  (impl/register-one-of-pred-fn k f))
+  (impl/register-string-pred-fn k f))
 
-(register-one-of-pred :default impl/one-of-pred-default)
-(register-one-of-pred :ic impl/one-of-pred-ignorecase)
+(register-string-pred :default impl/string-pred-default)
+(register-string-pred :ic impl/string-pred-ignorecase)
 
-(defn one-of?
+(defn is
   "Returns parser and predicate for the character `c` which is in the supplied
-  string of characters `cs`. Optional `pred-k` keyword refers to function
-  `(fn [pred-k cs] (fn [c] ...))` which returns custom predicate for chars
-  against `cs`. The new `pred-k` should be registered using
-  [[register-one-of-pred]], predefined values are `:default` for default and
+  string of characters `s`. Optional `pred-k` keyword refers to function
+  `(fn [pred-k s] (fn [c] ...))` which returns custom predicate for chars
+  against `s`. The new `pred-k` should be registered using
+  [[register-string-pred]], predefined values are `:default` for default and
   `:ic` for case insensitive matching.
 
-      (def control-char (one-of? \"EX\"))
+      (def control-char (is \"EX\"))
 
-      (def control-char-ignorecase (one-of? \"ex\" :ic))
+      (def control-char-ignorecase (is \"ex\" :ic))
   "
-  ([cs]
-   (p/token (impl/one-of-pred-default cs)
-            (delay (if (second cs) (str "character of " (p/render cs))
-                                   (p/render cs)))))
-  ([cs, pred-k]
-   (p/token (impl/one-of-pred-fn pred-k cs)
-            (delay (if (second cs) (str "character of " (p/render cs))
-                                   (p/render cs))))))
+  ([s]
+   (p/token (impl/string-pred-default s)
+            (delay (if (second s) (str "character of " (p/render s))
+                                  (p/render s)))))
+  ([s, pred-k]
+   (p/token (impl/string-pred-fn pred-k s)
+            (delay (if (second s) (str "character of " (p/render s))
+                                  (p/render s))))))
 
-(defn not-of?
+(defn is-not
   "Returns parser and predicate for the character `c` which is _not_ in the
-  supplied string of characters `cs`. See also [[one-of?]] about optional
+  supplied string of characters `s`. See also [[is]] about optional
   `pred-k` argument."
-  ([cs]
-   (p/token (complement (one-of? cs))
-            (delay (if (second cs)
-                     (str "character not of " (p/render cs))
-                     (str "not " (p/render cs) " character")))))
-  ([cs, pred-k]
-   (p/token (complement (one-of? cs pred-k))
-            (delay (if (second cs)
-                     (str "character not of " (p/render cs))
-                     (str "not " (p/render cs) " character"))))))
+  ([s]
+   (p/token (complement (is s))
+            (delay (if (second s)
+                     (str "character not of " (p/render s))
+                     (str "not " (p/render s) " character")))))
+  ([s, pred-k]
+   (p/token (complement (is s pred-k))
+            (delay (if (second s)
+                     (str "character not of " (p/render s))
+                     (str "not " (p/render s) " character"))))))
 
-(defn re-match?
+(defn regex
   "Returns parser and predicate for the character `c` matching regex pattern
   `re`."
   [re]
   (p/token (fn [c] (re-find re (str c)))
-           (delay (str "character matching pattern " (p/render re)))))
+           (delay (str "character matching regex " (p/render re)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def upper-case?
-  "Parser and predicate for ASCII 7 bit upper-case alphabetic character."
+(def upper?
+  "Parser and predicate for ASCII 7 bit upper-case letter character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 65 c) (<= c 90)))
                       :cljs
                       (re-find #"[A-Z]" c)))
-           "upper-case alphabetic character"))
+           "upper-case ascii letter"))
 
-(def lower-case?
-  "Parser and predicate for ASCII 7 bit lower-case alphabetic character."
+(def lower?
+  "Parser and predicate for ASCII 7 bit lower-case letter character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 97 c) (<= c 122)))
                       :cljs
                       (re-find #"[a-z]" c)))
-           "lower-case alphabetic character"))
+           "lower-case ascii letter"))
 
-(def alpha?
-  "Parser and predicate for ASCII 7 bit alphabetic character."
+(def letter?
+  "Parser and predicate for ASCII 7 bit letter character."
   (p/token (fn [c] #?(:clj
-                      (or (upper-case? c) (lower-case? c))
+                      (or (upper? c) (lower? c))
                       :cljs
                       (re-find #"[a-zA-Z]" c)))
-           "alphabetic character"))
+           "ascii letter"))
 
-(def numeric?
-  "Parser and predicate for ASCII 7 bit numeric character."
+(def number?
+  "Parser and predicate for ASCII 7 bit number character."
   (p/token (fn [c] #?(:clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 48 c) (<= c 57)))
                       :cljs
                       (re-find #"[0-9]" c)))
-           "numeric character"))
+           "ascii number"))
 
-(def alpha-numeric?
-  "Parser and predicate for ASCII 7 bit alphabetic or numeric character."
+(def letter-or-number?
+  "Parser and predicate for ASCII 7 bit letter or number character."
   (p/token (fn [c] #?(:clj
-                      (or (alpha? c) (numeric? c))
+                      (or (letter? c) (number? c))
                       :cljs
                       (re-find #"[a-zA-Z0-9]" c)))
-           "alphanumeric character"))
+           "ascii letter or number"))
 
-(def whitespace?
+(def white?
   "Parser and predicate for ASCII 7 bit whitespace character."
   (p/token (fn [c] #?(:clj
                       (Character/isSpace c)
@@ -119,15 +119,15 @@
 
 (def newline
   "Parses a CRLF or LF end of line. Returns a `\newline` character."
-  (p/choice (one-of? "\n")
-            (p/after (one-of? "\r") (one-of? "\n"))))
+  (p/choice (is "\n")
+            (p/after (is "\r") (is "\n"))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn ++
+(defn str*
   "Builds string from (possibly nested) collections of parsed characters and
-  strings. To be used with [[p/with]]."
+  strings. To be used with [[core/using]]."
   [x]
-  (impl/deep-join x))
+  (impl/str* x))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

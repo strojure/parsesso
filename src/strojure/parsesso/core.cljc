@@ -190,7 +190,7 @@
   an identifier we have to use the [[maybe]] combinator. Suppose we write:
 
       (def identifier
-        (many1 char/alpha?))
+        (many1 char/letter?))
 
       (def let-expr
         (after (word \"let\")
@@ -250,7 +250,7 @@
     behaviour as follows:
 
         (-> (word \"let\")
-            (not-followed-by char/alpha-numeric?))
+            (not-followed-by char/letter-or-number?))
 
     - Fails:
         - when `p` fails.
@@ -275,9 +275,9 @@
   Example:
 
       (def identifier
-        (bind-let [c char/alpha?
-                   cs (many0 (choice char/alpha-numeric?
-                             (char/one-of? \"_\")))]
+        (bind-let [c char/letter?
+                   cs (many0 (choice char/letter-or-number?
+                                     (char/is \"_\")))]
           (result (cons c cs))))
   "
   [p]
@@ -302,7 +302,7 @@
   Example:
 
       (def word
-        (many1 char/alpha?)
+        (many1 char/letter?)
   "
   [p]
   (bind-let [x p, xs (many0 p)]
@@ -317,7 +317,7 @@
   Example:
 
       (def spaces
-        (skip0 char/whitespace?))
+        (skip0 char/white?))
   "
   [p]
   (fn [state context]
@@ -524,8 +524,8 @@
   Example:
 
       (defn braces [p]
-        (-> p (between (char/one-of? \"{\")
-                       (char/one-of? \"}\"))))
+        (-> p (between (char/is \"{\")
+                       (char/is \"}\"))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -577,8 +577,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep-by-zero p (after (char/one-of? \",\")
-                              (skip0 char/whitespace?))))
+        (sep-by-zero p (after (char/is \",\")
+                              (skip0 char/white?))))
   "
   [p sep]
   (option (sep1 p sep)))
@@ -623,7 +623,7 @@
 
   Example:
 
-      (parse (after (char/one-of? \"aeiou\")
+      (parse (after (char/is \"aeiou\")
                     (debug-state \"label\"))
              \"atest\")
 
@@ -646,8 +646,8 @@
 
   Example:
 
-      (parse (after (char/one-of? \"aeiou\")
-                    (-> (char/one-of? \"nope\")
+      (parse (after (char/is \"aeiou\")
+                    (-> (char/is \"nope\")
                         (debug-parser \"one-of-nope\")))
              \"atest\")
 

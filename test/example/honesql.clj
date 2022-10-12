@@ -25,32 +25,32 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def space0 (p/skip0 char/whitespace?))
+(def space0 (p/skip0 char/white?))
 
-(def space1 (p/skip1 char/whitespace?))
+(def space1 (p/skip1 char/white?))
 
 (defn comma-sep
   "Parses `p` separated by commas."
   [p]
-  (p/sep1 p (p/maybe (-> (char/one-of? ",")
+  (p/sep1 p (p/maybe (-> (char/is ",")
                          (p/between space0)))))
 
 (def table-name
   "Parses table name as `:table`."
-  (-> (p/many1 char/alpha?)
-      (p/using char/++ keyword)))
+  (-> (p/many1 char/letter?)
+      (p/using char/str* keyword)))
 
 (def column-name
   "Parses column as `:column` or `:table.column`."
-  (-> (p/tuple (p/option (p/maybe (p/tuple (p/many1 char/alpha?)
-                                           (char/one-of? "."))))
-               (p/many1 char/alpha?))
-      (p/using char/++ keyword)))
+  (-> (p/tuple (p/option (p/maybe (p/tuple (p/many1 char/letter?)
+                                           (char/is "."))))
+               (p/many1 char/letter?))
+      (p/using char/str* keyword)))
 
 (def alias-id
   "Parses alias keyword as `:alias`."
-  (-> (p/many1 char/alpha?)
-      (p/using char/++ keyword)))
+  (-> (p/many1 char/letter?)
+      (p/using char/str* keyword)))
 
 (def as-expr
   (->> alias-id (p/after (p/maybe (-> (p/word "as" :ic)
