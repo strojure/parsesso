@@ -1,4 +1,4 @@
-(defproject com.github.strojure/parsesso "1.0.218-RC1"
+(defproject com.github.strojure/parsesso "1.0.225-RC2"
   :description "Parser combinators library for Clojure(Script)."
   :url "https://github.com/strojure/parsesso"
   :license {:name "The MIT License" :url "http://opensource.org/licenses/MIT"}
