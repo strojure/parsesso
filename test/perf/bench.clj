@@ -2,8 +2,8 @@
   "Some benchmarks between parsesso, kern and parsatron. There is no jasentaa
   here because it is very slow."
   (:require [blancas.kern.core :as krn]
-            [strojure.parsesso.char.core :as char]
-            [strojure.parsesso.core :as p]
+            [strojure.parsesso.char :as char]
+            [strojure.parsesso.parser :as p]
             [the.parsatron :as prt]))
 
 (set! *warn-on-reflection* true)

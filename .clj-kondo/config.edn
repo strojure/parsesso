@@ -6,7 +6,7 @@
            :unknown-require-option {:level :off}
            :unsorted-required-namespaces {:level :warning}}
  :lint-as {cljs.core/defrecord clojure.core/defrecord
-           strojure.parsesso.core/bind-let clojure.core/let}
+           strojure.parsesso.parser/bind-let clojure.core/let}
  :config-in-comment {:linters {:redundant-expression {:level :off}
                                :unresolved-namespace {:level :off}
                                :unresolved-symbol {:level :off}

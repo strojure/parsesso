@@ -1,8 +1,8 @@
-(ns strojure.parsesso.parser-state
+(ns strojure.parsesso.state
   "Parser combinators to work with parser state."
-  (:require [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.reply :as reply]
-            [strojure.parsesso.impl.state :as state]))
+  (:require [strojure.parsesso.impl.reply :as reply]
+            [strojure.parsesso.impl.state :as impl]
+            [strojure.parsesso.parser :as p]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -39,23 +39,23 @@
 
 (def get-input
   "This parser returns the current input."
-  (p/using get-parser-state state/input))
+  (p/using get-parser-state impl/input))
 
 (def ^{:arglists '([input])}
   set-input
   "This parser continues parsing with `input`."
-  (partial do-update-state state/set-input))
+  (partial do-update-state impl/set-input))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (def get-user-state
   "This parser returns the current user state."
-  (p/using get-parser-state state/user))
+  (p/using get-parser-state impl/user))
 
 (def ^{:arglists '([u])}
   set-user-state
   "This parser sets the user state to `u`"
-  (partial do-update-state state/set-user-state))
+  (partial do-update-state impl/set-user-state))
 
 (defn update-user-state
   "This parser applies function `f` to the user state. Suppose that we want to
@@ -66,6 +66,6 @@
         (result x))
   "
   [f]
-  (do-update-state state/update-user-state f))
+  (do-update-state impl/update-user-state f))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

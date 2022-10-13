@@ -1,4 +1,4 @@
-(ns strojure.parsesso.core
+(ns strojure.parsesso.parser
   "Main namespace with parsers and their combinators."
   (:require [strojure.parsesso.impl.char :as char]
             [strojure.parsesso.impl.error :as error]
@@ -7,7 +7,7 @@
             [strojure.parsesso.impl.reply :as reply :include-macros true]
             [strojure.parsesso.impl.state :as state])
   #?(:clj  (:import (clojure.lang ISeq))
-     :cljs (:require-macros [strojure.parsesso.core :refer [bind-let do-parser]])))
+     :cljs (:require-macros [strojure.parsesso.parser :refer [bind-let do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))

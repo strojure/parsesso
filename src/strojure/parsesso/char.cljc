@@ -1,9 +1,9 @@
-(ns strojure.parsesso.char.core
+(ns strojure.parsesso.char
   "Basic function for parsing sequences of characters."
   (:refer-clojure :exclude [newline number?])
   (:require #?(:cljs [clojure.string :as string])
-            [strojure.parsesso.core :as p]
-            [strojure.parsesso.impl.char :as impl]))
+            [strojure.parsesso.impl.char :as impl]
+            [strojure.parsesso.parser :as p]))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -126,7 +126,7 @@
 
 (defn str*
   "Builds string from (possibly nested) collections of parsed characters and
-  strings. To be used with [[strojure.parsesso.core/using]]."
+  strings. To be used with [[strojure.parsesso.parser/using]]."
   [x]
   (impl/str* x))
 

@@ -1,8 +1,8 @@
 (ns demo.honeysql-select
   "Demo: Parse SQL SELECT query to HoneySQL data structures."
   {:clj-kondo/config '{:linters {:missing-docstring {:level :off}}}}
-  (:require [strojure.parsesso.char.core :as char]
-            [strojure.parsesso.core :as p]))
+  (:require [strojure.parsesso.char :as char]
+            [strojure.parsesso.parser :as p]))
 
 (set! *warn-on-reflection* true)
 

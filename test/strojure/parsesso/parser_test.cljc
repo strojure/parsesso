@@ -1,7 +1,7 @@
-(ns strojure.parsesso.core-test
+(ns strojure.parsesso.parser-test
   (:require [clojure.string :as string]
             [clojure.test :as test :refer [deftest testing]]
-            [strojure.parsesso.core :as p]))
+            [strojure.parsesso.parser :as p]))
 
 #_(test/run-tests)
 

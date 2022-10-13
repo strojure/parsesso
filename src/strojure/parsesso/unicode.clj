@@ -1,6 +1,6 @@
-(ns strojure.parsesso.char.unicode-java
+(ns strojure.parsesso.unicode
   "Unicode char parsers using `java.lang.Character`. Clojure only."
-  (:require [strojure.parsesso.core :as p]))
+  (:require [strojure.parsesso.parser :as p]))
 
 (set! *warn-on-reflection* true)
 
