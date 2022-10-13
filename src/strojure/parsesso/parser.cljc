@@ -668,7 +668,7 @@
 
   Options:
 
-  **`:pos`** The instance of InputPos or keyword for [[pos/init-pos]] to
+  **`:pos`** The instance of InputPos or keyword for [[impl.pos/init-pos]] to
   init parser pos. By default pos is initialized to TextPos for string input or
   first token of char type, or IndexPos otherwise.
 
