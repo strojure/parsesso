@@ -33,12 +33,10 @@
   "
   ([s]
    (p/token (impl/string-pred-default s)
-            (delay (if (second s) (str "character of " (p/render s))
-                                  (p/render s)))))
+            (delay (str (p/render s) " character"))))
   ([s, pred-k]
    (p/token (impl/string-pred-fn pred-k s)
-            (delay (if (second s) (str "character of " (p/render s))
-                                  (p/render s))))))
+            (delay (str (p/render s) " character")))))
 
 (defn is-not
   "Returns parser and predicate for the character `c` which is _not_ in the
@@ -46,14 +44,10 @@
   `pred-k` argument."
   ([s]
    (p/token (complement (is s))
-            (delay (if (second s)
-                     (str "character not of " (p/render s))
-                     (str "not " (p/render s) " character")))))
+            (delay (str "not " (p/render s) " character"))))
   ([s, pred-k]
    (p/token (complement (is s pred-k))
-            (delay (if (second s)
-                     (str "character not of " (p/render s))
-                     (str "not " (p/render s) " character"))))))
+            (delay (str "not " (p/render s) " character")))))
 
 (defn regex
   "Returns parser and predicate for the character `c` matching regex pattern

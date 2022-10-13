@@ -44,25 +44,25 @@
          "d")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"d\""
-                                "expecting character of \"abc\""]}
+                                "expecting \"abc\" character"]}
 
       (p (char/is "abc")
          "")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected end of input"
-                                "expecting character of \"abc\""]}
+                                "expecting \"abc\" character"]}
 
       (p (char/is "a")
          "d")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"d\""
-                                "expecting \"a\""]}
+                                "expecting \"a\" character"]}
 
       (p (char/is "a")
          "")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected end of input"
-                                "expecting \"a\""]}
+                                "expecting \"a\" character"]}
 
       ))
 
@@ -85,7 +85,7 @@
          "d")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"d\""
-                                "expecting character of \"abc\""]}
+                                "expecting \"abc\" character"]}
 
       )))
 
@@ -101,13 +101,13 @@
          "a")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"a\""
-                                "expecting character not of \"abc\""]}
+                                "expecting not \"abc\" character"]}
 
       (p (char/is-not "abc")
          "")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected end of input"
-                                "expecting character not of \"abc\""]}
+                                "expecting not \"abc\" character"]}
 
       (p (char/is-not "a")
          "a")
@@ -134,13 +134,13 @@
          "a")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"a\""
-                                "expecting character not of \"abc\""]}
+                                "expecting not \"abc\" character"]}
 
       (p (char/is-not "abc" :ic)
          "A")
       {:consumed false, :error ["error at line 1, column 1:"
                                 "unexpected \"A\""
-                                "expecting character not of \"abc\""]}
+                                "expecting not \"abc\" character"]}
 
       (p (char/is-not "a" :ic)
          "a")
@@ -320,25 +320,25 @@
        "\ra")
     {:consumed true, :error ["error at line 1, column 2:"
                              "unexpected \"a\""
-                             "expecting \"\\n\""]}
+                             "expecting \"\\n\" character"]}
 
     (p char/newline
        "\r")
     {:consumed true, :error ["error at line 1, column 2:"
                              "unexpected end of input"
-                             "expecting \"\\n\""]}
+                             "expecting \"\\n\" character"]}
 
     (p char/newline
        "a")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"a\""
-                              "expecting \"\\n\" or \"\\r\""]}
+                              "expecting \"\\n\" character or \"\\r\" character"]}
 
     (p char/newline
        "")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected end of input"
-                              "expecting \"\\n\" or \"\\r\""]}
+                              "expecting \"\\n\" character or \"\\r\" character"]}
 
     ))
 
@@ -368,7 +368,7 @@
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""
-                              "expecting character of \"abc\""]}
+                              "expecting \"abc\" character"]}
 
     ))
 

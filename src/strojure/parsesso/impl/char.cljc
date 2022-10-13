@@ -38,10 +38,12 @@
 (defn string-pred-default
   "Default predicate for `is` and `is-not` parsers."
   [s]
-  (fn [c] #?(:clj
-             (<= 0 (.indexOf ^String s ^int (.charValue ^Character c)))
-             :cljs
-             (string/index-of s c))))
+  #?(:clj
+     (if (char? s)
+       (fn [c] (.equals ^Character s c))
+       (fn [c] (<= 0 (.indexOf ^String s ^int (.charValue ^Character c)))))
+     :cljs
+     (fn [c] (string/index-of s c))))
 
 (defn string-pred-ignorecase
   "Default predicate for `is` and `is-not` parsers."
