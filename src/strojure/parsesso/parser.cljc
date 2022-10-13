@@ -622,8 +622,9 @@
 ;;; Parser state combinators
 
 (defn get-state
-  "This parser returns the parser state field `:input`, `:pos`, `:user`. Without
-  `field` it returns the parser state record itself."
+  "This parser returns the parser state field `:input`, `:pos` or `:user`.
+  Without `field` it returns the parser state record itself."
+  {:arglists '([] [:input] [:pos] [:user])}
   ([]
    (fn [state context]
      (reply/e-ok context state state)))
@@ -632,14 +633,15 @@
      (reply/e-ok context state (field state)))))
 
 (defn update-state
-  "This parser applies function `f` to the parser state field `:input`, `:pos`,
-  `:user` and returns modified value. Without `field` it applies `f` to the
+  "This parser applies function `f` to the parser state field `:input`, `:pos`
+  or `:user` and returns modified value. Without `field` it applies `f` to the
   parser state record itself. Suppose that we want to count identifiers in a
   source, we could use the user state as:
 
       (bind-let [x identifier
                  _ (update-state :user inc)]
         (result x))"
+  {:arglists '([f] [:input, f] [:pos, f] [:user, f])}
   ([f]
    (fn [state context]
      (let [s (f state)]
@@ -651,8 +653,9 @@
        (reply/e-ok context (assoc state field v) v)))))
 
 (defn set-state
-  "This parser sets the parser state field `:input`, `:pos`, `:user` to `x`.
+  "This parser sets the parser state field `:input`, `:pos` or `:user` to `x`.
   Without `field` it sets the parser state record itself to `state`."
+  {:arglists '([state] [:input, new-input] [:pos, new-pos] [:user, new-user-state])}
   ([state]
    (update-state (constantly state)))
   ([field x]
