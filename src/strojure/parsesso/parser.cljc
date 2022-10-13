@@ -365,7 +365,7 @@
   optional expecting `msg`. 1-arity behaves as `(complement pred)` and can be
   used in predicate composition.
 
-  - Fails: when `(pred token)` return logical false.
+  - Fails: when `(pred token)` return logical true.
   - Consumes: when succeeds.
   "
   ([pred]
