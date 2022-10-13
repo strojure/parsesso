@@ -360,6 +360,19 @@
         (reply/e-err context (cond-> (error/sys-unexpected-eof state)
                                msg (error/expecting msg))))))))
 
+(defn token-not
+  "This parser accepts a token when `(pred token)` returns logical false, and
+  optional expecting `msg`. 1-arity behaves as `(complement pred)` and can be
+  used in predicate composition.
+
+  - Fails: when `(pred token)` return logical false.
+  - Consumes: when succeeds.
+  "
+  ([pred]
+   (token (complement pred)))
+  ([pred msg]
+   (token (complement pred) msg)))
+
 (defn register-word-test
   "Associates keyword `k` with test-fn of the [[word]] parser."
   [k, f]

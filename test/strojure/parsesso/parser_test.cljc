@@ -564,6 +564,40 @@
 
     ))
 
+(deftest token-not-t
+  (test/are [expr result] (= result expr)
+
+    (p (p/token-not #{:A})
+       [:B])
+    {:consumed true, :value :B}
+
+    (p (p/token-not #{:A})
+       [:A])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected :A"]}
+
+    (p (p/token-not #{:A})
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected end of input"]}
+
+    (p (fail-consumed (p/token-not #{:A}))
+       [:B])
+    {:consumed true, :error ["error at index 1:"
+                             "Test failure after parsing :B"]}
+
+    (p (fail-consumed (p/token-not #{:A}))
+       [:A])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected :A"]}
+
+    (p (fail-consumed (p/token-not #{:A}))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "unexpected end of input"]}
+
+    ))
+
 (deftest word-t
   (testing "default matching"
     (test/are [expr result] (= result expr)
