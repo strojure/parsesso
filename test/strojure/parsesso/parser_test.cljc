@@ -1293,6 +1293,67 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+(deftest get-state-t
+  (test/are [expr result] (= result expr)
+
+    (-> (p/parse* (p/get-state) [:A])
+        ((juxt (comp :input :value) (comp :input :state))))
+    ['(:A) '(:A)]
+
+    (-> (p/parse* (p/get-state :input) [:A])
+        :value)
+    '(:A)
+
+    (-> (p/parse* (p/after (p/set-state :user ::state) (p/get-state :user)) [:A])
+        :value)
+    ::state
+
+    ))
+
+(deftest set-state-t
+  (test/are [expr result] (= result expr)
+
+    (-> (p/parse* (p/set-state ::state) [:A])
+        :state)
+    ::state
+
+    (-> (p/parse* (p/set-state :input [:B]) [:A])
+        :state :input)
+    '(:B)
+
+    (-> (p/parse* (p/set-state :input nil) [:A])
+        :state :input)
+    '()
+
+    (-> (p/parse* (p/set-state :user ::state) [:A])
+        :state :user)
+    ::state
+
+    ))
+
+(deftest update-state-t
+  (test/are [expr result] (= result expr)
+
+    (-> (p/parse* (p/update-state (constantly ::state)) [:A])
+        :state)
+    ::state
+
+    (-> (p/parse* (p/update-state :input (constantly [:B])) [:A])
+        :state :input)
+    '(:B)
+
+    (-> (p/parse* (p/update-state :input (constantly nil)) [:A])
+        :state :input)
+    '()
+
+    (-> (p/parse* (p/update-state :user (constantly ::state)) [:A])
+        :state :user)
+    ::state
+
+    ))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (deftest trace-t
   (testing "trace state"
     (test/are [expr result] (= result expr)

@@ -619,6 +619,47 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
+;;; Parser state combinators
+
+(defn get-state
+  "This parser returns the parser state field `:input`, `:pos`, `:user`. Without
+  `field` it returns the parser state record itself."
+  ([]
+   (fn [state context]
+     (reply/e-ok context state state)))
+  ([field]
+   (fn [state context]
+     (reply/e-ok context state (field state)))))
+
+(defn update-state
+  "This parser applies function `f` to the parser state field `:input`, `:pos`,
+  `:user` and returns modified value. Without `field` it applies `f` to the
+  parser state record itself. Suppose that we want to count identifiers in a
+  source, we could use the user state as:
+
+      (bind-let [x identifier
+                 _ (update-state :user inc)]
+        (result x))"
+  ([f]
+   (fn [state context]
+     (let [s (f state)]
+       (reply/e-ok context s s))))
+  ([field f]
+   (fn [state context]
+     (let [v (cond-> (f (field state))
+               (identical? :input field) (state/conform-input))]
+       (reply/e-ok context (assoc state field v) v)))))
+
+(defn set-state
+  "This parser sets the parser state field `:input`, `:pos`, `:user` to `x`.
+  Without `field` it sets the parser state record itself to `state`."
+  ([state]
+   (update-state (constantly state)))
+  ([field x]
+   (update-state field (constantly x))))
+
+;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
 (defn trace
   "This parser prints the parser state (position, remaining input and user
   state) at the time it is invoked. When `p` is provided it then continues to
