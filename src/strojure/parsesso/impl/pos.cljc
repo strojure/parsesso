@@ -1,4 +1,5 @@
-(ns strojure.parsesso.impl.pos)
+(ns strojure.parsesso.impl.pos
+  {:no-doc true})
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
