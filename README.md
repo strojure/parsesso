@@ -19,27 +19,48 @@ Parser combinators for Clojure(Script).
 
 ## Cheat sheet
 
-| Parsesso          | Parsec<sup>[1], [2]</sup>       | Kern<sup>[3]</sup>    | Parsatron<sup>[4]</sup> |
-|-------------------|---------------------------------|-----------------------|-------------------------|
-| `result`          | `return`                        | `return`              | `always`                |
-| `fail`            | `fail`                          | `fail`                | `never`                 |
-| `expecting`       | `label`, `<?>`                  | `<?>`                 |                         |
-| `bind-let`        | `do`                            | `bind`                | `let->>`                |
-| `after`           | `>>`                            | `>>`                  | `>>`, `nxt`             |
-| `using`           | `fmap`                          | `<$>`                 |                         |
-| `maybe`           | `try`                           | `<:>`                 | `attempt`               |
-| `look-ahead`      | `lookAhead`                     | `look-ahead`          | `lookahead`             |
-| `not-followed-by` | `notFollowedBy`                 | `not-followed-by`     |                         |
-| `many0`           | `many`                          | `many`                | `many`                  |
-| `many1`           | `many1`                         | `many1`               | `many1`                 |
-| `skip0`           | `skipMany`                      | `skip-many`           |                         |
-| `skip1`           | `skipMany1`                     | `skip-many1`          |                         |
-| `token`           | `token`, `satisfy`              | `satisfy`             | `token`                 |
-| `word`            | `tokens`, `string`              | `token*`              | `string`                |
-| `group`           | `<*>`                           | `<*>`                 |                         |
-| `choice`          | <code><&#124;></code>, `choice` | <code><&#124;></code> | `choice`                |
-| `option`          | `option`, `optional`            | `option`, `optional`  |                         |
-| `times`           | `count`                         | `times`               | `times`                 |
+| Parsesso          | Parsec<sup>[1], [2]</sup>       | Kern<sup>[3]</sup>     | Parsatron<sup>[4]</sup> |
+|-------------------|---------------------------------|------------------------|-------------------------|
+| `result`          | `return`                        | `return`               | `always`                |
+| `fail`            | `fail`                          | `fail`                 | `never`                 |
+| `fail-unexpected` | `unexpected`                    | `unexpected`           |                         |
+| `expecting`       | `<?>`, `label`                  | `<?>`, `expect`        |                         |
+| `bind`            | `>>=`                           | `>>=`                  | `bind`                  |
+| `bind-let`        | `do`                            | `bind`                 | `let->>`                |
+| `after`           | `>>`                            | `>>`                   | `>>`, `nxt`             |
+| `using`           | `fmap`                          | `<$>`                  |                         |
+| `maybe`           | `try`                           | `<:>`                  | `attempt`               |
+| `look-ahead`      | `lookAhead`                     | `look-ahead`           | `lookahead`             |
+| `not-followed-by` | `notFollowedBy`                 | `not-followed-by`      |                         |
+| `many0`           | `many`                          | `many`                 | `many`                  |
+| `many1`           | `many1`                         | `many1`                | `many1`                 |
+| `skip0`           | `skipMany`                      | `skip-many`            |                         |
+| `skip1`           | `skipMany1`                     | `skip-many1`           |                         |
+| `token`           | `token`, `satisfy`              | `satisfy`              | `token`                 |
+| `token-not`       |                                 |                        |                         |
+| `word`            | `tokens`, `string`              | `token*`               | `string`                |
+| `any-token`       | `anyToken`                      | `any-char`             | `any-char`              |
+| `eof`             | `eof`                           | `eof`                  | `eof`                   |
+| `group`           | `<*>`                           | `<*>`                  |                         |
+| `choice`          | <code><&#124;></code>, `choice` | <code><&#124;></code>  | `choice`                |
+| `option`          | `option`, `optional`            | `option`, `optional`   |                         |
+| `between`         | `between`                       | `between`              | `between`               |
+| `times`           | `count`                         | `times`                | `times`                 |
+| `many-till`       | `manyTill`                      | `many-till`            |                         |
+| `sep0`            | `sepBy`                         | `sep-by`               |                         |
+| `sep1`            | `sepBy1`                        | `sep-by1`              |                         |
+| `sep0-end`        | `endBy`                         | `end-by`               |                         |
+| `sep1-end`        | `endBy1`                        | `end-by1`              |                         |
+| `sep0-opt`        | `sepEndBy`                      | `sep-end-by`           |                         |
+| `sep1-opt`        | `sepEndBy1`                     | `sep-end-by1`          |                         |
+| `chain0-left`     | `chainl`                        | `chainl`               |                         |
+| `chain1-left`     | `chainl1`                       | `chainl1`              |                         |
+| `chain0-right`    | `chainr`                        | `chainr`               |                         |
+| `chain1-right`    | `chainr1`                       | `chainr1`              |                         |
+| `get-state`       | `getParserState`...             | input, pos, user state |                         |
+| `set-state`       | `setParserState`...             | input, pos, user state |                         |
+| `update-state`    | `updateParserState`...          | user state             |                         |
+| `trace`           | `parserTrace`, `parserTraced`   |                        |                         |
 
 [1]: https://github.com/haskell/parsec/blob/master/src/Text/Parsec/Prim.hs
 
