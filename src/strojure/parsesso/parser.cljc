@@ -1,5 +1,6 @@
 (ns strojure.parsesso.parser
   "Main namespace with parsers and their combinators."
+  (:refer-clojure :exclude [for])
   (:require [strojure.parsesso.impl.char :as char]
             [strojure.parsesso.impl.error :as error]
             [strojure.parsesso.impl.parser :as parser]
@@ -7,7 +8,7 @@
             [strojure.parsesso.impl.reply :as reply :include-macros true]
             [strojure.parsesso.impl.state :as state])
   #?(:clj  (:import (clojure.lang ISeq))
-     :cljs (:require-macros [strojure.parsesso.parser :refer [bind-let do-parser]])))
+     :cljs (:require-macros [strojure.parsesso.parser :refer [for do-parser]])))
 
 #?(:clj  (set! *warn-on-reflection* true)
    :cljs (set! *warn-on-infer* true))
@@ -109,7 +110,7 @@
       (parser/go p state (reply/assign context {reply/c-ok c-ok-p
                                                 reply/e-ok e-ok-p})))))
 
-(defmacro bind-let
+(defmacro for
   "Expands into nested bind forms and a function body.
 
   The pattern:
@@ -121,9 +122,9 @@
 
   can be more conveniently be written as:
 
-      (bind-let [x p
-                 y q
-                 ...]
+      (for [x p
+            y q
+           ...]
         (result (f x y ...)))
   "
   [[& bindings] & body]
@@ -133,7 +134,7 @@
     (assert (some? body) "Requires some body")
     (if (= 2 (count bindings))
       `(bind ~p (fn [~sym] ~@body))
-      `(bind ~p (fn [~sym] (bind-let ~(drop 2 bindings) ~@body))))))
+      `(bind ~p (fn [~sym] (for ~(drop 2 bindings) ~@body))))))
 
 (defn after
   "This parser tries to apply the parsers in order, until last of them succeeds.
@@ -270,9 +271,9 @@
   Example:
 
       (def identifier
-        (bind-let [c char/letter?
-                   cs (many0 (choice char/letter-or-number?
-                                     (char/is \"_\")))]
+        (for [c char/letter?
+              cs (many0 (choice char/letter-or-number?
+                                (char/is \"_\")))]
           (result (cons c cs))))
   "
   [p]
@@ -300,7 +301,7 @@
         (many1 char/letter?)
   "
   [p]
-  (bind-let [x p, xs (many0 p)]
+  (for [x p, xs (many0 p)]
     (result (cons x xs))))
 
 (defn skip0
@@ -464,7 +465,7 @@
   "
   [ps]
   (if-let [p (first ps)]
-    (bind-let [x p, xs (group* (rest ps))]
+    (for [x p, xs (group* (rest ps))]
       (result (cons x xs)))
     (result nil)))
 
@@ -534,7 +535,7 @@
   "
   ([p around] (between p around around))
   ([p open close]
-   (bind-let [_ open, x p, _ close]
+   (for [_ open, x p, _ close]
      (result x))))
 
 (defn times
@@ -564,7 +565,7 @@
   "
   [p end]
   (letfn [(scan [] (choice (after end (result nil))
-                           (bind-let [x p, xs (scan)]
+                           (for [x p, xs (scan)]
                              (result (cons x xs)))))]
     (scan)))
 
@@ -574,7 +575,7 @@
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`."
   [p sep]
-  (bind-let [x p, xs (many0 (after sep p))]
+  (for [x p, xs (many0 (after sep p))]
     (result (cons x xs))))
 
 (defn sep0
@@ -592,7 +593,7 @@
   "Parses _one_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (many1 (bind-let [x p, _ sep]
+  (many1 (for [x p, _ sep]
            (result x))))
 
 (defn sep0-end
@@ -605,8 +606,8 @@
   "Parses _one_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (bind-let [x p]
-    (choice (bind-let [_ sep, xs (option (sep1-opt p sep))]
+  (for [x p]
+    (choice (for [_ sep, xs (option (sep1-opt p sep))]
               (result (cons x xs)))
             (result [x]))))
 
@@ -637,8 +638,8 @@
   parser state record itself. Suppose that we want to count identifiers in a
   source, we could use the user state as:
 
-      (bind-let [x identifier
-                 _ (update-state :user inc)]
+      (for [x identifier
+            _ (update-state :user inc)]
         (result x))"
   {:arglists '([f] [:input, f] [:pos, f] [:user, f])}
   ([f]

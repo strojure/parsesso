@@ -23,7 +23,7 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/choice (p/bind-let [x parser] (p/fail (str "Test failure after parsing " x)))
+  (p/choice (p/for [x parser] (p/fail (str "Test failure after parsing " x)))
             parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -1358,10 +1358,10 @@
   (testing "trace state"
     (test/are [expr result] (= result expr)
 
-      (-> (p (p/bind-let [_ (p/trace "a")
-                          a (tok :A)
-                          _ (p/trace "b")
-                          b (tok :B)]
+      (-> (p (p/for [_ (p/trace "a")
+                     a (tok :A)
+                     _ (p/trace "b")
+                     b (tok :B)]
                (p/result [a b]))
              [:A :B :C])
           (with-out-str)
@@ -1373,10 +1373,10 @@
        " - input: (:B :C)"
        " - user: nil"]
 
-      (-> (p (p/bind-let [_ (p/trace "a")
-                          a (tok :A)
-                          _ (p/trace "b")
-                          b (tok :B)]
+      (-> (p (p/for [_ (p/trace "a")
+                     a (tok :A)
+                     _ (p/trace "b")
+                     b (tok :B)]
                (p/result [a b]))
              [:A :B])
           (with-out-str)
@@ -1388,10 +1388,10 @@
        " - input: (:B)"
        " - user: nil"]
 
-      (-> (p (p/bind-let [a (tok :A)
-                          _ (p/trace "a")
-                          b (tok :B)
-                          _ (p/trace "b")]
+      (-> (p (p/for [a (tok :A)
+                     _ (p/trace "a")
+                     b (tok :B)
+                     _ (p/trace "b")]
                (p/result [a b]))
              [:A :B])
           (with-out-str)
@@ -1408,8 +1408,8 @@
   (testing "trace parser"
     (test/are [expr result] (= result expr)
 
-      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
-                          b (p/trace "b" (tok :B))]
+      (-> (p (p/for [a (p/trace "a" (tok :A))
+                     b (p/trace "b" (tok :B))]
                (p/result [a b]))
              [:A :B :C])
           (with-out-str)
@@ -1421,8 +1421,8 @@
        " - input: (:B :C)"
        " - user: nil"]
 
-      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
-                          b (p/trace "b" (tok :B))]
+      (-> (p (p/for [a (p/trace "a" (tok :A))
+                     b (p/trace "b" (tok :B))]
                (p/result [a b]))
              [:A :B])
           (with-out-str)
@@ -1434,8 +1434,8 @@
        " - input: (:B)"
        " - user: nil"]
 
-      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
-                          b (p/trace "b" (tok :B))]
+      (-> (p (p/for [a (p/trace "a" (tok :A))
+                     b (p/trace "b" (tok :B))]
                (p/result [a b]))
              [:B :C])
           (with-out-str)
@@ -1445,8 +1445,8 @@
        " - user: nil"
        "a: backtracked"]
 
-      (-> (p (p/bind-let [a (p/trace "a" (tok :A))
-                          b (p/trace "b" (tok :B))]
+      (-> (p (p/for [a (p/trace "a" (tok :A))
+                     b (p/trace "b" (tok :B))]
                (p/result [a b]))
              [:A :C])
           (with-out-str)

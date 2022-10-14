@@ -26,7 +26,7 @@ Parser combinators for Clojure(Script).
 | `fail-unexpected`        | `unexpected`                    | `unexpected`            |                         |
 | `expecting`              | `<?>`, `label`                  | `<?>`, `expect`         |                         |
 | `bind`                   | `>>=`                           | `>>=`                   | `bind`                  |
-| `bind-let`               | `do`                            | `bind`                  | `let->>`                |
+| `for`                    | `do`                            | `bind`                  | `let->>`                |
 | `after`                  | `>>`                            | `>>`                    | `>>`, `nxt`             |
 | `value`                  | `fmap`                          | `<$>`                   |                         |
 | `maybe`                  | `try`                           | `<:>`                   | `attempt`               |

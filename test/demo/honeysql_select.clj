@@ -78,10 +78,10 @@
 
 (def select-statement
   "Parses SQL SELECT statement to `{:select [...] :from [...] ...}`."
-  (p/bind-let [_ (p/maybe (p/after (p/word "select" :ic) space1))
-               select (comma-sep (with-as column-name))
-               _ (-> (p/word "from" :ic) (p/between space1))
-               from (comma-sep (with-as table-name))]
+  (p/for [_ (p/maybe (p/after (p/word "select" :ic) space1))
+          select (comma-sep (with-as column-name))
+          _ (-> (p/word "from" :ic) (p/between space1))
+          from (comma-sep (with-as table-name))]
     (p/result
       {:select (vec select)
        :from (vec from)})))

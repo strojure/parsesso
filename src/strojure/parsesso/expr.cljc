@@ -16,10 +16,10 @@
   grammars."
   [p op]
   (letfn [(more [x]
-            (p/choice (p/bind-let [f op, y p]
+            (p/choice (p/for [f op, y p]
                         (more (f x y)))
                       (p/result x)))]
-    (p/bind-let [x p]
+    (p/for [x p]
       (more x))))
 
 (defn chain0-left
@@ -38,10 +38,10 @@
   returned by `op` to the values returned by `p`."
   [p op]
   (letfn [(scan []
-            (p/bind-let [x p]
+            (p/for [x p]
               (more x)))
           (more [x]
-            (p/choice (p/bind-let [f op, y (scan)]
+            (p/choice (p/for [f op, y (scan)]
                         (p/result (f x y)))
                       (p/result x)))]
     (scan)))
