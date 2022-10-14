@@ -455,29 +455,28 @@
 
 ;;; combinators
 
-(defn each
-  "This parser tries to apply parsers in order until all of them succeeds.
-  Returns a sequence of values returned by every parser.
+(defn group*
+  "This parser tries to apply parsers of `ps` in order until all of them
+  succeeds. Returns a sequence of values returned by every parser.
 
   - Fails: when any of tried parsers fails.
   - Consumes: when any of tried parsers consumes some input.
   "
   [ps]
   (if-let [p (first ps)]
-    (bind-let [x p, xs (each (rest ps))]
+    (bind-let [x p, xs (group* (rest ps))]
       (result (cons x xs)))
     (result nil)))
 
-(defn tuple
-  "This parser tries to apply argument parsers in order until all of them
-  succeeds. Returns a sequence of values returned by every parser. It is a 2+
-  arity version of the [[each]] parser.
+(defn group
+  "This parser tries to apply parsers in order until all of them succeeds.
+  Returns a sequence of values returned by every parser.
 
   - Fails: when any of tried parsers fails.
   - Consumes: when any of tried parsers consumes some input.
   "
   [p q & ps]
-  (each (cons p (cons q ps))))
+  (group* (cons p (cons q ps))))
 
 (defn choice
   "This parser tries to apply the parsers in order, until one of them succeeds.
@@ -542,7 +541,7 @@
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
   equals to `(return nil)`. Returns a sequence of `n` values returned by `p`."
   [n p]
-  (each (repeat n p)))
+  (group* (repeat n p)))
 
 (defn many-till
   "This parser applies parser `p` _zero_ or more times until parser `end`

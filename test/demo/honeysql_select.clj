@@ -42,7 +42,7 @@
 
 (def column-name
   "Parses column as `:column` or `:table.column`."
-  (-> (p/tuple (p/option (p/maybe (p/tuple (p/many1 char/letter?)
+  (-> (p/group (p/option (p/maybe (p/group (p/many1 char/letter?)
                                            (char/is "."))))
                (p/many1 char/letter?))
       (p/using char/str* keyword)))
@@ -66,7 +66,7 @@
 (defn with-as
   "Parses `p` with optional alias like `:name` or `[:name :alias]`."
   [p]
-  (-> (p/tuple p (p/option as-expr))
+  (-> (p/group p (p/option as-expr))
       (p/using (fn [[x as]] (if as [x as] x)))))
 
 (comment

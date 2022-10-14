@@ -352,7 +352,7 @@
        "abc")
     {:consumed true, :value "a"}
 
-    (p (-> (p/tuple (p/many1 (char/is "abc"))
+    (p (-> (p/group (p/many1 (char/is "abc"))
                     (p/many1 (char/is "123")))
            (p/using char/str*))
        "abc123")

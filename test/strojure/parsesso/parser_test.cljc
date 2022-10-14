@@ -701,46 +701,46 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest each-t
+(deftest group*-t
   (test/are [expr result] (= result expr)
 
-    (p (p/each [(tok :A) (tok :B) (tok :C)])
+    (p (p/group* [(tok :A) (tok :B) (tok :C)])
        [:A :B :C])
     '{:consumed true, :value (:A :B :C)}
 
-    (p (p/each [(tok :A) (tok :B) (tok :C)])
+    (p (p/group* [(tok :A) (tok :B) (tok :C)])
        [:B :C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/each [(fail-consumed (tok :A)) (tok :B) (tok :C)])
+    (p (p/group* [(fail-consumed (tok :A)) (tok :B) (tok :C)])
        [:A :B :C])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/each [])
+    (p (p/group* [])
        [:A :B :C])
     {:consumed false, :value nil}
 
-    (p (p/each nil)
+    (p (p/group* nil)
        [:A :B :C])
     {:consumed false, :value nil}
 
     ))
 
-(deftest tuple-t
+(deftest group-t
   (test/are [expr result] (= result expr)
 
-    (p (p/tuple (tok :A) (tok :B) (tok :C))
+    (p (p/group (tok :A) (tok :B) (tok :C))
        [:A :B :C])
     '{:consumed true, :value (:A :B :C)}
 
-    (p (p/tuple (tok :A) (tok :B) (tok :C))
+    (p (p/group (tok :A) (tok :B) (tok :C))
        [:B :C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/tuple (fail-consumed (tok :A)) (tok :B) (tok :C))
+    (p (p/group (fail-consumed (tok :A)) (tok :B) (tok :C))
        [:A :B :C])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
