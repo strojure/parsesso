@@ -166,7 +166,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (-> (p/many0 char/letter?) (p/using char/str*)) "abc")
+(p/parse (-> (p/many0 char/letter?) (p/value char/str*)) "abc")
 ;             Execution time mean : 1,514160 µs
 ;    Execution time std-deviation : 104,898493 ns
 ;   Execution time lower quantile : 1,439323 µs ( 2,5%)

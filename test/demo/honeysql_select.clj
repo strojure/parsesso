@@ -38,14 +38,14 @@
 (def table-name
   "Parses table name as `:table`."
   (-> (p/many1 char/letter?)
-      (p/using char/str* keyword)))
+      (p/value char/str* keyword)))
 
 (def column-name
   "Parses column as `:column` or `:table.column`."
   (-> (p/group (p/option (p/maybe (p/group (p/many1 char/letter?)
                                            (char/is "."))))
                (p/many1 char/letter?))
-      (p/using char/str* keyword)))
+      (p/value char/str* keyword)))
 
 (comment
   (p/parse column-name "username") #_=> :username
@@ -57,7 +57,7 @@
   "Parses alias keyword like `:alias` after AS."
   (p/after (p/maybe (-> (p/word "as" :ic) (p/between space1)))
            (-> (p/many1 char/letter?)
-               (p/using char/str* keyword))))
+               (p/value char/str* keyword))))
 
 (comment
   (p/parse as-expr " AS name") #_=> :name
@@ -67,7 +67,7 @@
   "Parses `p` with optional alias like `:name` or `[:name :alias]`."
   [p]
   (-> (p/group p (p/option as-expr))
-      (p/using (fn [[x as]] (if as [x as] x)))))
+      (p/value (fn [[x as]] (if as [x as] x)))))
 
 (comment
   (p/parse (with-as column-name) "u.username") #_=> :u.username

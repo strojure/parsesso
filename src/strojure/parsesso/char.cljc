@@ -120,7 +120,7 @@
 
 (defn str*
   "Builds string from (possibly nested) collections of parsed characters and
-  strings. To be used with [[strojure.parsesso.parser/using]]."
+  strings. To be used with [[strojure.parsesso.parser/value]]."
   [x]
   (impl/str* x))
 

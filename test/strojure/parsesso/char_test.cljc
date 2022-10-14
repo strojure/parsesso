@@ -348,23 +348,23 @@
   (test/are [expr result] (= result expr)
 
     (p (-> (char/is "abc")
-           (p/using char/str*))
+           (p/value char/str*))
        "abc")
     {:consumed true, :value "a"}
 
     (p (-> (p/group (p/many1 (char/is "abc"))
                     (p/many1 (char/is "123")))
-           (p/using char/str*))
+           (p/value char/str*))
        "abc123")
     {:consumed true, :value "abc123"}
 
     (p (-> (p/many0 (char/is "abc"))
-           (p/using char/str*))
+           (p/value char/str*))
        "123")
     {:consumed false, :value ""}
 
     (p (-> (char/is "abc")
-           (p/using char/str*))
+           (p/value char/str*))
        "123")
     {:consumed false, :error ["error at line 1, column 1:"
                               "unexpected \"1\""

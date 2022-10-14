@@ -188,42 +188,42 @@
 
     ))
 
-(deftest using-t
+(deftest value-t
   (test/are [expr result] (= result expr)
 
-    (p (p/using (tok :A) name)
+    (p (p/value (tok :A) name)
        [:A])
     {:consumed true, :value "A"}
 
-    (p (p/using (p/token number?) inc inc)
+    (p (p/value (p/token number?) inc inc)
        [1])
     {:consumed true, :value 3}
 
-    (p (p/using (p/token number?) inc inc inc str)
+    (p (p/value (p/token number?) inc inc inc str)
        [1])
     {:consumed true, :value "4"}
 
-    (p (p/using (tok :A) name)
+    (p (p/value (tok :A) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/using (tok :A) name)
+    (p (p/value (tok :A) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/using (fail-consumed (tok :A)) name)
+    (p (p/value (fail-consumed (tok :A)) name)
        [:A])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/using (fail-consumed (tok :A)) name)
+    (p (p/value (fail-consumed (tok :A)) name)
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/using (fail-consumed (tok :A)) name)
+    (p (p/value (fail-consumed (tok :A)) name)
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}

@@ -150,7 +150,7 @@
   ([q qq qqq & more]
    (reduce after (list* q qq qqq more))))
 
-(defn using
+(defn value
   "This parser applies series of functions to the result value of the parser `p`.
 
   - Fails: when `p` fails.
