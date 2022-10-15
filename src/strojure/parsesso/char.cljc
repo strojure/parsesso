@@ -25,11 +25,11 @@
   `(fn [pred-k s] (fn [c] ...))` which returns custom predicate for chars
   against `s`. The new `pred-k` should be registered using
   [[register-string-pred]], predefined values are `:default` for default and
-  `:ic` for case insensitive matching.
+  `:ic` for case-insensitive matching.
 
-      (def control-char (is \"EX\"))
+      (def control-char (char/is \"EX\"))
 
-      (def control-char-ignorecase (is \"ex\" :ic))
+      (def control-char-ignorecase (char/is \"ex\" :ic))
   "
   ([s]
    (p/token (impl/string-pred-default s)

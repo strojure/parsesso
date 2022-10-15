@@ -115,17 +115,17 @@
 
   The pattern:
 
-      (bind p (fn [x]
-                (bind q (fn [y]
-                          ...
-                          (result (f x y ...))))))
+      (p/bind p (fn [x]
+                  (p/bind q (fn [y]
+                              ...
+                              (p/result (f x y ...))))))
 
   can be more conveniently be written as:
 
-      (for [x p
-            y q
-           ...]
-        (result (f x y ...)))
+      (p/for [x p
+              y q
+             ...]
+        (p/result (f x y ...)))
   "
   [[& bindings] & body]
   (let [[sym p :as pair] (take 2 bindings)]
@@ -186,16 +186,16 @@
   an identifier we have to use the [[maybe]] combinator. Suppose we write:
 
       (def identifier
-        (many1 char/letter?))
+        (p/many1 char/letter?))
 
       (def let-expr
-        (after (word \"let\")
-               ...))
+        (p/after (p/word \"let\")
+                 ...))
 
       (def expr
-        (-> (choice let-expr
-                    identifier)
-            (expecting \"expression\"))
+        (-> (p/choice let-expr
+                      identifier)
+            (p/expecting \"expression\"))
 
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
   expecting \"t\" of (word \"let\")`. Indeed, since the [[choice]] combinator
@@ -205,8 +205,8 @@
   adding the [[maybe]] combinator:
 
       (def let-expr
-        (after (maybe (word \"let\"))
-               ...))
+        (p/after (p/maybe (p/word \"let\"))
+                 ...))
   "
   [p]
   (fn [state context]
@@ -245,8 +245,8 @@
     the keyword is actually an identifier (for example `lets`). We can write this
     behaviour as follows:
 
-        (-> (word \"let\")
-            (not-followed-by char/letter-or-number?))
+        (-> (p/word \"let\")
+            (p/not-followed-by char/letter-or-number?))
 
     - Fails:
         - when `p` fails.
@@ -271,10 +271,10 @@
   Example:
 
       (def identifier
-        (for [c char/letter?
-              cs (many0 (choice char/letter-or-number?
-                                (char/is \"_\")))]
-          (result (cons c cs))))
+        (p/for [c char/letter?
+                cs (p/many0 (p/choice char/letter-or-number?
+                                      (char/is \"_\")))]
+          (p/result (cons c cs))))
   "
   [p]
   (fn [state context]
@@ -298,7 +298,7 @@
   Example:
 
       (def word
-        (many1 char/letter?)
+        (p/many1 char/letter?)
   "
   [p]
   (for [x p, xs (many0 p)]
@@ -313,7 +313,7 @@
   Example:
 
       (def spaces
-        (skip0 char/white?))
+        (p/skip0 char/white?))
   "
   [p]
   (fn [state context]
@@ -394,9 +394,9 @@
 
   Example:
 
-      (def let-keyword (word \"let\"))
+      (def let-keyword (p/word \"let\"))
 
-      (def let-keyword-ignorecase (word \"let\" :ic))
+      (def let-keyword-ignorecase (p/word \"let\" :ic))
   "
   {:inline (fn [tokens] `(word ~tokens =)) :inline-arities #{1}}
   ([tokens] (word tokens =))
@@ -530,8 +530,8 @@
   Example:
 
       (defn braces [p]
-        (-> p (between (char/is \"{\")
-                       (char/is \"}\"))))
+        (-> p (p/between (char/is \"{\")
+                         (char/is \"}\"))))
   "
   ([p around] (between p around around))
   ([p open close]
@@ -557,8 +557,8 @@
   Example:
 
       (def simple-comment
-        (after (word \"<!--\")
-               (many-till any-token (maybe (word \"-->\")))))
+        (p/after (p/word \"<!--\")
+                 (p/many-till p/any-token (p/maybe (p/word \"-->\")))))
 
   Note the overlapping parsers [[any-token]] and `(word \"-->\")`, and
   therefore the use of the [[maybe]] combinator.
@@ -583,8 +583,8 @@
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (sep0 p (after (char/is \",\")
-                       (skip0 char/white?))))
+        (p/sep0 p (p/after (char/is \",\")
+                           (p/skip0 char/white?))))
   "
   [p sep]
   (option (sep1 p sep)))
@@ -638,9 +638,9 @@
   parser state record itself. Suppose that we want to count identifiers in a
   source, we could use the user state as:
 
-      (for [x identifier
-            _ (update-state :user inc)]
-        (result x))"
+      (p/for [x identifier
+              _ (p/update-state :user inc)]
+        (p/result x))"
   {:arglists '([f] [:input, f] [:pos, f] [:user, f])}
   ([f]
    (fn [state context]
@@ -675,17 +675,17 @@
 
   Examples:
 
-      (parse (after (char/is \"aeiou\")
-                    (trace \"test-label\"))
-             \"atest\")
+      (p/parse (p/after (char/is \"aeiou\")
+                        (p/trace \"test-label\"))
+               \"atest\")
 
       > test-label: at line 1, column 2
       >  - input: (\\t \\e \\s \\t)
       >  - user: nil
 
-      (parse (after (char/is \"aeiou\")
-                    (trace \"test-label\" (char/is \"nope\")))
-             \"atest\")
+      (p/parse (p/after (char/is \"aeiou\")
+                        (p/trace \"test-label\" (char/is \"nope\")))
+               \"atest\")
 
       > test-label: at line 1, column 2
       >  - input: (\\t \\e \\s \\t)
