@@ -8,12 +8,22 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (defn chain1-left
-  ;; TODO: Code example from haskell
   "This parser parses _one_ or more occurrences of `p`, separated by `op`
   Returns a value obtained by a _left_ associative application of all functions
   returned by `op` to the values returned by `p`. This parser can for example be
   used to eliminate left recursion which typically occurs in expression
-  grammars."
+  grammars.
+
+      (def mulop  (p/choice (p/after (char/is \\*) (p/result *))
+                            (p/after (char/is \\/) (p/result /))))
+
+      (def addop  (p/choice (p/after (char/is \\+) (p/result +))
+                            (p/after (char/is \\-) (p/result -))))
+
+      (def expr   (chain1-left term addop))
+      (def term   (chain1-left factor mulop))
+      (def factor (p/choice (parens expr) integer))
+  "
   [p op]
   (letfn [(more [x]
             (p/choice (p/for [f op, y p]
