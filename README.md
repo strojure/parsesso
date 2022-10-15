@@ -53,14 +53,14 @@ Parser combinators for Clojure(Script).
 | <code>[p/sep1-end]</code>             | `endBy1`                        | `end-by1`               |                         |
 | <code>[p/sep0-opt]</code>             | `sepEndBy`                      | `sep-end-by`            |                         |
 | <code>[p/sep1-opt]</code>             | `sepEndBy1`                     | `sep-end-by1`           |                         |
-| <code>[p/chain0-left]</code>          | `chainl`                        | `chainl`                |                         |
-| <code>[p/chain1-left]</code>          | `chainl1`                       | `chainl1`               |                         |
-| <code>[p/chain0-right]</code>         | `chainr`                        | `chainr`                |                         |
-| <code>[p/chain1-right]</code>         | `chainr1`                       | `chainr1`               |                         |
 | <code>[p/get-state]</code>            | `getParserState`...             | input, pos, user state  |                         |
 | <code>[p/set-state]</code>            | `setParserState`...             | input, pos, user state  |                         |
 | <code>[p/update-state]</code>         | `updateParserState`...          | user state              |                         |
 | <code>[p/trace]</code>                | `parserTrace`, `parserTraced`   |                         |                         |
+| <code>[expr/chain0-left]</code>       | `chainl`                        | `chainl`                |                         |
+| <code>[expr/chain1-left]</code>       | `chainl1`                       | `chainl1`               |                         |
+| <code>[expr/chain0-right]</code>      | `chainr`                        | `chainr`                |                         |
+| <code>[expr/chain1-right]</code>      | `chainr1`                       | `chainr1`               |                         |
 | <code>[char/is]</code>                | `char`, `oneOf`                 | `sym*`, `one-of*`       | `char`                  |
 | <code>[char/is-not]</code>            | `noneOf`                        | `none-of*`              |                         |
 | <code>[char/regex]</code>             |                                 |                         |                         |
@@ -147,14 +147,6 @@ Parser combinators for Clojure(Script).
 
 [p/sep1-opt]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep1-opt
 
-[p/chain0-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#chain0-left
-
-[p/chain1-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#chain1-left
-
-[p/chain0-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#chain0-right
-
-[p/chain1-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#chain1-right
-
 [p/get-state]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#get-state
 
 [p/set-state]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#set-state
@@ -162,6 +154,14 @@ Parser combinators for Clojure(Script).
 [p/update-state]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#update-state
 
 [p/trace]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#trace
+
+[expr/chain0-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain0-left
+
+[expr/chain1-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain1-left
+
+[expr/chain0-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain0-right
+
+[expr/chain1-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain1-right
 
 [char/is]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/is
 
