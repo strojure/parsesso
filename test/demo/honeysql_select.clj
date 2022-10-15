@@ -32,7 +32,7 @@
 (defn comma-sep
   "Parses `p` separated by commas."
   [p]
-  (p/sep1 p (p/maybe (-> (char/is ",")
+  (p/sep1 p (p/maybe (-> (char/is \,)
                          (p/between space0)))))
 
 (def table-name
@@ -43,7 +43,7 @@
 (def column-name
   "Parses column as `:column` or `:table.column`."
   (-> (p/group (p/option (p/maybe (p/group (p/many1 char/letter?)
-                                           (char/is "."))))
+                                           (char/is \.))))
                (p/many1 char/letter?))
       (p/value char/str* keyword)))
 

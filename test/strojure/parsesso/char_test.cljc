@@ -66,7 +66,7 @@
 
       ))
 
-  (testing "case insensitive matching"
+  (testing "case-insensitive matching"
     (test/are [expr result] (= result expr)
 
       (p (char/is "abc" :ic)
