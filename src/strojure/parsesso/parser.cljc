@@ -200,7 +200,7 @@
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
   expecting \"t\" of (word \"let\")`. Indeed, since the [[choice]] combinator
   only tries alternatives when the first alternative hasn't consumed input, the
-  `identifier` parser is never tried (because the prefix \"le\" of the `(word
+  `identifier` parser is never tried (because the prefix \"le\" of the `(p/word
   \"let\")` parser is already consumed). The right behaviour can be obtained by
   adding the [[maybe]] combinator:
 
@@ -540,7 +540,7 @@
 
 (defn times
   "Parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser
-  equals to `(return nil)`. Returns a sequence of `n` values returned by `p`."
+  equals to `(p/result nil)`. Returns a sequence of `n` values returned by `p`."
   [n p]
   (group* (repeat n p)))
 
@@ -560,7 +560,7 @@
         (p/after (p/word \"<!--\")
                  (p/many-till p/any-token (p/maybe (p/word \"-->\")))))
 
-  Note the overlapping parsers [[any-token]] and `(word \"-->\")`, and
+  Note the overlapping parsers [[any-token]] and `(p/word \"-->\")`, and
   therefore the use of the [[maybe]] combinator.
   "
   [p end]
