@@ -163,27 +163,27 @@ Parser combinators for Clojure(Script).
 
 [expr/+chain-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#+chain-right
 
-[char/is]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/is
+[char/is]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#is
 
-[char/is-not]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/is-not
+[char/is-not]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#is-not
 
-[char/regex]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/regex
+[char/regex]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#regex
 
-[char/upper?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/upper?
+[char/upper?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#upper?
 
-[char/lower?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/lower?
+[char/lower?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#lower?
 
-[char/letter?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/letter?
+[char/letter?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#letter?
 
-[char/number?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/number?
+[char/number?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#number?
 
-[char/letter-or-number?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/letter-or-number?
+[char/letter-or-number?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#letter-or-number?
 
-[char/white?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/white?
+[char/white?]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#white?
 
-[char/newline]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/newline
+[char/newline]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#newline
 
-[char/str*]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/str*
+[char/str*]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#str*
 
 ## Examples
 
