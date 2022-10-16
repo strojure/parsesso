@@ -21,9 +21,9 @@
 
 (defn is
   "Returns parser and predicate for the character `c` which is in the supplied
-  string of characters `s`. Optional `pred-k` keyword refers to function
-  `(fn [pred-k s] (fn [c] ...))` which returns custom predicate for chars
-  against `s`. The new `pred-k` should be registered using
+  string of characters `s` (or a single character). The optional `pred-k`
+  keyword refers to function `(fn [pred-k s] (fn [c] ...))` which returns custom
+  predicate for chars against `s`. The new `pred-k` should be registered using
   [[register-string-pred]], predefined values are `:default` for default and
   `:ic` for case-insensitive matching.
 
@@ -40,8 +40,8 @@
 
 (defn is-not
   "Returns parser and predicate for the character `c` which is _not_ in the
-  supplied string of characters `s`. See also [[is]] about optional
-  `pred-k` argument."
+  supplied string of characters `s` (or a single character). See also [[is]]
+  about optional `pred-k` argument."
   ([s]
    (p/token (complement (is s))
             (delay (str "not " (p/render s) " character"))))
