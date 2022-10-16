@@ -159,7 +159,7 @@
 (deftest regex-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 (char/regex #"[a-z]"))
+    (p (p/*many (char/regex #"[a-z]"))
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -203,7 +203,7 @@
 (deftest upper?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 char/upper?)
+    (p (p/*many char/upper?)
        "ABC")
     {:consumed true, :value (seq "ABC")}
 
@@ -224,7 +224,7 @@
 (deftest lower?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 char/lower?)
+    (p (p/*many char/lower?)
        "abc")
     {:consumed true, :value (seq "abc")}
 
@@ -245,7 +245,7 @@
 (deftest number?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 char/number?)
+    (p (p/*many char/number?)
        "01234567890")
     {:consumed true, :value (seq "01234567890")}
 
@@ -266,7 +266,7 @@
 (deftest letter-or-number?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 char/letter-or-number?)
+    (p (p/*many char/letter-or-number?)
        "12345abcABC")
     {:consumed true, :value (seq "12345abcABC")}
 
@@ -287,7 +287,7 @@
 (deftest white?-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 char/white?)
+    (p (p/*many char/white?)
        " \t\r\n")
     {:consumed true, :value (seq " \t\r\n")}
 
@@ -352,13 +352,13 @@
        "abc")
     {:consumed true, :value "a"}
 
-    (p (-> (p/group (p/many1 (char/is "abc"))
-                    (p/many1 (char/is "123")))
+    (p (-> (p/group (p/+many (char/is "abc"))
+                    (p/+many (char/is "123")))
            (p/value char/str*))
        "abc123")
     {:consumed true, :value "abc123"}
 
-    (p (-> (p/many0 (char/is "abc"))
+    (p (-> (p/*many (char/is "abc"))
            (p/value char/str*))
        "123")
     {:consumed false, :value ""}

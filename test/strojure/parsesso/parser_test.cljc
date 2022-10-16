@@ -437,91 +437,91 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest many0-t
+(deftest *many-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many0 (tok :A :B :C))
+    (p (p/*many (tok :A :B :C))
        [:A :B :C :D :E :F])
     {:consumed true, :value [:A :B :C]}
 
-    (p (p/many0 (fail-consumed (tok :A :B :C)))
+    (p (p/*many (fail-consumed (tok :A :B :C)))
        [:A :B :C :D :E :F])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/many0 (tok :D :E :F))
+    (p (p/*many (tok :D :E :F))
        [:A :B :C :D :E :F])
     {:consumed false, :value nil}
 
-    (p (p/many0 (tok :A :B :C))
+    (p (p/*many (tok :A :B :C))
        [])
     {:consumed false, :value nil}
 
-    (p (p/many0 (tok :A))
+    (p (p/*many (tok :A))
        (repeat 10000 :A))
     {:consumed true, :value (repeat 10000 :A)}
 
     ))
 
-(deftest many1-t
+(deftest +many-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many1 (tok :A :B :C))
+    (p (p/+many (tok :A :B :C))
        [:A :B :C :D :E :F])
     {:consumed true, :value [:A :B :C]}
 
-    (p (p/many1 (tok :D :E :F))
+    (p (p/+many (tok :D :E :F))
        [:A :B :C :D :E :F])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :A"]}
 
-    (p (p/many1 (tok :A :B :C))
+    (p (p/+many (tok :A :B :C))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/many1 (tok :A))
+    (p (p/+many (tok :A))
        (repeat 10000 :A))
     {:consumed true, :value (repeat 10000 :A)}
 
     ))
 
-(deftest skip0-t
+(deftest *skip-t
   (test/are [expr result] (= result expr)
 
-    (p (p/skip0 (tok :A))
+    (p (p/*skip (tok :A))
        [:A :A :A :B :B :B])
     {:consumed true, :value nil}
 
-    (p (p/skip0 (fail-consumed (tok :A)))
+    (p (p/*skip (fail-consumed (tok :A)))
        [:A :A :A :B :B :B])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/skip0 (tok :A))
+    (p (p/*skip (tok :A))
        [:B :B :B])
     {:consumed false, :value nil}
 
-    (p (p/skip0 (tok :A))
+    (p (p/*skip (tok :A))
        [])
     {:consumed false, :value nil}
 
     )
   )
 
-(deftest skip1-t
+(deftest +skip-t
   (test/are [expr result] (= result expr)
 
-    (p (p/skip1 (tok :A))
+    (p (p/+skip (tok :A))
        [:A :A :A :B :B :B])
     {:consumed true, :value nil}
 
-    (p (p/skip1 (tok :A))
+    (p (p/+skip (tok :A))
        [:B :B :B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/skip1 (tok :A))
+    (p (p/+skip (tok :A))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
@@ -996,52 +996,52 @@
 
     ))
 
-(deftest many-till-t
+(deftest *many-till-t
   (test/are [expr result] (= result expr)
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        [:A1 :A2 :A3 :END])
     {:consumed true, :value '(:A1 :A2 :A3)}
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        [:A1 :A2 :A3 :B :END])
     {:consumed true, :error ["error at index 3:"
                              "unexpected :B"]}
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        [:B :END])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        [:A1 :A2 :A3])
     {:consumed true, :error ["error at index 3:"
                              "unexpected end of input"]}
 
-    (p (p/many-till (fail-consumed (tok :A1 :A2 :A3))
-                    (tok :END))
+    (p (p/*many-till (fail-consumed (tok :A1 :A2 :A3))
+                     (tok :END))
        [:A1 :A2 :A3 :END])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A1"]}
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        [:END])
     {:consumed true, :value nil}
 
-    (p (p/many-till (p/choice (tok :A1 :A2 :A3)
-                              (p/many-till (tok :B1 :B2 :B3)
-                                           (tok :END)))
-                    (tok :END))
+    (p (p/*many-till (p/choice (tok :A1 :A2 :A3)
+                               (p/*many-till (tok :B1 :B2 :B3)
+                                             (tok :END)))
+                     (tok :END))
        [:A1 :A2 :A3 :B1 :B2 :B3 :END :A1 :A2 :A3 :END])
     {:consumed true, :value '(:A1 :A2 :A3 (:B1 :B2 :B3) :A1 :A2 :A3)}
 
-    (p (p/many-till (tok :A1 :A2 :A3)
-                    (tok :END))
+    (p (p/*many-till (tok :A1 :A2 :A3)
+                     (tok :END))
        (concat (take 10000 (cycle [:A1 :A2 :A3])) [:END]))
     {:consumed true, :value (take 10000 (cycle [:A1 :A2 :A3]))}
 
@@ -1049,111 +1049,111 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(deftest sep1-t
+(deftest +sep-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :error ["error at index 6:"
                              "unexpected end of input"]}
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/sep1 (tok :A) (tok :S))
+    (p (p/+sep-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :S"]}
 
     ))
 
-(deftest sep0-t
+(deftest *sep-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :error ["error at index 6:"
                              "unexpected end of input"]}
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [])
     {:consumed false, :value nil}
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :value nil}
 
-    (p (p/sep0 (tok :A) (tok :S))
+    (p (p/*sep-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :value nil}
 
     ))
 
-(deftest sep1-end-t
+(deftest +sep-end-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :A])
     {:consumed true, :error ["error at index 7:"
                              "unexpected end of input"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :error ["error at index 5:"
                              "unexpected end of input"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :A])
     {:consumed true, :error ["error at index 5:"
                              "unexpected :A"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :error ["error at index 5:"
                              "unexpected :B"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/sep1-end (tok :A) (tok :S))
+    (p (p/+sep-end-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :S"]}
@@ -1161,131 +1161,131 @@
     )
   )
 
-(deftest sep0-end-t
+(deftest *sep-end-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :A])
     {:consumed true, :error ["error at index 7:"
                              "unexpected end of input"]}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :error ["error at index 5:"
                              "unexpected end of input"]}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :A])
     {:consumed true, :error ["error at index 5:"
                              "unexpected :A"]}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :error ["error at index 5:"
                              "unexpected :B"]}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [])
     {:consumed false, :value nil}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :value nil}
 
-    (p (p/sep0-end (tok :A) (tok :S))
+    (p (p/*sep-end-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :value nil}
 
     ))
 
-(deftest sep1-opt-t
+(deftest +sep-opt-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :A])
     {:consumed true, :value '(:A :A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :B"]}
 
-    (p (p/sep1-opt (tok :A) (tok :S))
+    (p (p/+sep-opt-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :S"]}
 
     ))
 
-(deftest sep0-opt-t
+(deftest *sep-opt-by-t
   (test/are [expr result] (= result expr)
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :A])
     {:consumed true, :value '(:A :A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :S :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :A])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:A :S :A :S :A :B])
     {:consumed true, :value '(:A :A :A)}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [])
     {:consumed false, :value nil}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:B])
     {:consumed false, :value nil}
 
-    (p (p/sep0-opt (tok :A) (tok :S))
+    (p (p/*sep-opt-by (tok :A) (tok :S))
        [:S])
     {:consumed false, :value nil}
 

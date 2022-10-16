@@ -144,7 +144,7 @@
 
 ;;; Parse letters
 
-(p/parse (p/many0 char/letter?) "abc")
+(p/parse (p/*many char/letter?) "abc")
 ;             Execution time mean : 975,326535 ns
 ;    Execution time std-deviation : 65,828611 ns
 ;   Execution time lower quantile : 915,594047 ns ( 2,5%)
@@ -166,7 +166,7 @@
 
 ;;; Parse letters as string
 
-(p/parse (-> (p/many0 char/letter?) (p/value char/str*)) "abc")
+(p/parse (-> (p/*many char/letter?) (p/value char/str*)) "abc")
 ;             Execution time mean : 1,514160 µs
 ;    Execution time std-deviation : 104,898493 ns
 ;   Execution time lower quantile : 1,439323 µs ( 2,5%)
@@ -182,7 +182,7 @@
 
 ;;; Parse `many` for long input
 
-(p/parse (p/many0 (p/token #(= :a %))) -input-10000)
+(p/parse (p/*many (p/token #(= :a %))) -input-10000)
 ;             Execution time mean : 1,311809 ms
 ;    Execution time std-deviation : 96,377398 µs
 ;   Execution time lower quantile : 1,223376 ms ( 2,5%)
@@ -203,7 +203,7 @@
 
 ;;; Skip `many` for long input
 
-(p/parse (p/skip0 (p/token #(= :a %))) -input-10000)
+(p/parse (p/*skip (p/token #(= :a %))) -input-10000)
 ;             Execution time mean : 1,043996 ms
 ;    Execution time std-deviation : 252,158552 µs
 ;   Execution time lower quantile : 893,890237 µs ( 2,5%)
@@ -284,7 +284,7 @@
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 (p/parse (p/after (p/word "<!--")
-                  (p/many-till p/any-token (p/maybe (p/word "-->"))))
+                  (p/*many-till p/any-token (p/maybe (p/word "-->"))))
          "<!-- comment -->")
 ;             Execution time mean : 7,450434 µs
 ;    Execution time std-deviation : 607,080144 ns

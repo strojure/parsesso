@@ -32,10 +32,10 @@ Parser combinators for Clojure(Script).
 | <code>[p/maybe]</code>                | `try`                           | `<:>`                   | `attempt`               |
 | <code>[p/look-ahead]</code>           | `lookAhead`                     | `look-ahead`            | `lookahead`             |
 | <code>[p/not-followed-by]</code>      | `notFollowedBy`                 | `not-followed-by`       |                         |
-| <code>[p/many0]</code>                | `many`                          | `many`                  | `many`                  |
-| <code>[p/many1]</code>                | `many1`                         | `many1`                 | `many1`                 |
-| <code>[p/skip0]</code>                | `skipMany`                      | `skip-many`             |                         |
-| <code>[p/skip1]</code>                | `skipMany1`                     | `skip-many1`            |                         |
+| <code>[p/*many]</code>                | `many`                          | `many`                  | `many`                  |
+| <code>[p/+many]</code>                | `many1`                         | `many1`                 | `many1`                 |
+| <code>[p/*skip]</code>                | `skipMany`                      | `skip-many`             |                         |
+| <code>[p/+skip]</code>                | `skipMany1`                     | `skip-many1`            |                         |
 | <code>[p/token]</code>                | `token`, `satisfy`              | `satisfy`               | `token`                 |
 | <code>[p/token-not]</code>            |                                 |                         |                         |
 | <code>[p/word]</code>                 | `tokens`, `string`              | `token*`                | `string`                |
@@ -46,21 +46,21 @@ Parser combinators for Clojure(Script).
 | <code>[p/option]</code>               | `option`, `optional`            | `option`, `optional`    |                         |
 | <code>[p/between]</code>              | `between`                       | `between`               | `between`               |
 | <code>[p/times]</code>                | `count`                         | `times`                 | `times`                 |
-| <code>[p/many-till]</code>            | `manyTill`                      | `many-till`             |                         |
-| <code>[p/sep0]</code>                 | `sepBy`                         | `sep-by`                |                         |
-| <code>[p/sep1]</code>                 | `sepBy1`                        | `sep-by1`               |                         |
-| <code>[p/sep0-end]</code>             | `endBy`                         | `end-by`                |                         |
-| <code>[p/sep1-end]</code>             | `endBy1`                        | `end-by1`               |                         |
-| <code>[p/sep0-opt]</code>             | `sepEndBy`                      | `sep-end-by`            |                         |
-| <code>[p/sep1-opt]</code>             | `sepEndBy1`                     | `sep-end-by1`           |                         |
+| <code>[p/*many-till]</code>           | `manyTill`                      | `many-till`             |                         |
+| <code>[p/*sep-by]</code>              | `sepBy`                         | `sep-by`                |                         |
+| <code>[p/+sep-by]</code>              | `sepBy1`                        | `sep-by1`               |                         |
+| <code>[p/*sep-end-by]</code>          | `endBy`                         | `end-by`                |                         |
+| <code>[p/+sep-end-by]</code>          | `endBy1`                        | `end-by1`               |                         |
+| <code>[p/*sep-opt-by]</code>          | `sepEndBy`                      | `sep-end-by`            |                         |
+| <code>[p/+sep-opt-by]</code>          | `sepEndBy1`                     | `sep-end-by1`           |                         |
 | <code>[p/get-state]</code>            | `getParserState`...             | input, pos, user state  |                         |
 | <code>[p/set-state]</code>            | `setParserState`...             | input, pos, user state  |                         |
 | <code>[p/update-state]</code>         | `updateParserState`...          | user state              |                         |
 | <code>[p/trace]</code>                | `parserTrace`, `parserTraced`   |                         |                         |
-| <code>[expr/chain0-left]</code>       | `chainl`                        | `chainl`                |                         |
-| <code>[expr/chain1-left]</code>       | `chainl1`                       | `chainl1`               |                         |
-| <code>[expr/chain0-right]</code>      | `chainr`                        | `chainr`                |                         |
-| <code>[expr/chain1-right]</code>      | `chainr1`                       | `chainr1`               |                         |
+| <code>[expr/*chain-left]</code>       | `chainl`                        | `chainl`                |                         |
+| <code>[expr/+chain-left]</code>       | `chainl1`                       | `chainl1`               |                         |
+| <code>[expr/*chain-right]</code>      | `chainr`                        | `chainr`                |                         |
+| <code>[expr/+chain-right]</code>      | `chainr1`                       | `chainr1`               |                         |
 | <code>[char/is]</code>                | `char`, `oneOf`                 | `sym*`, `one-of*`       | `char`                  |
 | <code>[char/is-not]</code>            | `noneOf`                        | `none-of*`              |                         |
 | <code>[char/regex]</code>             |                                 |                         |                         |
@@ -105,13 +105,13 @@ Parser combinators for Clojure(Script).
 
 [p/not-followed-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#not-followed-by
 
-[p/many0]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#many0
+[p/*many]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*many
 
-[p/many1]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#many1
+[p/+many]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#+many
 
-[p/skip0]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#skip0
+[p/*skip]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*skip
 
-[p/skip1]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#skip1
+[p/+skip]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#+skip
 
 [p/token]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#token
 
@@ -133,19 +133,19 @@ Parser combinators for Clojure(Script).
 
 [p/times]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#times
 
-[p/many-till]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#many-till
+[p/*many-till]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*many-till
 
-[p/sep0]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep0
+[p/*sep-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*sep-by
 
-[p/sep1]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep1
+[p/+sep-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#+sep-by
 
-[p/sep0-end]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep0-end
+[p/*sep-end-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*sep-end-by
 
-[p/sep1-end]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep1-end
+[p/+sep-end-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#+sep-end-by
 
-[p/sep0-opt]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep0-opt
+[p/*sep-opt-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#*sep-opt-by
 
-[p/sep1-opt]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#sep1-opt
+[p/+sep-opt-by]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#+sep-opt-by
 
 [p/get-state]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#get-state
 
@@ -155,13 +155,13 @@ Parser combinators for Clojure(Script).
 
 [p/trace]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#trace
 
-[expr/chain0-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain0-left
+[expr/*chain-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#*chain-left
 
-[expr/chain1-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain1-left
+[expr/+chain-left]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#+chain-left
 
-[expr/chain0-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain0-right
+[expr/*chain-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#*chain-right
 
-[expr/chain1-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#chain1-right
+[expr/+chain-right]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.expr#+chain-right
 
 [char/is]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.char#char/is
 

@@ -186,7 +186,7 @@
   an identifier we have to use the [[maybe]] combinator. Suppose we write:
 
       (def identifier
-        (p/many1 char/letter?))
+        (p/+many char/letter?))
 
       (def let-expr
         (p/after (p/word \"let\")
@@ -261,9 +261,9 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn many0
-  "This parser applies the parser `p` zero or more times. Returns a sequence of
-  the returned values or `p`.
+(defn *many
+  "This parser applies the parser `p` _zero_ or more times. Returns a sequence
+  of the returned values or `p`.
 
   - Fails: when `p` fails and consumes some input.
   - Consumes: when `p` consumes some input.
@@ -272,7 +272,7 @@
 
       (def identifier
         (p/for [c char/letter?
-                cs (p/many0 (p/choice char/letter-or-number?
+                cs (p/*many (p/choice char/letter-or-number?
                                       (char/is \"_\")))]
           (p/result (cons c cs))))
   "
@@ -288,7 +288,7 @@
                                                 reply/e-ok parser/e-ok-throw-empty-input
                                                 reply/e-err (fn [_] (reply/e-ok context state nil))})))))
 
-(defn many1
+(defn +many
   "This parser applies the parser `p` _one_ or more times. Returns a sequence of
   the returned values of `p`.
 
@@ -298,14 +298,14 @@
   Example:
 
       (def word
-        (p/many1 char/letter?)
+        (p/+many char/letter?)
   "
   [p]
-  (for [x p, xs (many0 p)]
+  (for [x p, xs (*many p)]
     (result (cons x xs))))
 
-(defn skip0
-  "This parser applies the parser `p` zero or more times, skipping its result.
+(defn *skip
+  "This parser applies the parser `p` _zero_ or more times, skipping its result.
 
   - Fails: when `p` fails and consumes some input.
   - Consumes: when `p` consumes some input.
@@ -313,7 +313,7 @@
   Example:
 
       (def spaces
-        (p/skip0 char/white?))
+        (p/*skip char/white?))
   "
   [p]
   (fn [state context]
@@ -325,14 +325,14 @@
                                                 reply/e-ok parser/e-ok-throw-empty-input
                                                 reply/e-err (fn [_] (reply/e-ok context state nil))})))))
 
-(defn skip1
+(defn +skip
   "This parser applies the parser `p` _one_ or more times, skipping its result.
 
   - Fails: when `p` does not succeed at least once.
   - Consumes: when `p` consumes some input.
   "
   [p]
-  (after p (skip0 p)))
+  (after p (*skip p)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -544,7 +544,7 @@
   [n p]
   (group* (repeat n p)))
 
-(defn many-till
+(defn *many-till
   "This parser applies parser `p` _zero_ or more times until parser `end`
   succeeds. Returns a sequence of values returned by `p`.
 
@@ -558,7 +558,7 @@
 
       (def simple-comment
         (p/after (p/word \"<!--\")
-                 (p/many-till p/any-token (p/maybe (p/word \"-->\")))))
+                 (p/*many-till p/any-token (p/maybe (p/word \"-->\")))))
 
   Note the overlapping parsers [[any-token]] and `(p/word \"-->\")`, and
   therefore the use of the [[maybe]] combinator.
@@ -571,51 +571,51 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(defn sep1
+(defn +sep-by
   "Parses _one_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`."
   [p sep]
-  (for [x p, xs (many0 (after sep p))]
+  (for [x p, xs (*many (after sep p))]
     (result (cons x xs))))
 
-(defn sep0
+(defn *sep-by
   "Parses _zero_ or more occurrences of `p`, separated by `sep`. Returns a
   sequence of values returned by `p`.
 
       (defn comma-sep [p]
-        (p/sep0 p (p/after (char/is \",\")
-                           (p/skip0 char/white?))))
+        (p/*sep-by p (p/after (char/is \",\")
+                              (p/*skip char/white?))))
   "
   [p sep]
-  (option (sep1 p sep)))
+  (option (+sep-by p sep)))
 
-(defn sep1-end
+(defn +sep-end-by
   "Parses _one_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (many1 (for [x p, _ sep]
+  (+many (for [x p, _ sep]
            (result x))))
 
-(defn sep0-end
+(defn *sep-end-by
   "Parses _zero_ or more occurrences of `p`, separated and ended by `sep`.
   Returns a sequence of values returned by `p`."
   [p sep]
-  (option (sep1-end p sep)))
+  (option (+sep-end-by p sep)))
 
-(defn sep1-opt
+(defn +sep-opt-by
   "Parses _one_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (for [x p]
-    (choice (for [_ sep, xs (option (sep1-opt p sep))]
+    (choice (for [_ sep, xs (option (+sep-opt-by p sep))]
               (result (cons x xs)))
             (result [x]))))
 
-(defn sep0-opt
+(defn *sep-opt-by
   "Parses _zero_ or more occurrences of `p`, separated and optionally ended by
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
-  (option (sep1-opt p sep)))
+  (option (+sep-opt-by p sep)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 

@@ -25,26 +25,26 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-(def space0 (p/skip0 char/white?))
+(def *space (p/*skip char/white?))
 
-(def space1 (p/skip1 char/white?))
+(def +space (p/+skip char/white?))
 
 (defn comma-sep
   "Parses `p` separated by commas."
   [p]
-  (p/sep1 p (p/maybe (-> (char/is \,)
-                         (p/between space0)))))
+  (p/+sep-by p (p/maybe (-> (char/is \,)
+                            (p/between *space)))))
 
 (def table-name
   "Parses table name as `:table`."
-  (-> (p/many1 char/letter?)
+  (-> (p/+many char/letter?)
       (p/value char/str* keyword)))
 
 (def column-name
   "Parses column as `:column` or `:table.column`."
-  (-> (p/group (p/option (p/maybe (p/group (p/many1 char/letter?)
+  (-> (p/group (p/option (p/maybe (p/group (p/+many char/letter?)
                                            (char/is \.))))
-               (p/many1 char/letter?))
+               (p/+many char/letter?))
       (p/value char/str* keyword)))
 
 (comment
@@ -55,8 +55,8 @@
 
 (def as-expr
   "Parses alias keyword like `:alias` after AS."
-  (p/after (p/maybe (-> (p/word "as" :ic) (p/between space1)))
-           (-> (p/many1 char/letter?)
+  (p/after (p/maybe (-> (p/word "as" :ic) (p/between +space)))
+           (-> (p/+many char/letter?)
                (p/value char/str* keyword))))
 
 (comment
@@ -78,9 +78,9 @@
 
 (def select-statement
   "Parses SQL SELECT statement to `{:select [...] :from [...] ...}`."
-  (p/for [_ (p/maybe (p/after (p/word "select" :ic) space1))
+  (p/for [_ (p/maybe (p/after (p/word "select" :ic) +space))
           select (comma-sep (with-as column-name))
-          _ (-> (p/word "from" :ic) (p/between space1))
+          _ (-> (p/word "from" :ic) (p/between +space))
           from (comma-sep (with-as table-name))]
     (p/result
       {:select (vec select)
