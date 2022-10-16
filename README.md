@@ -42,7 +42,7 @@ Parser combinators for Clojure(Script).
 | <code>[p/any-token]</code>            | `anyToken`,`anyChar`            | `any-char`              | `any-char`              |
 | <code>[p/eof]</code>                  | `eof`                           | `eof`                   | `eof`                   |
 | <code>[p/group]</code>                | `<*>`                           | `<*>`                   |                         |
-| <code>[p/choice]</code>               | <code><&#124;></code>, `choice` | <code><&#124;></code>   | `choice`                |
+| <code>[p/alt]</code>                  | <code><&#124;></code>, `choice` | <code><&#124;></code>   | `choice`                |
 | <code>[p/option]</code>               | `option`, `optional`            | `option`, `optional`    |                         |
 | <code>[p/between]</code>              | `between`                       | `between`               | `between`               |
 | <code>[p/times]</code>                | `count`                         | `times`                 | `times`                 |
@@ -125,7 +125,7 @@ Parser combinators for Clojure(Script).
 
 [p/group]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#group
 
-[p/choice]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#choice
+[p/alt]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#alt
 
 [p/option]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#option
 

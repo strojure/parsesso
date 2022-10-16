@@ -217,11 +217,11 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; The `choice` combinator
+;;; The `alt` combinator
 
-(p/parse (p/choice (p/fail "a")
-                   (p/fail "b")
-                   (p/result :x)) [])
+(p/parse (p/alt (p/fail "a")
+                (p/fail "b")
+                (p/result :x)) [])
 ;             Execution time mean : 573,340067 ns
 ;    Execution time std-deviation : 46,346310 ns
 ;   Execution time lower quantile : 511,933832 ns ( 2,5%)

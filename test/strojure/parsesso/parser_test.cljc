@@ -23,8 +23,8 @@
 (defn- fail-consumed
   "Returns parser which fails when `p` is successfully consumed."
   [parser]
-  (p/choice (p/for [x parser] (p/fail (str "Test failure after parsing " x)))
-            parser))
+  (p/alt (p/for [x parser] (p/fail (str "Test failure after parsing " x)))
+         parser))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -747,79 +747,79 @@
 
     ))
 
-(deftest choice-t
+(deftest alt-t
   (test/are [expr result] (= result expr)
 
-    (p (p/choice (tok :A)
-                 (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:A])
     {:consumed true, :value :A}
 
-    (p (p/choice (tok :A)
-                 (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:B])
     {:consumed true, :value :B}
 
-    (p (p/choice (tok :A)
-                 (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [:C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :C"]}
 
-    (p (p/choice (tok :A)
-                 (tok :B))
+    (p (p/alt (tok :A)
+              (tok :B))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/choice (fail-consumed (tok :A))
-                 (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:A])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :A"]}
 
-    (p (p/choice (fail-consumed (tok :A))
-                 (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:B])
     {:consumed true, :value :B}
 
-    (p (p/choice (fail-consumed (tok :A))
-                 (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [:C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :C"]}
 
-    (p (p/choice (fail-consumed (tok :A))
-                 (tok :B))
+    (p (p/alt (fail-consumed (tok :A))
+              (tok :B))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/choice (tok :A)
-                 (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:A])
     {:consumed true, :value :A}
 
-    (p (p/choice (tok :A)
-                 (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:B])
     {:consumed true, :error ["error at index 1:"
                              "Test failure after parsing :B"]}
 
-    (p (p/choice (tok :A)
-                 (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [:C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :C"]}
 
-    (p (p/choice (tok :A)
-                 (fail-consumed (tok :B)))
+    (p (p/alt (tok :A)
+              (fail-consumed (tok :B)))
        [])
     {:consumed false, :error ["error at index 0:"
                               "unexpected end of input"]}
 
-    (p (p/choice (p/expecting (tok :A) :A)
-                 (p/expecting (tok :B) :B))
+    (p (p/alt (p/expecting (tok :A) :A)
+              (p/expecting (tok :B) :B))
        [:C])
     {:consumed false, :error ["error at index 0:"
                               "unexpected :C"
@@ -1033,9 +1033,9 @@
        [:END])
     {:consumed true, :value nil}
 
-    (p (p/*many-till (p/choice (tok :A1 :A2 :A3)
-                               (p/*many-till (tok :B1 :B2 :B3)
-                                             (tok :END)))
+    (p (p/*many-till (p/alt (tok :A1 :A2 :A3)
+                            (p/*many-till (tok :B1 :B2 :B3)
+                                          (tok :END)))
                      (tok :END))
        [:A1 :A2 :A3 :B1 :B2 :B3 :END :A1 :A2 :A3 :END])
     {:consumed true, :value '(:A1 :A2 :A3 (:B1 :B2 :B3) :A1 :A2 :A3)}

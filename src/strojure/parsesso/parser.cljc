@@ -176,7 +176,7 @@
   - Consumes: when `p` succeeds and consumes some input.
 
   This combinator is used whenever arbitrary look ahead is needed. Since it
-  pretends that it hasn't consumed any input when `p` fails, the [[choice]]
+  pretends that it hasn't consumed any input when `p` fails, the [[alt]]
   combinator will try its second alternative even when the first parser failed
   while consuming input.
 
@@ -193,13 +193,13 @@
                  ...))
 
       (def expr
-        (-> (p/choice let-expr
-                      identifier)
+        (-> (p/alt let-expr
+                   identifier)
             (p/expecting \"expression\"))
 
   If the user writes \"lexical\", the parser fails with: `unexpected \"x\",
-  expecting \"t\" of (word \"let\")`. Indeed, since the [[choice]] combinator
-  only tries alternatives when the first alternative hasn't consumed input, the
+  expecting \"t\" of (word \"let\")`. Indeed, since the [[alt]] combinator only
+  tries alternatives when the first alternative hasn't consumed input, the
   `identifier` parser is never tried (because the prefix \"le\" of the `(p/word
   \"let\")` parser is already consumed). The right behaviour can be obtained by
   adding the [[maybe]] combinator:
@@ -272,8 +272,8 @@
 
       (def identifier
         (p/for [c char/letter?
-                cs (p/*many (p/choice char/letter-or-number?
-                                      (char/is \"_\")))]
+                cs (p/*many (p/alt char/letter-or-number?
+                                   (char/is \"_\")))]
           (p/result (cons c cs))))
   "
   [p]
@@ -479,7 +479,7 @@
   [p q & ps]
   (group* (cons p (cons q ps))))
 
-(defn choice
+(defn alt
   "This parser tries to apply the parsers in order, until one of them succeeds.
   Returns the value of the succeeding parser.
 
@@ -506,9 +506,9 @@
                                                            reply/e-err e-err-q}))))]
        (parser/go p state (reply/assign context {reply/e-err e-err-p})))))
   ([p q qq]
-   (-> p (choice q) (choice qq)))
+   (-> p (alt q) (alt qq)))
   ([p q qq & more]
-   (reduce choice (list* p q qq more))))
+   (reduce alt (list* p q qq more))))
 
 (defn option
   "This parser tries to apply parser `p`. If `p` fails without consuming input,
@@ -519,7 +519,7 @@
   "
   ([p] (option p nil))
   ([p x]
-   (choice p (result x))))
+   (alt p (result x))))
 
 (defn between
   "Parses `open`, followed by `p` and `close`. Returns the value returned by `p`.
@@ -564,9 +564,9 @@
   therefore the use of the [[maybe]] combinator.
   "
   [p end]
-  (letfn [(scan [] (choice (after end (result nil))
-                           (for [x p, xs (scan)]
-                             (result (cons x xs)))))]
+  (letfn [(scan [] (alt (after end (result nil))
+                        (for [x p, xs (scan)]
+                          (result (cons x xs)))))]
     (scan)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -607,9 +607,9 @@
   `sep`. Returns a sequence of values returned by `p`."
   [p sep]
   (for [x p]
-    (choice (for [_ sep, xs (option (+sep-opt-by p sep))]
-              (result (cons x xs)))
-            (result [x]))))
+    (alt (for [_ sep, xs (option (+sep-opt-by p sep))]
+           (result (cons x xs)))
+         (result [x]))))
 
 (defn *sep-opt-by
   "Parses _zero_ or more occurrences of `p`, separated and optionally ended by
@@ -704,8 +704,8 @@
      (reply/e-ok context state nil)))
   ([label p]
    (after (trace label)
-          (choice p, (do-parser (println (str label ": backtracked"))
-                                (fail))))))
+          (alt p, (do-parser (println (str label ": backtracked"))
+                             (fail))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
