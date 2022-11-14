@@ -1,0 +1,1 @@
+{:lint-as {strojure.parsesso.parser/for clojure.core/let}}
