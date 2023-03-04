@@ -1,7 +1,7 @@
 (ns strojure.parsesso.char
   "Basic function for parsing sequences of characters."
   (:refer-clojure :exclude [newline number?])
-  (:require #?(:cljs [clojure.string :as string])
+  (:require #?@(:bb [[clojure.string :as string]] :clj [] :default [[clojure.string :as string]])
             [strojure.parsesso.impl.char :as impl]
             [strojure.parsesso.parser :as p]))
 
@@ -61,54 +61,54 @@
 (def upper?
   "Parser and predicate for ASCII 7 bit upper-case letter character."
   (p/token (fn [c] #?(:bb
-                      (re-find #"[A-Z]" c)
+                      (re-find #"[A-Z]" (str c))
                       :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 65 c) (<= c 90)))
                       :default
-                      (re-find #"[A-Z]" c)))
+                      (re-find #"[A-Z]" (str c))))
            "upper-case ascii letter"))
 
 (def lower?
   "Parser and predicate for ASCII 7 bit lower-case letter character."
   (p/token (fn [c] #?(:bb
-                      (re-find #"[a-z]" c)
+                      (re-find #"[a-z]" (str c))
                       :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 97 c) (<= c 122)))
                       :default
-                      (re-find #"[a-z]" c)))
+                      (re-find #"[a-z]" (str c))))
            "lower-case ascii letter"))
 
 (def letter?
   "Parser and predicate for ASCII 7 bit letter character."
   (p/token (fn [c] #?(:bb
-                      (re-find #"[a-zA-Z]" c)
+                      (re-find #"[a-zA-Z]" (str c))
                       :clj
                       (or (upper? c) (lower? c))
                       :default
-                      (re-find #"[a-zA-Z]" c)))
+                      (re-find #"[a-zA-Z]" (str c))))
            "ascii letter"))
 
 (def number?
   "Parser and predicate for ASCII 7 bit number character."
   (p/token (fn [c] #?(:bb
-                      (re-find #"[0-9]" c)
+                      (re-find #"[0-9]" (str c))
                       :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 48 c) (<= c 57)))
                       :default
-                      (re-find #"[0-9]" c)))
+                      (re-find #"[0-9]" (str c))))
            "ascii number"))
 
 (def letter-or-number?
   "Parser and predicate for ASCII 7 bit letter or number character."
   (p/token (fn [c] #?(:bb
-                      (re-find #"[a-zA-Z0-9]" c)
+                      (re-find #"[a-zA-Z0-9]" (str c))
                       :clj
                       (or (letter? c) (number? c))
                       :default
-                      (re-find #"[a-zA-Z0-9]" c)))
+                      (re-find #"[a-zA-Z0-9]" (str c))))
            "ascii letter or number"))
 
 (def white?
