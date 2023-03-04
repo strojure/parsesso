@@ -23,11 +23,11 @@
 (defn next-state
   "Returns next (incremented) instance of parser state for parsed token `tok`."
   ([^State state, tok]
-   (State. (#?(:clj .more :cljs -rest) ^ISeq (.-input state))
+   (State. (#?(:bb rest :clj .more :cljs -rest :default rest) ^ISeq (.-input state))
            (pos/next-pos (.-pos state) tok)
            (.-user state)))
   ([^State state, tok, user-fn]
-   (State. (#?(:clj .more :cljs -rest) ^ISeq (.-input state))
+   (State. (#?(:bb rest :clj .more :cljs -rest :default rest) ^ISeq (.-input state))
            (pos/next-pos (.-pos state) tok)
            (user-fn (.-user state)))))
 

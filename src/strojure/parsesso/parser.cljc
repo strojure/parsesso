@@ -352,8 +352,8 @@
      ([tok] (pred tok))
      ;; Parser behaviour.
      ([state context]
-      (if-let [input (-> ^ISeq (state/input state) #?(:clj .seq :cljs -seq))]
-        (let [tok (#?(:clj .first :cljs -first) input)]
+      (if-let [input (-> ^ISeq (state/input state) #?(:bb seq :clj .seq :cljs -seq :default seq))]
+        (let [tok (#?(:bb first :clj .first :cljs -first :default first) input)]
           (if (pred tok)
             (reply/c-ok context (state/next-state state tok) tok)
             (reply/e-err context (cond-> (error/sys-unexpected state (delay (render tok)))
@@ -416,11 +416,11 @@
              (reply-err context (-> (error/sys-unexpected-eof state)
                                     (error/expecting (delay (render tokens)))))
              :else
-             (let [w (#?(:clj .first :cljs -first) ws)
-                   t (#?(:clj .first :cljs -first) input)]
+             (let [w (#?(:bb first :clj .first :cljs -first :default first) ws)
+                   t (#?(:bb first :clj .first :cljs -first :default first) input)]
                (if (test-fn w t)
-                 (recur (#?(:clj .next :cljs -next) ws)
-                        (#?(:clj .next :cljs -next) input)
+                 (recur (#?(:bb next :clj .next :cljs -next :default next) ws)
+                        (#?(:bb next :clj .next :cljs -next :default next) input)
                         reply/c-err)
                  (reply-err context (-> (error/sys-unexpected state (delay (render t)))
                                         (error/expecting (delay (render tokens)))))))))

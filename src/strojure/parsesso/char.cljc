@@ -60,52 +60,64 @@
 
 (def upper?
   "Parser and predicate for ASCII 7 bit upper-case letter character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (re-find #"[A-Z]" c)
+                      :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 65 c) (<= c 90)))
-                      :cljs
+                      :default
                       (re-find #"[A-Z]" c)))
            "upper-case ascii letter"))
 
 (def lower?
   "Parser and predicate for ASCII 7 bit lower-case letter character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (re-find #"[a-z]" c)
+                      :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 97 c) (<= c 122)))
-                      :cljs
+                      :default
                       (re-find #"[a-z]" c)))
            "lower-case ascii letter"))
 
 (def letter?
   "Parser and predicate for ASCII 7 bit letter character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (re-find #"[a-zA-Z]" c)
+                      :clj
                       (or (upper? c) (lower? c))
-                      :cljs
+                      :default
                       (re-find #"[a-zA-Z]" c)))
            "ascii letter"))
 
 (def number?
   "Parser and predicate for ASCII 7 bit number character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (re-find #"[0-9]" c)
+                      :clj
                       (let [c (unchecked-int (.charValue ^Character c))]
                         (and (<= 48 c) (<= c 57)))
-                      :cljs
+                      :default
                       (re-find #"[0-9]" c)))
            "ascii number"))
 
 (def letter-or-number?
   "Parser and predicate for ASCII 7 bit letter or number character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (re-find #"[a-zA-Z0-9]" c)
+                      :clj
                       (or (letter? c) (number? c))
-                      :cljs
+                      :default
                       (re-find #"[a-zA-Z0-9]" c)))
            "ascii letter or number"))
 
 (def white?
   "Parser and predicate for ASCII 7 bit whitespace character."
-  (p/token (fn [c] #?(:clj
+  (p/token (fn [c] #?(:bb
+                      (string/index-of " \n\r\t\f" c)
+                      :clj
                       (Character/isSpace c)
-                      :cljs
+                      :default
                       (string/index-of " \n\r\t\f" c)))
            "whitespace character"))
 

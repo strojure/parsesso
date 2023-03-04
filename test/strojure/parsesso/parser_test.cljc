@@ -1470,7 +1470,7 @@
     :ok
 
     (try (p/parse (p/fail "Error") [])
-         (catch #?@(:clj [Exception e] :cljs [:default e])
+         (catch #?@(:clj [Exception e] :default [:default e])
                 (ex-message e)))
     "error at index 0:\nError"
 

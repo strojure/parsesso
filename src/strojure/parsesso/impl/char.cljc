@@ -11,10 +11,16 @@
 (defn equals-ignorecase
   "True if chars are equal, case insensitive. "
   [c1 c2]
-  (or (= c1 c2) #?(:clj  (.equals ^Object (Character/toLowerCase ^char c1)
-                                  (Character/toLowerCase ^char c2))
-                   :cljs (= (string/lower-case c1)
-                            (string/lower-case c2)))))
+  (or (= c1 c2)
+      #?(:bb
+         (= (string/lower-case c1)
+            (string/lower-case c2))
+         :clj
+         (.equals ^Object (Character/toLowerCase ^char c1)
+                  (Character/toLowerCase ^char c2))
+         :default
+         (= (string/lower-case c1)
+            (string/lower-case c2)))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
@@ -38,20 +44,24 @@
 (defn string-pred-default
   "Default predicate for `is` and `is-not` parsers."
   [s]
-  #?(:clj
+  #?(:bb
+     (fn [c] (string/index-of s c))
+     :clj
      (if (char? s)
        (fn [c] (.equals ^Character s c))
        (fn [c] (<= 0 (.indexOf ^String s ^int (.charValue ^Character c)))))
-     :cljs
+     :default
      (fn [c] (string/index-of s c))))
 
 (defn string-pred-ignorecase
   "Default predicate for `is` and `is-not` parsers."
   [s]
   (let [s (string/lower-case s)]
-    (fn [c] #?(:clj
+    (fn [c] #?(:bb
+               (string/index-of s (string/lower-case c))
+               :clj
                (<= 0 (.indexOf ^String s ^int (Character/toLowerCase ^char c)))
-               :cljs
+               :default
                (string/index-of s (string/lower-case c))))))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
