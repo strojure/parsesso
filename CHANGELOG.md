@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
-- feat(bb): Make code `bb` compatible.
+- feat: Make code compatible with `bb` and other platforms.
+- build: Add CI config to run lein test + bb test:bb.
 
 ## `1.0.253`
 

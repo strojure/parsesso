@@ -1,0 +1,6 @@
+{:deps {com.github.strojure/parsesso {:local/root "."}}
+ :tasks
+ {test:bb {:extra-paths ["test"]
+           :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner"
+                                                   :sha "a522ab2851a2aa5bf9c22a942b45287a3a019310"}}
+           :task cognitect.test-runner/-main}}}
