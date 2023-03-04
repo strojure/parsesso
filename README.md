@@ -192,3 +192,9 @@ Parser combinators for Clojure(Script).
 ## Performance
 
 See some benchmarks [here](test/perf/bench.clj).
+
+## Contributors
+
+- [Michiel Borkent](https://github.com/borkdude)
+  + Compatibility with babashka.
+  + Github CI configuration.
