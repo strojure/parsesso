@@ -194,8 +194,18 @@ Parser combinators for Clojure(Script).
 
 See some benchmarks [here](test/perf/bench.clj).
 
+## FAQ
+
+**Q.** What parser combinators are & are good for? How does it differ e.g. from
+Instaparse, which also parses text into data?
+
+A parser combinator library is a library with functions that can be composed
+into a parser. Instaparse takes a grammar specification, but in a parser
+combinator library you build the specification from functions, rather than a
+DSL.
+
 ## Contributors
 
 - [Michiel Borkent](https://github.com/borkdude)
-  + Compatibility with babashka.
-  + Github CI configuration.
+    + Compatibility with babashka.
+    + Github CI configuration.
