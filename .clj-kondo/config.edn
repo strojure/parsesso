@@ -5,8 +5,8 @@
                           :suggest {}}
            :unknown-require-option {:level :off}
            :unsorted-required-namespaces {:level :warning}}
- :lint-as {cljs.core/defrecord clojure.core/defrecord
-           strojure.parsesso.parser/for clojure.core/let}
+ :lint-as {cljs.core/defrecord clojure.core/defrecord}
+ :config-paths ["../resources/clj-kondo.exports/com.github.strojure/parsesso"]
  :config-in-comment {:linters {:redundant-expression {:level :off}
                                :unresolved-namespace {:level :off}
                                :unresolved-symbol {:level :off}

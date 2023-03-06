@@ -209,3 +209,4 @@ DSL.
 - [Michiel Borkent](https://github.com/borkdude)
     + Compatibility with babashka.
     + Github CI configuration.
+    + Clj-kondo configuration tips.
