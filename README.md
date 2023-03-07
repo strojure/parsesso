@@ -204,9 +204,25 @@ into a parser. Instaparse takes a grammar specification, but in a parser
 combinator library you build the specification from functions, rather than a
 DSL.
 
+**Q.** When should I pick parser combinators over EBNF? Do they offer the same,
+and it is only question of which one I prefer to learn or is there some distinct
+advantage over a DSL such as EBNF? Perhaps it is easier to describe more complex
+grammars b/c I can make my own helper functions, or something?
+
+In general, parser combinators such as `parsesso` are for creating top-down
+(i.e. LL) parsers, with the ability to reuse common code (this lib). Parser
+Generators typically generate a finite state automaton for a bottom-up (LR)
+parser. Though nowadays there are also combinators for LR grammars and
+generators for LL ones (e.g. ANTLR). Which one you should use, depends on how
+hard your grammar is, and how fast the parser needs to be. Especially if the
+grammar has lot of non-trivial ambiguities then it might be easier with the more
+flexible combinators approach.
+
 ## Contributors
 
 - [Michiel Borkent](https://github.com/borkdude)
-    + Compatibility with babashka.
-    + Github CI configuration.
-    + Clj-kondo configuration tips.
+  + Compatibility with babashka.
+  + Github CI configuration.
+  + Clj-kondo configuration tips.
+- [Jakub Holý](https://github.com/holyjak)
+  + Questions and answers in FAQ.
