@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
-- (chore project) Implement `cljs-test` lein alias
+- (chore project) Implement `cljs-test` lein alias.
+- (fix cljs) `parser/update-state` for nil :input.
+- (chore) Change license to Unlicense.
 
 ## `1.1.0-258`
 
