@@ -8,6 +8,7 @@ pom.xml.asc
 /target/
 /checkouts/
 /test/user
+/cljs-test-runner-out
 .idea/
 .lein-deps-sum
 .lein-repl-history
