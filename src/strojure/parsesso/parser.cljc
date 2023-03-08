@@ -649,7 +649,7 @@
   ([field f]
    (fn [state context]
      (let [v (cond-> (f (field state))
-               (identical? :input field) (state/conform-input))]
+               (= :input field) (state/conform-input))]
        (reply/e-ok context (assoc state field v) v)))))
 
 (defn set-state
