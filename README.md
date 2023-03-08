@@ -6,6 +6,7 @@ Clojure(Script).
 [![Clojars Project](https://img.shields.io/clojars/v/com.github.strojure/parsesso.svg)](https://clojars.org/com.github.strojure/parsesso)
 
 [![cljdoc badge](https://cljdoc.org/badge/com.github.strojure/parsesso)](https://cljdoc.org/d/com.github.strojure/parsesso)
+[![cljs compatible](https://img.shields.io/badge/cljs-compatible-green)](https://clojurescript.org/)
 [![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://babashka.org)
 [![tests](https://github.com/strojure/parsesso/actions/workflows/tests.yml/badge.svg)](https://github.com/strojure/parsesso/actions/workflows/tests.yml)
 
