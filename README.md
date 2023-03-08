@@ -7,6 +7,7 @@ Clojure(Script).
 
 [![cljdoc badge](https://cljdoc.org/badge/com.github.strojure/parsesso)](https://cljdoc.org/d/com.github.strojure/parsesso)
 [![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://babashka.org)
+[![tests](https://github.com/strojure/parsesso/actions/workflows/tests.yml/badge.svg)](https://github.com/strojure/parsesso/actions/workflows/tests.yml)
 
 ## Motivation
 
@@ -223,8 +224,8 @@ flexible combinators approach.
 ## Contributors
 
 - [Michiel Borkent](https://github.com/borkdude)
-  + Compatibility with babashka.
-  + Github CI configuration.
-  + Clj-kondo configuration tips.
+    + Compatibility with babashka.
+    + Github CI configuration.
+    + Clj-kondo configuration tips.
 - [Jakub Holý](https://github.com/holyjak)
-  + Questions and answers in FAQ.
+    + Questions and answers in FAQ.
