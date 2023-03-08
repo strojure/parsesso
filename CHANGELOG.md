@@ -4,9 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## `1.1.0-259-SNAPSHOT`
+## `1.1.2-275-SNAPSHOT`
 
 Release date `UNRELEASED`
+
+
+
+## `1.1.1-274`
+
+Release date `2023-03-08`
 
 - (chore project) Implement `cljs-test` lein alias.
 - (fix cljs) `parser/update-state` for nil :input.
