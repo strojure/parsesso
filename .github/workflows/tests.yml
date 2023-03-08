@@ -1,13 +1,16 @@
-name: ci
+name: tests
 
-on: [ push, pull_request ]
+on:
+  workflow_dispatch: { }
+  push:
+    branches: [ default ]
+    paths: [ "src/**", "test/**", "project.clj", "*.edn" ]
+  pull_request:
+    paths: [ "src/**", "test/**", "project.clj", "*.edn" ]
 
 jobs:
   tests:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -34,10 +37,10 @@ jobs:
           key: cljdeps-${{ hashFiles('project.clj', 'bb.edn') }}
           restore-keys: cljdeps-
 
-      - name: Execute lein tests
-        run: |
-          lein test
+      - run: lein deps
 
-      - name: Execute bb tests
-        run: |
-          bb test:bb
+      - run: lein test
+
+      - run: lein cljs-test
+
+      - run: bb test:bb
