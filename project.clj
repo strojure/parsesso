@@ -1,4 +1,4 @@
-(defproject com.github.strojure/parsesso "1.1.1-274"
+(defproject com.github.strojure/parsesso "1.1.2-275-SNAPSHOT"
   :description "Parser combinators library for Clojure(Script)."
   :url "https://github.com/strojure/parsesso"
   :license {:name "Unlicense" :url "https://unlicense.org"}
