@@ -18,7 +18,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Return value without parsing
+;; ## Return value without parsing ##
 
 (p/parse (p/result :x) [])
 ;             Execution time mean : 175,877194 ns
@@ -40,7 +40,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Fail immediately without parsing
+;; ## Fail immediately without parsing ##
 
 (p/parse* (p/fail :x) [])
 ;             Execution time mean : 188,952263 ns
@@ -62,7 +62,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse token
+;; ## Parse token ##
 
 (p/parse (p/token #(= \a %)) "abc")
 ;             Execution time mean : 280,963465 ns
@@ -84,7 +84,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse word
+;; ## Parse word ##
 
 (p/parse (p/word "abc") "abc")
 ;             Execution time mean : 492,578323 ns
@@ -106,7 +106,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse word, case-insensitive
+;; ## Parse word, case-insensitive ##
 
 (p/parse (p/word "abc" :ic) "ABC")
 ;             Execution time mean : 631,199580 ns
@@ -122,7 +122,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse long word
+;; ## Parse long word ##
 
 (p/parse (p/word -input-10000) -input-10000)
 ;             Execution time mean : 190,951777 µs
@@ -142,7 +142,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse letters
+;; ## Parse letters ##
 
 (p/parse (p/*many char/letter?) "abc")
 ;             Execution time mean : 975,326535 ns
@@ -164,7 +164,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse letters as string
+;; ## Parse letters as string ##
 
 (p/parse (-> (p/*many char/letter?) (p/value char/str*)) "abc")
 ;             Execution time mean : 1,514160 µs
@@ -180,7 +180,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse `many` for long input
+;; ## Parse `many` for long input ##
 
 (p/parse (p/*many (p/token #(= :a %))) -input-10000)
 ;             Execution time mean : 1,311809 ms
@@ -201,7 +201,7 @@
 ;   Execution time upper quantile : 1,341844 sec (97,5%)
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Skip `many` for long input
+;; ## Skip `many` for long input ##
 
 (p/parse (p/*skip (p/token #(= :a %))) -input-10000)
 ;             Execution time mean : 1,043996 ms
@@ -217,7 +217,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; The `alt` combinator
+;; ## The `alt` combinator ##
 
 (p/parse (p/alt (p/fail "a")
                 (p/fail "b")
@@ -245,7 +245,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Wrap with `expecting`
+;; ## Wrap with `expecting` ##
 
 (p/parse (-> (p/result :x) (p/expecting "x")) [])
 ;             Execution time mean : 212,033445 ns
@@ -261,7 +261,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Test for the end of input
+;; ## Test for the end of input ##
 
 (p/parse* p/eof " ")
 ;             Execution time mean : 231,661354 ns

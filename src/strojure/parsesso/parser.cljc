@@ -30,7 +30,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; parsers
+;; ## Parsers ##
 
 (defn result
   "This parser always succeeds with value `x` without consuming any input.
@@ -454,7 +454,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; combinators
+;; ## Combinators ##
 
 (defn group*
   "This parser tries to apply parsers of `ps` in order until all of them
@@ -619,7 +619,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parser state combinators
+;; ## Parser state combinators ##
 
 (defn get-state
   "This parser returns the parser state field `:input`, `:pos` or `:user`.
