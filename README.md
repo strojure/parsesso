@@ -192,11 +192,11 @@ Clojure(Script).
 
 ## Examples
 
-* [HoneySQL SELECT](test/demo/honeysql_select.clj)
+* [HoneySQL SELECT](doc/demo/honeysql_select.clj)
 
 ## Performance
 
-See some benchmarks [here](test/perf/bench.clj).
+See some benchmarks [here](doc/benchmarks/compare.clj).
 
 ## FAQ
 

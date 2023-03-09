@@ -13,7 +13,8 @@
                                        ;; inspiration libs
                                        [org.blancas/kern "1.1.0"]
                                        [rm-hull/jasentaa "0.2.5"]
-                                       [the/parsatron "0.0.8"]]}}
+                                       [the/parsatron "0.0.8"]]
+                        :source-paths ["doc"]}}
 
   :aliases {"cljs-test" ["run" "-m" "cljs-test-runner.main"]}
 

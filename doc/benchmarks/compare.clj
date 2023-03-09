@@ -1,4 +1,4 @@
-(ns perf.bench
+(ns benchmarks.compare
   "Some benchmarks between parsesso, kern and parsatron. There is no jasentaa
   here because it is very slow."
   (:require [blancas.kern.core :as k]
@@ -106,7 +106,7 @@
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
-;;; Parse word, case insensitive
+;;; Parse word, case-insensitive
 
 (p/parse (p/word "abc" :ic) "ABC")
 ;             Execution time mean : 631,199580 ns
