@@ -27,6 +27,7 @@ Clojure(Script).
 
 | Parsesso                              | Parsec<sup>[1],[2],[3]</sup>    | Kern<sup>[4]</sup>      | Parsatron<sup>[5]</sup> |
 |---------------------------------------|---------------------------------|-------------------------|-------------------------|
+| <code>[p/do-parser]</code>            |                                 | `fwd`                   | `defparser`             |
 | <code>[p/result]</code>               | `return`                        | `return`                | `always`                |
 | <code>[p/fail]</code>                 | `fail`                          | `fail`                  | `never`                 |
 | <code>[p/fail-unexpected]</code>      | `unexpected`                    | `unexpected`            |                         |
@@ -88,6 +89,8 @@ Clojure(Script).
 [4]: https://github.com/blancas/kern/blob/master/src/main/clojure/blancas/kern/core.clj
 
 [5]: https://github.com/youngnh/parsatron/blob/master/src/clj/the/parsatron.clj
+
+[p/do-parser]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#do-parser
 
 [p/result]: https://cljdoc.org/d/com.github.strojure/parsesso/CURRENT/api/strojure.parsesso.parser#result
 
