@@ -23,6 +23,13 @@ Clojure(Script).
 * [youngnh/parsatron](https://github.com/youngnh/parsatron)
 * [rm-hull/jasentaa](https://github.com/rm-hull/jasentaa)
 
+## Documentation
+
+As far as there is no comprehensive documentation how to use `parsesso` there
+are another resources to get familiar with idea of parser combinators in Clojure:
+
+- [Kern documentation wiki](https://github.com/blancas/kern/wiki).
+
 ## Cheat sheet
 
 | Parsesso                              | Parsec<sup>[1],[2],[3]</sup>    | Kern<sup>[4]</sup>      | Parsatron<sup>[5]</sup> |
