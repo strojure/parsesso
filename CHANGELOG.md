@@ -4,9 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## `1.1.2-275-SNAPSHOT`
+## `1.1.3-284-SNAPSHOT`
 
 Release date `UNRELEASED`
+
+## `1.1.2-283`
+
+Release date `2023-05-17`
 
 - (fix): #5 `expecting` adds a message instead of replacing
 
