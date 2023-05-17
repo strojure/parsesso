@@ -94,23 +94,39 @@
   (test/are [expr result] (= result expr)
 
     (p (-> (p/fail "Test failure")
-           (p/expecting "expectation"))
+           (p/expecting "Expect"))
        [])
     {:consumed false, :error ["error at index 0:"
-                              "expecting expectation"
+                              "expecting Expect"
                               "Test failure"]}
 
     (p (-> (p/fail "Test failure")
-           (p/expecting (delay "expectation")))
+           (p/expecting (delay "Expect")))
        [])
     {:consumed false, :error ["error at index 0:"
-                              "expecting expectation"
+                              "expecting Expect"
                               "Test failure"]}
 
     (p (-> (p/fail "Test failure")
            (p/expecting nil))
        [])
     {:consumed false, :error ["error at index 0:"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting "Inner")
+           (p/expecting "Outer"))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting Outer"
+                              "Test failure"]}
+
+    (p (-> (p/fail "Test failure")
+           (p/expecting "Inner")
+           (p/expecting nil))
+       [])
+    {:consumed false, :error ["error at index 0:"
+                              "expecting Inner"
                               "Test failure"]}
 
     ))

@@ -56,11 +56,13 @@
   (new-error state ::unexpected msg))
 
 (defn expecting
-  "Returns new instance of the parser error `err` with added “expected item”
+  "Returns new instance of the parser error `err` with replaced “expected item”
   message. Ignores nil `msg` and returns just `err`."
   [^ParseError err, msg]
   (if msg
-    (ParseError. (.-pos err) (cons [::expecting msg] (.-messages err)))
+    (ParseError. (.-pos err)
+                 (cons [::expecting msg] (filter #(not= ::expecting (first %))
+                                                 (.-messages err))))
     err))
 
 (defn message
@@ -110,9 +112,9 @@
 
   Example:
 
-      unexpected UnExpect2 or UnExpect1
-      expecting Expect3, Expect2 or Expect1
-      Message2 or Message1
+      unexpected UnExpect1 or UnExpect2
+      expecting Expect1, Expect2 or Expect3
+      Message1 or Message2
   "
   {:arglists '([{:keys [unknown expecting unexpected end-of-input or] :as dict}, messages]
                [messages])}
@@ -141,18 +143,18 @@
        (dict :unknown)))))
 
 (comment
-  (->> [[::sys-unexpected nil]
-        [::sys-unexpected "SysUnExpect"]
-        [::unexpected "UnExpect1"]
-        [::unexpected (delay "UnExpect2")]
-        [::expecting "Expect1"]
-        [::expecting (delay "Expect2")]
-        [::expecting "Expect2"]
-        [::expecting ""]
-        [::expecting "Expect3"]
-        [::message "Message1"]
-        [::message (delay "Message1")]
-        [::message "Message2"]]
+  (->> (list [::message "Message2"]
+             [::message (delay "Message1")]
+             [::message "Message1"]
+             [::expecting "Expect3"]
+             [::expecting ""]
+             [::expecting "Expect2"]
+             [::expecting (delay "Expect2")]
+             [::expecting "Expect1"]
+             [::unexpected (delay "UnExpect2")]
+             [::unexpected "UnExpect1"]
+             [::sys-unexpected "SysUnExpect"]
+             [::sys-unexpected nil])
        (render-messages)
        (println))
   )

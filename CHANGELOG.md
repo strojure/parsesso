@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
-
+- (fix): #5 `expecting` adds a message instead of replacing
 
 ## `1.1.1-274`
 
