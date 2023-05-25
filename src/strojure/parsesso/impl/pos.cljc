@@ -21,8 +21,8 @@
 (defmethod init-pos :default
   [{:keys [pos]} _]
   (when (keyword? pos)
-    (throw (ex-info (str "Cannot init input position for: " pos) {}))
-    pos))
+    (throw (ex-info (str "Cannot init input position for: " pos) {})))
+  pos)
 
 (defmethod init-pos nil
   [opts input]
