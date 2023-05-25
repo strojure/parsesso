@@ -725,13 +725,16 @@
 
   Options:
 
-  **`:pos`** The instance of InputPos or keyword for `pos/init-pos` to init
-  parser pos. By default, pos is initialized to TextPos for string input or
-  first token of char type, or IndexPos otherwise.
+  - `:pos` − The instance of InputPos or keyword for `pos/init-pos` to init
+             parser pos. By default, pos is initialized to TextPos for string
+             input or first token of char type, or IndexPos otherwise.
 
-  **`:tab`** Tab size for TextPos, which is 8 by default.
+  - TextPos options:
+      - `:tab`  − tab size, default: 8.
+      - `:line` − line number, default: 1.
+      - `:col`  − column number, default: 1.
 
-  **`:user-state`** Initial value of user state.
+  - `:user-state` − Initial value of user state.
   "
   {:arglists '([p input]
                [p input {:keys [pos, tab, user-state] :as options}])}

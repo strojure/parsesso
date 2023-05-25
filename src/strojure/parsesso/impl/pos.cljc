@@ -84,6 +84,6 @@
 
 (defmethod init-pos :text
   [opts _]
-  (TextPos. (or (:tab opts) 8) 1 1))
+  (TextPos. (or (:tab opts) 8) (or (:line opts) 1) (or (:col opts) 1)))
 
 ;;,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
