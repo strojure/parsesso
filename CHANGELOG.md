@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
+- (docs): fix :arglists of `parser/parse` #7
+
 ## `1.2.0+287`
 
 Release date `2023-05-25`

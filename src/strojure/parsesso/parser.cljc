@@ -711,9 +711,7 @@
 
 (defn parse*
   "Executes parser `p` given `input` sequence of tokens, returns reply record.
-  See `parse` for available options."
-  {:arglists '([p input]
-               [p input {:keys [pos, tab, user-state] :as options}])}
+  See [[parse]] for available `opts`."
   ([p input]
    (parser/run p (state/init-state input (pos/init-pos nil input) nil)))
   ([p input opts]
@@ -737,7 +735,8 @@
   - `:user-state` − Initial value of user state.
   "
   {:arglists '([p input]
-               [p input {:keys [pos, tab, user-state] :as options}])}
+               [p input {:keys [pos user-state] :as options}]
+               [p input {:keys [tab line col user-state] :as options}])}
   ([p input]
    (-> (parse* p input) (reply/value)))
   ([p input opts]
