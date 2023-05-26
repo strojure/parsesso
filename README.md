@@ -211,18 +211,18 @@ See some benchmarks [here](doc/benchmarks/compare.clj).
 
 ## FAQ
 
-**Q.** What parser combinators are & are good for? How does it differ e.g. from
-Instaparse, which also parses text into data?
+**What parser combinators are & are good for? How does it differ e.g. from
+Instaparse, which also parses text into data?**
 
 A parser combinator library is a library with functions that can be composed
 into a parser. Instaparse takes a grammar specification, but in a parser
 combinator library you build the specification from functions, rather than a
 DSL.
 
-**Q.** When should I pick parser combinators over EBNF? Do they offer the same,
+**When should I pick parser combinators over EBNF? Do they offer the same,
 and it is only question of which one I prefer to learn or is there some distinct
 advantage over a DSL such as EBNF? Perhaps it is easier to describe more complex
-grammars b/c I can make my own helper functions, or something?
+grammars b/c I can make my own helper functions, or something?**
 
 In general, parser combinators such as `parsesso` are for creating top-down
 (i.e. LL) parsers, with the ability to reuse common code (this lib). Parser
