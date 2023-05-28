@@ -8,20 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
-- (docs): fix :arglists of `parser/parse` #7
+- (docs): fix :arglists of `parser/parse` [#7]
+ 
+[#7]: https://github.com/strojure/parsesso/issues/7
 
 ## `1.2.0+287`
 
 Release date `2023-05-25`
 
 - (feat pos): allow to specify initial line/col for :text pos
-- (fix): cannot pass custom `InputPos` #6
+- (fix): cannot pass custom `InputPos` [#6]
+
+[#6]: https://github.com/strojure/parsesso/issues/6
 
 ## `1.1.2-283`
 
 Release date `2023-05-17`
 
-- (fix): #5 `expecting` adds a message instead of replacing
+- (fix): `expecting` adds a message instead of replacing [#5]
+
+[#5]: https://github.com/strojure/parsesso/issues/5
 
 ## `1.1.1-274`
 
