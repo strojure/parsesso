@@ -4,12 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## `1.2.1-SNAPSHOT`
+## `1.2.2-SNAPSHOT`
 
 Release date `UNRELEASED`
 
+## `1.2.1+292`
+
+Release date `2023-05-28`
+
 - (docs): fix :arglists of `parser/parse` [#7]
- 
+
 [#7]: https://github.com/strojure/parsesso/issues/7
 
 ## `1.2.0+287`
