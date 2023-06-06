@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Release date `UNRELEASED`
 
+- (fix): allow destructuring in `p/for` [#8]
+
+[#8]: https://github.com/strojure/parsesso/issues/8
+
 ## `1.2.1+292`
 
 Release date `2023-05-28`

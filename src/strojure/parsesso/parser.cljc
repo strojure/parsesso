@@ -130,7 +130,6 @@
   [[& bindings] & body]
   (let [[sym p :as pair] (take 2 bindings)]
     (assert (= 2 (count pair)) "Requires an even number of forms in bindings")
-    (assert (symbol? sym) (str "Requires symbol for binding name: " sym))
     (assert (some? body) "Requires some body")
     (if (= 2 (count bindings))
       `(bind ~p (fn [~sym] ~@body))
