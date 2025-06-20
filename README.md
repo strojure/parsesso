@@ -8,7 +8,7 @@ Clojure(Script).
 
 [![cljdoc badge](https://cljdoc.org/badge/com.github.strojure/parsesso)](https://cljdoc.org/d/com.github.strojure/parsesso)
 [![cljs compatible](https://img.shields.io/badge/cljs-compatible-green)](https://clojurescript.org/)
-[![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://babashka.org)
+[![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://book.babashka.org#badges)
 [![tests](https://github.com/strojure/parsesso/actions/workflows/tests.yml/badge.svg)](https://github.com/strojure/parsesso/actions/workflows/tests.yml)
 
 ## Motivation
